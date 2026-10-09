@@ -6,7 +6,7 @@
 //   dateformat = %Y-%m-%d, timeformat = %H:%M, datetimeformat = %Y-%m-%d %H:%M
 
 function sanitizeSummary(title) {
-  return String(title || "").replace(/::/g, ":").replace(/\s+/g, " ").trim();
+  return String(title || "").replace(/:{2,}/g, ":").replace(/\s+/g, " ").trim();
 }
 
 // ev: { calendar, date, start, endDate, endTime, title, alarm }

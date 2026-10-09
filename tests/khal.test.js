@@ -20,6 +20,8 @@ describe("khal argv", () => {
 
   it("sanitizes summaries", () => {
     expect(sanitizeSummary("  a::b \r\n c ")).toBe("a:b c");
+    expect(sanitizeSummary("a:::b")).toBe("a:b");
+    expect(sanitizeSummary("a::::::b")).toBe("a:b");
   });
 
   it("builds sync and calendar listing commands", () => {
