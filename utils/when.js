@@ -9,6 +9,9 @@
 
 var END = "(?=$|[\\s,.;!?])";
 var LEAD = "(^|\\s)(?:(?:na|no|para|pra|em|de|às|as|a)\\s+)?";
+var TIME = "(\\d{1,2})(?:h(\\d{2})?|:(\\d{2}))";
+var TIME_OPT = "(\\d{1,2})(?:h(\\d{2})?|:(\\d{2}))?";
+var RANGE_SEP = "\\s*(?:-|até|às|as)\\s*";
 
 var RELATIVE_DAYS = [
   ["depois de amanh[ãa]", 2],
@@ -37,6 +40,13 @@ function take(state, re, accept) {
   return value;
 }
 
+function toTime(hours, minA, minB) {
+  const h = Number(hours);
+  const m = Number(minA || minB || 0);
+  if (h > 23 || m > 59) return null;
+  return Dates.pad2(h) + ":" + Dates.pad2(m);
+}
+
 function parseDay(state, today) {
   for (const [word, offset] of RELATIVE_DAYS) {
     const v = take(state, new RegExp(LEAD + word + END, "i"), () => Dates.isoDate(Dates.addDays(today, offset)));
@@ -60,10 +70,28 @@ function parseDay(state, today) {
   });
 }
 
+function parseTimes(state) {
+  const range = take(state, new RegExp(LEAD + TIME + RANGE_SEP + TIME_OPT + END, "i"), (m) => {
+    const start = toTime(m[2], m[3], m[4]);
+    const end = toTime(m[5], m[6], m[7]);
+    if (!start || !end || Dates.minutesOf(end) <= Dates.minutesOf(start)) return null;
+    return { start: start, end: end };
+  });
+  if (range) return range;
+  const start = take(state, new RegExp(LEAD + TIME + END, "i"), (m) => toTime(m[2], m[3], m[4]));
+  return { start: start, end: null };
+}
+
 function parseWhen(text, now) {
   const state = { rest: String(text || "") };
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const date = parseDay(state, today);
+  let date = parseDay(state, today);
+  const times = parseTimes(state);
+  if (!date && times.start) {
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const past = Dates.minutesOf(times.start) <= nowMinutes;
+    date = Dates.isoDate(past ? Dates.addDays(today, 1) : today);
+  }
   const title = state.rest.replace(/\s+/g, " ").trim();
-  return { title: title, date: date, start: null, end: null };
+  return { title: title, date: date, start: times.start, end: times.end };
 }

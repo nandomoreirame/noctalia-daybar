@@ -37,3 +37,29 @@ describe("parseWhen: days", () => {
     expect(parseWhen("segundas intenções", NOW).date).toBeNull();
   });
 });
+
+describe("parseWhen: times", () => {
+  it.each([
+    ["comprar pão amanhã 9h", { title: "comprar pão", date: "2026-10-10", start: "09:00", end: null }],
+    ["ligar pro banco 16h", { title: "ligar pro banco", date: "2026-10-09", start: "16:00", end: null }],
+    ["ligar pro banco 9h", { title: "ligar pro banco", date: "2026-10-10", start: "09:00", end: null }],
+    ["standup 15h", { title: "standup", date: "2026-10-10", start: "15:00", end: null }],
+    ["hoje 9h revisar", { title: "revisar", date: "2026-10-09", start: "09:00", end: null }],
+    ["reunião sexta 15h-16h", { title: "reunião", date: "2026-10-16", start: "15:00", end: "16:00" }],
+    ["15h às 16h30 call", { title: "call", date: "2026-10-10", start: "15:00", end: "16:30" }],
+    ["depois de amanhã às 10h30 dentista", { title: "dentista", date: "2026-10-11", start: "10:30", end: null }],
+    ["consulta 05/11 às 14:00", { title: "consulta", date: "2026-11-05", start: "14:00", end: null }],
+    ["almoço 12:00 - 13:00 amanhã", { title: "almoço", date: "2026-10-10", start: "12:00", end: "13:00" }]
+  ])("%s", (text, expected) => {
+    expect(parseWhen(text, NOW)).toEqual(expected);
+  });
+
+  it("rejects impossible times", () => {
+    expect(parseWhen("treino 25h", NOW)).toEqual({ title: "treino 25h", date: null, start: null, end: null });
+    expect(parseWhen("treino 10h75", NOW).start).toBeNull();
+  });
+
+  it("leaves a range whose end is not after its start as plain text", () => {
+    expect(parseWhen("plantão 23h-1h", NOW)).toEqual({ title: "plantão 23h-1h", date: null, start: null, end: null });
+  });
+});
