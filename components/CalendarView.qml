@@ -13,10 +13,12 @@ NBox {
   property var pluginApi: null
   property var mainInstance: null
   property date now: new Date()
-  property int year: now.getFullYear()
-  property int month: now.getMonth()
-  property string selected: Qt.formatDate(now, "yyyy-MM-dd")
-  readonly property var cells: Month.monthGrid(year, month, now, CalendarService.events)
+  // Changes only at midnight, so the month grid is not rebuilt on every clock tick.
+  property date today: new Date()
+  property int year: today.getFullYear()
+  property int month: today.getMonth()
+  property string selected: Qt.formatDate(today, "yyyy-MM-dd")
+  readonly property var cells: Month.monthGrid(year, month, today, CalendarService.events)
   readonly property var dayEvents: Events.eventsOn(CalendarService.events, selected)
 
   function tr(key) {
@@ -33,7 +35,12 @@ NBox {
     interval: 1000
     repeat: true
     running: root.visible
-    onTriggered: root.now = new Date()
+    onTriggered: {
+      const d = new Date();
+      root.now = d;
+      if (d.toDateString() !== root.today.toDateString())
+        root.today = d;
+    }
   }
 
   RowLayout {
