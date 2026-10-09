@@ -1,19 +1,26 @@
 import { describe, it, expect } from "vitest";
 import { pageArgs, imageArgs, thumbPath, removeArgs, isUsableExit } from "../utils/fetch.js";
 
-const LIMITS = ["--proto", "=http,https", "--proto-redir", "=http,https", "--max-time", "8", "--max-filesize", "2000000", "--max-redirs", "5"];
+const SHARED = ["--fail", "--proto", "=http,https", "--proto-redir", "=http,https", "--max-time", "8", "--max-redirs", "5"];
+const IMAGE_SIZE = ["--max-filesize", "2000000"];
+const PAGE_SIZE = ["--max-filesize", "2000000", "-r", "0-1999999"];
 
 describe("fetch argv", () => {
-  it("fetches a page with protocol, time and size limits, URL after --", () => {
+  it("fetches a page with protocol, time, size and range limits, URL after --", () => {
     const args = pageArgs("https://site.com/a");
     expect(args.slice(0, 2)).toEqual(["curl", "-sSL"]);
-    expect(args).toEqual(expect.arrayContaining(LIMITS));
+    expect(args).toEqual(expect.arrayContaining(SHARED));
+    expect(args).toEqual(expect.arrayContaining(PAGE_SIZE));
+    expect(args).toContain("--max-filesize");
+    expect(args).toContain("-r");
     expect(args.slice(-2)).toEqual(["--", "https://site.com/a"]);
   });
 
-  it("downloads an image to a given path with the same limits", () => {
+  it("downloads an image with the shared limits plus a size cap, without a range", () => {
     const args = imageArgs("https://cdn.com/a.png", "/tmp/thumbs/abc");
-    expect(args).toEqual(expect.arrayContaining(LIMITS));
+    expect(args).toEqual(expect.arrayContaining(SHARED.concat(IMAGE_SIZE)));
+    expect(args).toContain("--max-filesize");
+    expect(args).not.toContain("-r");
     expect(args).toEqual(expect.arrayContaining(["-o", "/tmp/thumbs/abc"]));
     expect(args.slice(-2)).toEqual(["--", "https://cdn.com/a.png"]);
   });
