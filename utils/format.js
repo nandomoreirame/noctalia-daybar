@@ -30,3 +30,10 @@ function relativeTime(iso, now) {
   if (days < 7) return { unit: "days", n: days };
   return { unit: "date", n: 0, date: Dates.isoDate(new Date(iso)) };
 }
+
+// i18n key and replacement value for a relativeTime() result. unit "date"
+// has no key (callers show r.date directly).
+function relativeKey(r) {
+  if (!r || r.unit === "date") return { key: "", n: 0, date: r && r.date ? r.date : "" };
+  return { key: "time." + r.unit, n: r.n, date: "" };
+}

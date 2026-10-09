@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { describeWhen, relativeTime } from "../utils/format.js";
+import { describeWhen, relativeTime, relativeKey } from "../utils/format.js";
 
 const NOW = new Date(2026, 9, 9, 15, 0);
 
@@ -26,5 +26,13 @@ describe("format.relativeTime", () => {
     ["2026-10-09T15:05:00.000Z", { unit: "now", n: 0 }]
   ])("%s", (iso, expected) => {
     expect(relativeTime(iso, NOW)).toEqual(expected);
+  });
+});
+
+describe("format.relativeKey", () => {
+  it("maps units to i18n keys and leaves dates keyless", () => {
+    expect(relativeKey({ unit: "now", n: 0 })).toEqual({ key: "time.now", n: 0, date: "" });
+    expect(relativeKey({ unit: "minutes", n: 5 })).toEqual({ key: "time.minutes", n: 5, date: "" });
+    expect(relativeKey({ unit: "date", n: 0, date: "2026-09-01" })).toEqual({ key: "", n: 0, date: "2026-09-01" });
   });
 });

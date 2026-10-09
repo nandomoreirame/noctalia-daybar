@@ -101,7 +101,8 @@ PanelWindow {
     if (!note)
       return "";
     const r = Format.relativeTime(note.updatedAt, new Date());
-    const when = r.unit === "date" ? r.date : tr("time." + r.unit).replace("{n}", r.n);
+    const k = Format.relativeKey(r);
+    const when = k.key === "" ? k.date : tr(k.key).replace("{n}", k.n);
     return tr("notes.edited").replace("{time}", when);
   }
 
