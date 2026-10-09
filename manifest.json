@@ -7,13 +7,12 @@
   "license": "MIT",
   "repository": "https://github.com/nandomoreirame/noctalia-daybar",
   "description": "Quick capture, today's checklist, Google Calendar and focus timer in one bar toolbar.",
-  "tags": [
-    "Bar",
-    "Productivity"
-  ],
+  "tags": ["Bar", "Productivity"],
   "entryPoints": {
     "main": "Main.qml",
-    "panel": "Panel.qml"
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml",
+    "settings": "Settings.qml"
   },
   "dependencies": {
     "plugins": []
