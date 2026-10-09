@@ -69,11 +69,14 @@ Events can be deleted from the panel. Read-only calendars are excluded.
    ("In production")**. In *Testing* status Google expires the refresh token every
    7 days. Create an OAuth client of type *Desktop app*.
 2. **Store the secrets** in the keyring:
+
    ~~~bash
    secret-tool store --label="vdirsyncer google id" service vdirsyncer-google key client_id
    secret-tool store --label="vdirsyncer google secret" service vdirsyncer-google key client_secret
    ~~~
+
 3. **vdirsyncer** (`~/.config/vdirsyncer/config`):
+
    ~~~ini
    [general]
    status_path = "~/.local/share/vdirsyncer/status/"
@@ -95,12 +98,16 @@ Events can be deleted from the panel. Read-only calendars are excluded.
    path = "~/.local/share/calendars/google/"
    fileext = ".ics"
    ~~~
+
    Then authorize and sync (opens the browser once):
+
    ~~~bash
    vdirsyncer discover google_calendar && vdirsyncer metasync && vdirsyncer sync
    ~~~
+
 4. **khal** (`~/.config/khal/config`). Daybar passes ISO dates, so the locale
    formats must be ISO:
+
    ~~~ini
    [calendars]
    [[google]]
@@ -115,8 +122,10 @@ Events can be deleted from the panel. Read-only calendars are excluded.
    longdatetimeformat = %Y-%m-%d %H:%M
    firstweekday = 0
    ~~~
+
    Check with `khal printcalendars` and pick the default calendar in Daybar's settings.
 5. **Periodic sync** (`~/.config/systemd/user/vdirsyncer.service` and `.timer`):
+
    ~~~ini
    # vdirsyncer.service
    [Unit]
@@ -126,6 +135,7 @@ Events can be deleted from the panel. Read-only calendars are excluded.
    Type=oneshot
    ExecStart=/usr/bin/vdirsyncer sync
    ~~~
+
    ~~~ini
    # vdirsyncer.timer
    [Unit]
@@ -138,9 +148,11 @@ Events can be deleted from the panel. Read-only calendars are excluded.
    [Install]
    WantedBy=timers.target
    ~~~
+
    ~~~bash
    systemctl --user daemon-reload && systemctl --user enable --now vdirsyncer.timer
    ~~~
+
 6. In Noctalia Settings > Location keep **Show calendar events** on.
 
 Without khal the Calendar tab shows "Calendar not configured"; tasks, notes, bookmarks,

@@ -52,6 +52,7 @@ Parallel batches: {T2, T5, T6, T13, T14, T18} after T1; then {T3, T7, T8, T11, T
 
 **Requirement:** infrastructure for all REQs
 **Files:**
+
 - Create: `package.json`
 - Create: `vitest.config.js`
 - Create: `.gitignore`
@@ -61,6 +62,7 @@ Parallel batches: {T2, T5, T6, T13, T14, T18} after T1; then {T3, T7, T8, T11, T
 - Test: `tests/transform.test.js` (deleted at the end of this task)
 
 **Team:**
+
 - Track: infra
 - Implementer: infra-engineer (skills: bash-linux)
 - Reviewers: consequences-reviewer
@@ -68,6 +70,7 @@ Parallel batches: {T2, T5, T6, T13, T14, T18} after T1; then {T3, T7, T8, T11, T
 **Step 1: Write the failing test**
 
 `package.json`:
+
 ```json
 {
   "name": "noctalia-daybar",
@@ -84,6 +87,7 @@ Parallel batches: {T2, T5, T6, T13, T14, T18} after T1; then {T3, T7, T8, T11, T
 ```
 
 `utils/nested/sample-dep.js`:
+
 ```js
 .pragma library
 
@@ -93,6 +97,7 @@ function double(n) {
 ```
 
 `utils/sample.js`:
+
 ```js
 .pragma library
 .import "nested/sample-dep.js" as Dep
@@ -105,6 +110,7 @@ function quadruple(n) {
 ```
 
 `tests/transform.test.js`:
+
 ```js
 import { describe, it, expect } from "vitest";
 import { BASE, quadruple } from "../utils/sample.js";
@@ -127,6 +133,7 @@ Expected: FAIL with a syntax error on `.pragma library` (no transform yet).
 **Step 3: Write minimal implementation**
 
 `vitest.config.js`:
+
 ```js
 import { defineConfig } from "vitest/config";
 
@@ -167,6 +174,7 @@ export default defineConfig({
 ```
 
 `.gitignore`:
+
 ```
 node_modules/
 *.qmlc
@@ -188,15 +196,18 @@ Run: `/git commit`
 
 **Requirement:** REQ-008, REQ-009, REQ-010, REQ-013, REQ-015
 **Files:**
+
 - Create: `utils/dates.js`
 - Test: `tests/dates.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { pad2, isoDate, parseIsoDate, addDays, hhmm, minutesOf, addMinutes, toDate } from "../utils/dates.js";
@@ -243,6 +254,7 @@ Run: `npm test -- tests/dates.test.js`
 Expected: FAIL with "Failed to load url ../utils/dates.js" (file does not exist).
 
 **Step 3: Write minimal implementation**
+
 ```js
 .pragma library
 
@@ -300,20 +312,24 @@ Expected: PASS (6 tests)
 Run: `/git commit`
 
 ---
+
 ### Task 3: pt-BR "when" parser, day expressions
 
 **Requirement:** REQ-003, REQ-008
 **Depends on:** Task 2
 **Files:**
+
 - Create: `utils/when.js`
 - Test: `tests/when.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { parseWhen } from "../utils/when.js";
@@ -361,6 +377,7 @@ Run: `npm test -- tests/when.test.js`
 Expected: FAIL with "Failed to load url ../utils/when.js".
 
 **Step 3: Write minimal implementation**
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -447,15 +464,18 @@ Run: `/git commit`
 **Requirement:** REQ-003, REQ-008, REQ-009, REQ-010
 **Depends on:** Task 3
 **Files:**
+
 - Modify: `utils/when.js` (replace whole file with the version below)
 - Modify: `tests/when.test.js` (append the `describe` block below)
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test** (append to `tests/when.test.js`)
+
 ```js
 describe("parseWhen: times", () => {
   it.each([
@@ -489,6 +509,7 @@ Run: `npm test -- tests/when.test.js`
 Expected: FAIL (times not parsed: `start` is `null`).
 
 **Step 3: Write minimal implementation** (full file)
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -590,6 +611,7 @@ function parseWhen(text, now) {
 ```
 
 Notes for the implementer:
+
 - A time with no explicit date that is not after `now` moves to tomorrow (`"standup 15h"` at 15:00 is tomorrow); an explicit `hoje` keeps today even in the past.
 - An invalid range (`"23h-1h"`) is left as text: the single-time pass does not match `23h` because `-` is not a token delimiter.
 
@@ -601,20 +623,24 @@ Expected: PASS (28 tests)
 Run: `/git commit`
 
 ---
+
 ### Task 5: Safe calculator
 
 **Requirement:** REQ-004, REQ-005
 **Depends on:** Task 1
 **Files:**
+
 - Create: `utils/calc.js`
 - Test: `tests/calc.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development, security-guardrails)
 - Reviewers: security-reviewer, business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { evaluate, formatNumber } from "../utils/calc.js";
@@ -674,6 +700,7 @@ Expected: FAIL with "Failed to load url" for `calc.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/calc.js`:
+
 ```js
 .pragma library
 
@@ -839,15 +866,18 @@ Run: `/git commit`
 **Requirement:** REQ-021, REQ-025 (data model)
 **Depends on:** Task 1
 **Files:**
+
 - Create: `utils/store.js`
 - Test: `tests/store.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { VERSION, createEmpty, parse, serialize, makeId } from "../utils/store.js";
@@ -900,6 +930,7 @@ Expected: FAIL with "Failed to load url" for `store.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/store.js`:
+
 ```js
 .pragma library
 
@@ -984,15 +1015,18 @@ Run: `/git commit`
 **Requirement:** REQ-008, REQ-014, REQ-018
 **Depends on:** Task 6
 **Files:**
+
 - Create: `utils/tasks.js`
 - Test: `tests/tasks.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { createEmpty } from "../utils/store.js";
@@ -1045,6 +1079,7 @@ Expected: FAIL with "Failed to load url" for `tasks.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/tasks.js`:
+
 ```js
 .pragma library
 
@@ -1110,15 +1145,18 @@ Run: `/git commit`
 **Requirement:** REQ-013, REQ-015
 **Depends on:** Task 2
 **Files:**
+
 - Create: `utils/events.js`
 - Test: `tests/events.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { overlapsDay, isAllDay, timeOn, eventsOn, compareTime } from "../utils/events.js";
@@ -1170,6 +1208,7 @@ Expected: FAIL with "Failed to load url" for `events.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/events.js`:
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -1237,15 +1276,18 @@ Run: `/git commit`
 **Requirement:** REQ-013, REQ-014
 **Depends on:** Tasks 7, 8
 **Files:**
+
 - Create: `utils/today.js`
 - Test: `tests/today.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { createEmpty } from "../utils/store.js";
@@ -1298,6 +1340,7 @@ Expected: FAIL with "Failed to load url" for `today.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/today.js`:
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -1369,15 +1412,18 @@ Run: `/git commit`
 **Requirement:** REQ-015
 **Depends on:** Task 8
 **Files:**
+
 - Create: `utils/month.js`
 - Test: `tests/month.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { monthGrid, shiftMonth } from "../utils/month.js";
@@ -1419,6 +1465,7 @@ Expected: FAIL with "Failed to load url" for `month.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/month.js`:
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -1466,15 +1513,18 @@ Run: `/git commit`
 **Requirement:** REQ-002, REQ-011, REQ-020
 **Depends on:** Task 6
 **Files:**
+
 - Create: `utils/inbox.js`
 - Test: `tests/inbox.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development, security-guardrails)
 - Reviewers: security-reviewer, business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { createEmpty } from "../utils/store.js";
@@ -1527,6 +1577,7 @@ Expected: FAIL with "Failed to load url" for `inbox.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/inbox.js`:
+
 ```js
 .pragma library
 
@@ -1584,15 +1635,18 @@ Run: `/git commit`
 **Requirement:** REQ-010
 **Depends on:** Tasks 2, 6
 **Files:**
+
 - Create: `utils/reminders.js`
 - Test: `tests/reminders.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { createEmpty } from "../utils/store.js";
@@ -1625,6 +1679,7 @@ Expected: FAIL with "Failed to load url" for `reminders.js` (file does not exist
 **Step 3: Write minimal implementation**
 
 `utils/reminders.js`:
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -1676,15 +1731,18 @@ Run: `/git commit`
 **Requirement:** REQ-009, REQ-010, REQ-012, REQ-023
 **Depends on:** Task 1
 **Files:**
+
 - Create: `utils/khal.js`
 - Test: `tests/khal.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development, security-guardrails)
 - Reviewers: security-reviewer, business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { newEventArgs, syncArgs, printCalendarsArgs, parseCalendars, sanitizeSummary } from "../utils/khal.js";
@@ -1725,6 +1783,7 @@ Expected: FAIL with "Failed to load url" for `khal.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/khal.js`:
+
 ```js
 .pragma library
 
@@ -1776,15 +1835,18 @@ Run: `/git commit`
 **Requirement:** REQ-017, REQ-018, REQ-019
 **Depends on:** Task 1
 **Files:**
+
 - Create: `utils/pomodoro.js`
 - Test: `tests/pomodoro.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { WORK, SHORT, LONG, durationFor, nextPhase, finish, formatClock } from "../utils/pomodoro.js";
@@ -1827,6 +1889,7 @@ Expected: FAIL with "Failed to load url" for `pomodoro.js` (file does not exist)
 **Step 3: Write minimal implementation**
 
 `utils/pomodoro.js`:
+
 ```js
 .pragma library
 
@@ -1890,15 +1953,18 @@ Run: `/git commit`
 **Requirement:** REQ-003
 **Depends on:** Task 2
 **Files:**
+
 - Create: `utils/format.js`
 - Test: `tests/format.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { describeWhen } from "../utils/format.js";
@@ -1925,6 +1991,7 @@ Expected: FAIL with "Failed to load url" for `format.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/format.js`:
+
 ```js
 .pragma library
 .import "dates.js" as Dates
@@ -1961,6 +2028,7 @@ Run: `/git commit`
 **Requirement:** REQ-003, REQ-004, REQ-008, REQ-009, REQ-010, REQ-011
 **Depends on:** Tasks 4, 5, 11
 **Files:**
+
 - Create: `utils/capture/task.js`
 - Create: `utils/capture/event.js`
 - Create: `utils/capture/reminder.js`
@@ -1970,11 +2038,13 @@ Run: `/git commit`
 - Test: `tests/capture.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import * as Task from "../utils/capture/task.js";
@@ -2028,6 +2098,7 @@ Expected: FAIL with "Failed to load url" for `task.js` (file does not exist).
 **Step 3: Write minimal implementation**
 
 `utils/capture/task.js`:
+
 ```js
 .pragma library
 .import "../when.js" as When
@@ -2044,6 +2115,7 @@ function build(text, now) {
 ```
 
 `utils/capture/event.js`:
+
 ```js
 .pragma library
 .import "../when.js" as When
@@ -2068,6 +2140,7 @@ function build(text, now) {
 ```
 
 `utils/capture/reminder.js`:
+
 ```js
 .pragma library
 .import "../when.js" as When
@@ -2092,6 +2165,7 @@ function build(text, now) {
 ```
 
 `utils/capture/note.js`:
+
 ```js
 .pragma library
 
@@ -2106,6 +2180,7 @@ function build(text) {
 ```
 
 `utils/capture/link.js`:
+
 ```js
 .pragma library
 .import "../inbox.js" as Inbox
@@ -2125,6 +2200,7 @@ function build(text) {
 ```
 
 `utils/capture/calculation.js`:
+
 ```js
 .pragma library
 .import "../calc.js" as Calc
@@ -2153,15 +2229,18 @@ Run: `/git commit`
 **Requirement:** REQ-006
 **Depends on:** Task 16
 **Files:**
+
 - Create: `utils/capture/registry.js`
 - Test: `tests/registry.test.js`
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: test-driven-development)
 - Reviewers: business-logic-reviewer, test-reviewer
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { resolve, nextType, CYCLE } from "../utils/capture/registry.js";
@@ -2215,6 +2294,7 @@ Expected: FAIL with "Failed to load url" for `registry.js` (file does not exist)
 **Step 3: Write minimal implementation**
 
 `utils/capture/registry.js`:
+
 ```js
 .pragma library
 .import "task.js" as Task
@@ -2277,17 +2357,20 @@ Run: `/git commit`
 **Requirement:** REQ-003, REQ-007, REQ-016, REQ-023 (all user-facing strings)
 **Depends on:** Task 1
 **Files:**
+
 - Create: `i18n/en.json`
 - Create: `i18n/pt.json`
 - Test: `tests/i18n.test.js`
 
 **Team:**
+
 - Track: docs
 - Implementer: rpi-implementer
 - Reviewers: self-review
 
 **Step 1: Write the failing test**
 The test keeps `en` and `pt` in lockstep and fails whenever a QML file calls `tr("some.key")` that is missing. Keys built at runtime are listed in `DYNAMIC`. From Task 19 on, this is the red test for every new string.
+
 ```js
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -2345,6 +2428,7 @@ Expected: FAIL with `ENOENT` for `i18n/en.json`.
 **Step 3: Write minimal implementation**
 
 `i18n/en.json`:
+
 ```json
 {
   "tabs": {
@@ -2463,6 +2547,7 @@ Expected: FAIL with `ENOENT` for `i18n/en.json`.
 ```
 
 `i18n/pt.json`:
+
 ```json
 {
   "tabs": {
@@ -2594,10 +2679,12 @@ Run: `/git commit`
 **Requirement:** REQ-001, REQ-002, REQ-003, REQ-005, REQ-006, REQ-007
 **Depends on:** Tasks 15, 17, 18
 **Files:**
+
 - Create: `CaptureWindow.qml`
 - Test: `tests/i18n.test.js` (existing, covers the keys this file uses)
 
 **Team:**
+
 - Track: frontend
 - Implementer: frontend-engineer (skills: accessibility-guardrails)
 - Reviewers: type-safety-reviewer, test-reviewer, accessibility-guardrails
@@ -2611,6 +2698,7 @@ Expected: FAIL listing `capture.not-a-key` as missing. Remove that probe.
 
 **Step 3: Write minimal implementation**
 Behavior contract: layer-shell overlay with exclusive keyboard focus; a second `openOn` only refocuses; `prefill` fills only an untouched field; Tab cycles type (no-op for calculations); Enter/Shift+Enter/Esc per REQ-007; a click on the backdrop closes; errors keep the text.
+
 ```qml
 import QtQuick
 import QtQuick.Controls
@@ -2903,6 +2991,7 @@ Run: `/git commit`
 **Requirement:** REQ-001, REQ-002, REQ-007..REQ-012, REQ-017, REQ-018, REQ-021, REQ-022
 **Depends on:** Tasks 6, 7, 11, 12, 13, 14, 19
 **Files:**
+
 - Create: `Main.qml`
 - Create: `manifest.json` (entry point `main` only for now)
 - Create: `alarm.mp3` (copied from the MIT pomodoro plugin)
@@ -2910,17 +2999,21 @@ Run: `/git commit`
 - Test: `tests/i18n.test.js` (existing)
 
 **Team:**
+
 - Track: backend
 - Implementer: backend-engineer (skills: security-guardrails)
 - Reviewers: security-reviewer, business-logic-reviewer, consequences-reviewer
 
 **Step 1: Write the failing test**
 QML has no unit harness (spec Test Strategy). The red/green signal for this task is the i18n coverage test (any new `tr()` key) plus the runtime check below. Install the plugin first so the runtime check fails before `Main.qml` exists:
+
 ```bash
 ln -s ~/dev/projects/noctalia-daybar ~/.config/noctalia/plugins/daybar
 cp ~/.config/noctalia/plugins/pomodoro/alarm.mp3 alarm.mp3
 ```
+
 `manifest.json` (temporary: only `main`):
+
 ```json
 {
   "id": "daybar",
@@ -2957,6 +3050,7 @@ cp ~/.config/noctalia/plugins/pomodoro/alarm.mp3 alarm.mp3
   }
 }
 ```
+
 Enable **Daybar** in Noctalia Settings > Plugins.
 
 **Step 2: Run test to verify it fails**
@@ -2965,6 +3059,7 @@ Expected: FAIL (no `plugin:daybar` IPC target / `Main.qml` not found in the log)
 
 **Step 3: Write minimal implementation**
 `Main.qml`. Notes: the data dir is created with `mkdir -p` before the `FileView` gets its path; writes are debounced (400 ms) and atomic; khal writes run one at a time through `writeQueue`; `vdirsyncer sync` runs after each successful write and always reloads `CalendarService`; the focus-mode command runs as `[cmd, "on"|"off"]` only when set.
+
 ```qml
 import QtQuick
 import Quickshell
@@ -3351,6 +3446,7 @@ Item {
 ```
 
 `THIRD_PARTY.md`:
+
 ```markdown
 # Third-party code
 
@@ -3397,6 +3493,7 @@ Run: `/git commit`
 **Requirement:** REQ-013, REQ-014, REQ-015, REQ-016, REQ-017, REQ-018, REQ-020, REQ-022
 **Depends on:** Tasks 9, 10, 14, 20
 **Files:**
+
 - Create: `Panel.qml`
 - Create: `components/TodayView.qml`
 - Create: `components/CalendarView.qml`
@@ -3406,6 +3503,7 @@ Run: `/git commit`
 - Test: `tests/i18n.test.js` (existing)
 
 **Team:**
+
 - Track: frontend
 - Implementer: frontend-engineer (skills: accessibility-guardrails)
 - Reviewers: type-safety-reviewer, test-reviewer, accessibility-guardrails
@@ -3419,6 +3517,7 @@ Expected: FAIL (`Panel.qml` not found / panel does not open).
 
 **Step 3: Write minimal implementation**
 `Panel.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -3532,6 +3631,7 @@ Item {
 ```
 
 `components/TodayView.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -3670,6 +3770,7 @@ NBox {
 ```
 
 `components/CalendarView.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -3864,6 +3965,7 @@ NBox {
 ```
 
 `components/FocusView.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -3968,6 +4070,7 @@ NBox {
 ```
 
 `components/InboxView.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -4105,17 +4208,20 @@ Run: `/git commit`
 **Requirement:** REQ-019, REQ-023
 **Depends on:** Task 21
 **Files:**
+
 - Create: `BarWidget.qml`
 - Create: `Settings.qml`
 - Modify: `manifest.json` (final version below)
 - Test: `tests/manifest.test.js`
 
 **Team:**
+
 - Track: frontend
 - Implementer: frontend-engineer (skills: accessibility-guardrails)
 - Reviewers: type-safety-reviewer, test-reviewer, accessibility-guardrails
 
 **Step 1: Write the failing test**
+
 ```js
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
@@ -4149,6 +4255,7 @@ Expected: FAIL (`barWidget`/`settings` entry points and the full `defaultSetting
 
 **Step 3: Write minimal implementation**
 `manifest.json`:
+
 ```json
 {
   "id": "daybar",
@@ -4187,6 +4294,7 @@ Expected: FAIL (`barWidget`/`settings` entry points and the full `defaultSetting
 ```
 
 `BarWidget.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -4261,6 +4369,7 @@ Item {
 ```
 
 `Settings.qml`:
+
 ```qml
 import QtQuick
 import QtQuick.Layouts
@@ -4431,10 +4540,12 @@ Run: `/git commit`
 **Requirement:** REQ-016 (setup guide), Test Strategy (manual smoke)
 **Depends on:** Task 22
 **Files:**
+
 - Create: `README.md`
 - Create: `docs/SMOKE.md`
 
 **Team:**
+
 - Track: docs
 - Implementer: rpi-implementer
 - Reviewers: self-review
@@ -4448,6 +4559,7 @@ Expected: FAIL (`grep: docs/SMOKE.md: No such file`).
 
 **Step 3: Write minimal implementation**
 `README.md`:
+
 ```markdown
 # Daybar
 
@@ -4622,6 +4734,7 @@ MIT. The focus timer is derived from an MIT plugin, see [THIRD_PARTY.md](THIRD_P
 ```
 
 `docs/SMOKE.md`:
+
 ```markdown
 # Smoke test (manual)
 
@@ -4673,10 +4786,12 @@ Run: `/git commit`
 **Requirement:** REQ-009, REQ-010, REQ-012, REQ-015, REQ-016, all P1 (verification)
 **Depends on:** Tasks 1-23
 **Files:**
+
 - Modify: `docs/specs/daybar-mvp/SPEC.md` (Requirement Traceability: P1 rows to `Done`)
 - Modify: `docs/specs/daybar-mvp/STATE.md` (`phase: implement-complete`)
 
 **Team:**
+
 - Track: infra
 - Implementer: infra-engineer (skills: bash-linux)
 - Reviewers: consequences-reviewer
