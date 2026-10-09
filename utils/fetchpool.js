@@ -38,3 +38,8 @@ function finish(pool, id) {
 function clearQueue(pool) {
   return { limit: pool.limit, queue: [], running: pool.running };
 }
+
+// Like clearQueue, but also returns the dropped jobs so callers can update them.
+function dropQueue(pool) {
+  return { pool: clearQueue(pool), dropped: pool.queue.slice() };
+}

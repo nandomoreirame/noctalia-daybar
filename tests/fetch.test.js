@@ -36,3 +36,21 @@ describe("fetch argv", () => {
     expect(isUsableExit(6)).toBe(false);
   });
 });
+
+describe("fetch error handling and final URL", () => {
+  it("fails on HTTP errors instead of parsing an error page", async () => {
+    const { pageArgs, imageArgs, isUsableExit } = await import("../utils/fetch.js");
+    expect(pageArgs("https://x.com")).toContain("--fail");
+    expect(imageArgs("https://x.com/a.png", "/t/a")).toContain("--fail");
+    expect(isUsableExit(22)).toBe(false);
+  });
+
+  it("appends the effective URL after a marker and splits it back", async () => {
+    const { pageArgs, splitPageOutput, URL_MARKER } = await import("../utils/fetch.js");
+    const args = pageArgs("https://bit.ly/x");
+    expect(args[args.indexOf("-w") + 1]).toBe("\n" + URL_MARKER + "%{url_effective}");
+    expect(splitPageOutput("<html>a</html>\n" + URL_MARKER + "https://site.com/post", "https://bit.ly/x")).toEqual({ html: "<html>a</html>", finalUrl: "https://site.com/post" });
+    expect(splitPageOutput("<html>no marker</html>", "https://bit.ly/x")).toEqual({ html: "<html>no marker</html>", finalUrl: "https://bit.ly/x" });
+    expect(splitPageOutput("x\n" + URL_MARKER + "javascript:1", "https://bit.ly/x").finalUrl).toBe("https://bit.ly/x");
+  });
+});

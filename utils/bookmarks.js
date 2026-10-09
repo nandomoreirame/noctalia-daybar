@@ -61,6 +61,16 @@ function markFailed(data, id, token) {
   return update(data, id, token, () => ({ status: "failed" }));
 }
 
+// A queued fetch dropped because fetching was turned off.
+function markOff(data, id, token) {
+  return update(data, id, token, () => ({ status: "off" }));
+}
+
+// True while a fetch job still belongs to a live bookmark (not deleted or re-saved).
+function isCurrent(data, id, token) {
+  return data.bookmarks.some((b) => b.id === id && b.token === token);
+}
+
 function rename(data, id, title) {
   const clean = String(title || "").replace(/\s+/g, " ").trim();
   if (!clean) return data;

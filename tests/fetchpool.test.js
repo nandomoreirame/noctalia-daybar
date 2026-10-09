@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createPool, request, finish, clearQueue } from "../utils/fetchpool.js";
+import { createPool, request, finish, clearQueue, dropQueue } from "../utils/fetchpool.js";
 
 const job = (id, token = 1) => ({ id, token, url: "https://" + id + ".com" });
 
@@ -49,5 +49,15 @@ describe("fetch pool", () => {
     p = clearQueue(p);
     expect(p.queue).toEqual([]);
     expect(p.running.map((j) => j.id)).toEqual(["a"]);
+  });
+
+  it("drops the queue and reports the dropped jobs", () => {
+    let p = createPool(1);
+    p = request(p, job("a")).pool;
+    p = request(p, job("b")).pool;
+    const r = dropQueue(p);
+    expect(r.dropped).toEqual([job("b")]);
+    expect(r.pool.queue).toEqual([]);
+    expect(r.pool.running.map((j) => j.id)).toEqual(["a"]);
   });
 });

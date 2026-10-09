@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { add, applyPreview, setImage, markFailed, rename, remove, sorted, search, prefillFromClipboard, hasUrl } from "../utils/bookmarks.js";
+import { add, applyPreview, setImage, markFailed, markOff, isCurrent, rename, remove, sorted, search, prefillFromClipboard, hasUrl } from "../utils/bookmarks.js";
 
 const T0 = "2026-10-09T15:00:00.000Z";
 const T1 = "2026-10-09T16:00:00.000Z";
@@ -88,3 +88,21 @@ describe("bookmarks edits and queries", () => {
     expect(prefillFromClipboard("hello", data)).toBe("");
   });
 });
+
+describe("bookmarks fetch bookkeeping", () => {
+  const base = () => add({ bookmarks: [] }, "https://site.com/a", "b1", T0, true).data;
+
+  it("marks a dropped fetch as off for the current token only", () => {
+    expect(markOff(base(), "b1", 1).bookmarks[0].status).toBe("off");
+    const data = base();
+    expect(markOff(data, "b1", 9)).toBe(data);
+  });
+
+  it("knows whether a job still matches a live bookmark", () => {
+    const data = base();
+    expect(isCurrent(data, "b1", 1)).toBe(true);
+    expect(isCurrent(data, "b1", 2)).toBe(false);
+    expect(isCurrent(remove(data, "b1"), "b1", 1)).toBe(false);
+  });
+});
+

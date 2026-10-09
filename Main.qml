@@ -130,7 +130,18 @@ Item {
     running: true
   }
 
-  onFetchPreviewsChanged: if (!fetchPreviews) fetchPool = FetchPool.clearQueue(fetchPool)
+  // Turning previews off drops the queue; the dropped bookmarks leave "pending".
+  onFetchPreviewsChanged: {
+    if (fetchPreviews)
+      return;
+    const r = FetchPool.dropQueue(fetchPool);
+    fetchPool = r.pool;
+    let next = data;
+    for (const job of r.dropped)
+      next = Bookmarks.markOff(next, job.id, job.token);
+    if (next !== data)
+      commit(next);
+  }
 
   // Returns "saved", "replaced" or "invalid".
   function addBookmark(url) {
@@ -204,12 +215,19 @@ Item {
   }
 
   function startPreview(job) {
+    // Deleted or re-saved while queued: skip, the newer job (if any) is queued.
+    if (!Bookmarks.isCurrent(data, job.id, job.token)) {
+      Qt.callLater(() => root.finishPreview(job.id));
+      return;
+    }
     const p = pageFetcher.createObject(root, { job: job, command: Fetch.pageArgs(job.url) });
     p.running = true;
   }
 
-  function onPageFetched(job, exitCode, html) {
-    const meta = Fetch.isUsableExit(exitCode) ? PageMeta.parse(html, job.url) : null;
+  function onPageFetched(job, exitCode, stdout) {
+    // Relative og:image URLs resolve against the page reached after redirects.
+    const page = Fetch.splitPageOutput(stdout, job.url);
+    const meta = Fetch.isUsableExit(exitCode) ? PageMeta.parse(page.html, page.finalUrl) : null;
     if (!meta || (!meta.title && !meta.description && !meta.image)) {
       commit(Bookmarks.markFailed(data, job.id, job.token));
       finishPreview(job.id);
