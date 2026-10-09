@@ -41,6 +41,6 @@ ConfirmButton {
 
   onConfirmed: {
     if (target)
-      mainInstance.deleteEvent(uid, target.path);
+      mainInstance.deleteEvent(uid, calendar, target.path);
   }
 }

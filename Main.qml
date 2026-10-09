@@ -155,9 +155,12 @@ Item {
   }
 
   function refreshBookmark(id) {
-    const b = data.bookmarks.find(x => x.id === id);
-    if (b)
-      addBookmark(b.url);
+    const r = Bookmarks.refresh(data, id, nowIso(), fetchPreviews);
+    if (!r)
+      return;
+    commit(r.data);
+    if (fetchPreviews)
+      requestPreview(r.bookmark);
   }
 
   function renameBookmark(id, title) { commit(Bookmarks.rename(data, id, title)); }
@@ -202,12 +205,16 @@ Item {
       property string path: ""
       onExited: function (exitCode) {
         // Keep the file only if the bookmark still exists with this token
-        // (it may have been deleted or re-saved while downloading).
-        const current = root.data.bookmarks.some(b => b.id === job.id && b.token === job.token);
-        if (exitCode === 0 && current)
+        // (it may have been deleted or re-saved while downloading). A failed
+        // or stale download also removes any previous thumb for this id and
+        // clears the image path so the bookmark does not point at a deleted file.
+        if (exitCode === 0 && Bookmarks.isCurrent(root.data, job.id, job.token))
           root.commit(Bookmarks.setImage(root.data, job.id, job.token, path));
-        else if (!root.data.bookmarks.some(b => b.id === job.id))
+        else {
           Quickshell.execDetached(Fetch.removeArgs(path));
+          if (Bookmarks.isCurrent(root.data, job.id, job.token))
+            root.commit(Bookmarks.setImage(root.data, job.id, job.token, ""));
+        }
         root.finishPreview(job.id);
         destroy();
       }
@@ -224,19 +231,34 @@ Item {
     p.running = true;
   }
 
+  function removeThumb(id) {
+    const path = Fetch.thumbPath(thumbsDir, id);
+    if (path)
+      Quickshell.execDetached(Fetch.removeArgs(path));
+  }
+
   function onPageFetched(job, exitCode, stdout) {
     // Relative og:image URLs resolve against the page reached after redirects.
     const page = Fetch.splitPageOutput(stdout, job.url);
     const meta = Fetch.isUsableExit(exitCode) ? PageMeta.parse(page.html, page.finalUrl) : null;
     if (!meta || (!meta.title && !meta.description && !meta.image)) {
       commit(Bookmarks.markFailed(data, job.id, job.token));
+      if (Bookmarks.isCurrent(data, job.id, job.token))
+        removeThumb(job.id);
       finishPreview(job.id);
       return;
     }
     commit(Bookmarks.applyPreview(data, job.id, job.token, meta));
     const path = Fetch.thumbPath(thumbsDir, job.id);
-    const current = data.bookmarks.find(b => b.id === job.id);
-    if (!meta.image || !path || !current || current.token !== job.token) {
+    if (!Bookmarks.isCurrent(data, job.id, job.token) || !path) {
+      finishPreview(job.id);
+      return;
+    }
+    // Only download og:image when the host is publicly routable (SSRF guard).
+    // The bookmark URL itself may be a local service; the page-chosen image may not.
+    if (!meta.image || !Url.isPublicHttpUrl(meta.image)) {
+      commit(Bookmarks.setImage(data, job.id, job.token, ""));
+      removeThumb(job.id);
       finishPreview(job.id);
       return;
     }
@@ -331,10 +353,25 @@ Item {
 
   readonly property string khalConfigPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/khal/config"
   property var calendarRootsList: []
+  property var calendarSectionList: []
   property var collections: []
+  // Keys are EventDelete.eventKey(uid, calendar); cleared after the sync reload.
   property var hiddenEventUids: []
+  // Set in the sync exit handler; cleared together with hiddenEventUids once
+  // CalendarService.events has actually been replaced (onEventsChanged).
+  property bool clearHiddenOnReload: false
   // CalendarService.events without the events deleted in this session (until reload).
   readonly property var visibleEvents: EventDelete.hideEvents(CalendarService.events, hiddenEventUids)
+
+  Connections {
+    target: CalendarService
+    function onEventsChanged() {
+      if (root.clearHiddenOnReload) {
+        root.hiddenEventUids = [];
+        root.clearHiddenOnReload = false;
+      }
+    }
+  }
 
   function canDeleteEvent(calendarName) {
     return calendarReady && EventDelete.isWritableCalendar(collections, calendarName);
@@ -346,7 +383,9 @@ Item {
     running: root.calendarReady
     stdout: StdioCollector {
       onStreamFinished: {
-        root.calendarRootsList = EventDelete.calendarRoots(text, Quickshell.env("HOME"));
+        const home = Quickshell.env("HOME");
+        root.calendarRootsList = EventDelete.calendarRoots(text, home);
+        root.calendarSectionList = EventDelete.calendarSections(text, home);
         if (root.calendarRootsList.length > 0) {
           collectionsProcess.command = EventDelete.collectionsArgs(root.calendarRootsList);
           collectionsProcess.running = true;
@@ -358,7 +397,7 @@ Item {
   Process {
     id: collectionsProcess
     stdout: StdioCollector {
-      onStreamFinished: root.collections = EventDelete.parseCollections(text)
+      onStreamFinished: root.collections = EventDelete.parseCollections(text, root.calendarSectionList)
     }
   }
 
@@ -366,11 +405,24 @@ Item {
     id: eventLookup
     Process {
       property var done: null
+      property bool exitedDone: false
+      property bool streamDone: false
+      property string outText: ""
       stdout: StdioCollector {
-        id: lookupOut
+        onStreamFinished: {
+          outText = text;
+          streamDone = true;
+          maybeFinish();
+        }
       }
       onExited: {
-        done(lookupOut.text);
+        exitedDone = true;
+        maybeFinish();
+      }
+      function maybeFinish() {
+        if (!exitedDone || !streamDone)
+          return;
+        done(outText);
         destroy();
       }
     }
@@ -402,28 +454,30 @@ Item {
     id: eventRemover
     Process {
       property string uid: ""
+      property string calendar: ""
       onExited: function (exitCode) {
-        root.onEventFileRemoved(uid, exitCode === 0);
+        root.onEventFileRemoved(uid, calendar, exitCode === 0);
         destroy();
       }
     }
   }
 
-  function deleteEvent(uid, path) {
+  function deleteEvent(uid, calendar, path) {
     if (!EventDelete.isDeletablePath(path, calendarRootsList)) {
       ToastService.showWarning(pluginApi?.tr("events.error.title"), pluginApi?.tr("events.error.failed"));
       return;
     }
-    const p = eventRemover.createObject(root, { uid: uid, command: EventDelete.deleteArgs(path) });
+    const p = eventRemover.createObject(root, { uid: uid, calendar: calendar, command: EventDelete.deleteArgs(path) });
     p.running = true;
   }
 
-  function onEventFileRemoved(uid, ok) {
+  function onEventFileRemoved(uid, calendar, ok) {
     if (!ok) {
       ToastService.showWarning(pluginApi?.tr("events.error.title"), pluginApi?.tr("events.error.failed"));
       return;
     }
-    hiddenEventUids = hiddenEventUids.concat([uid]);
+    hiddenEventUids = hiddenEventUids.concat([EventDelete.eventKey(uid, calendar)]);
+    // Checks are keyed by uid only (no calendar on the check record).
     commit(EventDelete.removeEventChecks(data, uid));
     requestSync();
   }
@@ -520,6 +574,9 @@ Item {
     onExited: function (exitCode) {
       if (exitCode !== 0)
         ToastService.showWarning(root.pluginApi?.tr("agenda.sync-failed-title"), root.pluginApi?.tr("agenda.sync-failed-body"));
+      // Defer clearing optimistic hides until CalendarService.events is replaced;
+      // clearing earlier lets the still-loaded deleted event flicker back.
+      root.clearHiddenOnReload = true;
       CalendarService.loadEvents();
     }
     // Rerun once when an event was written mid-sync; also covers a vdirsyncer
