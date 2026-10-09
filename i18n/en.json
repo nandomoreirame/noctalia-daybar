@@ -56,14 +56,15 @@
   },
   "today": {
     "title": "Today",
-    "empty": "Nothing for today. Add something below.",
     "overdue": "overdue",
     "delete": "Delete task",
     "add-placeholder": "New task for today. E.g.: call the bank 3pm",
     "progress": "{n} of {total}",
     "edit-hint": "Double-click to edit",
     "rename": "Edit task",
-    "focus": "Focus on this task"
+    "focus": "Focus on this task",
+    "empty-title": "A free day. How about planning something?",
+    "new-task": "New task"
   },
   "calendar": {
     "not-configured": "Calendar not configured. Install khal and vdirsyncer (see README).",
@@ -133,7 +134,7 @@
     "title": "Bookmarks",
     "search": "Search bookmarks",
     "add-placeholder": "Paste an https://... link and press Enter",
-    "empty": "No bookmarks. Paste a link below or use capture.",
+    "empty": "Paste a link in the field below or use quick capture.",
     "no-results": "Nothing found.",
     "open": "Open",
     "copy": "Copy URL",
@@ -143,13 +144,15 @@
     "confirm-delete": "Delete this bookmark?",
     "saved": "Bookmark saved",
     "replaced": "Bookmark updated",
-    "invalid": "Invalid link"
+    "invalid": "Invalid link",
+    "empty-title": "No bookmarks yet.",
+    "add": "Add link"
   },
   "notes": {
     "title": "Notes",
     "search": "Search notes",
     "new": "New note",
-    "empty": "No notes. Create one or use /n in capture.",
+    "empty": "Create a note or use /n in quick capture.",
     "no-results": "Nothing found.",
     "untitled": "Untitled",
     "copy": "Copy",
@@ -160,7 +163,8 @@
     "close": "Close",
     "edited": "Edited {time}",
     "placeholder": "Write in Markdown...",
-    "keys": "Ctrl+E edit/preview · Ctrl+S save · Esc close"
+    "keys": "Ctrl+E edit/preview · Ctrl+S save · Esc close",
+    "empty-title": "No notes yet."
   },
   "confirm": {
     "ok": "OK",

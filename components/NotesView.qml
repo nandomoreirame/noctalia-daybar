@@ -57,7 +57,9 @@ Card {
         Keys.onEscapePressed: text = ""
       }
 
+      // The empty state offers its own "New note" button.
       PillButton {
+        visible: root.all.length > 0
         primary: true
         implicitHeight: Math.round(34 * Style.uiScaleRatio)
         icon: "plus"
@@ -66,14 +68,14 @@ Card {
       }
     }
 
-    NText {
+    EmptyState {
       visible: root.items.length === 0
-      Layout.fillWidth: true
-      Layout.fillHeight: true
-      Layout.leftMargin: Math.round(6 * Style.uiScaleRatio)
-      text: root.all.length === 0 ? root.tr("notes.empty") : root.tr("notes.no-results")
-      pointSize: Style.fontSizeS
-      color: Qt.alpha(Color.mOnSurface, 0.56)
+      icon: root.all.length === 0 ? "notes" : "search"
+      title: root.all.length === 0 ? root.tr("notes.empty-title") : root.tr("notes.no-results")
+      description: root.all.length === 0 ? root.tr("notes.empty") : ""
+      actionText: root.all.length === 0 ? root.tr("notes.new") : ""
+      actionIcon: "plus"
+      onAction: root.mainInstance.newNote()
     }
 
     NScrollView {

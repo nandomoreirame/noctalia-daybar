@@ -55,14 +55,14 @@ Card {
       Keys.onEscapePressed: text = ""
     }
 
-    NText {
+    EmptyState {
       visible: root.items.length === 0
-      Layout.fillWidth: true
-      Layout.fillHeight: true
-      Layout.leftMargin: Math.round(6 * Style.uiScaleRatio)
-      text: root.all.length === 0 ? root.tr("bookmarks.empty") : root.tr("bookmarks.no-results")
-      pointSize: Style.fontSizeS
-      color: Qt.alpha(Color.mOnSurface, 0.56)
+      icon: root.all.length === 0 ? "bookmark" : "search"
+      title: root.all.length === 0 ? root.tr("bookmarks.empty-title") : root.tr("bookmarks.no-results")
+      description: root.all.length === 0 ? root.tr("bookmarks.empty") : ""
+      actionText: root.all.length === 0 ? root.tr("bookmarks.add") : ""
+      actionIcon: "plus"
+      onAction: addField.forceActiveFocus()
     }
 
     NScrollView {

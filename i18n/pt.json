@@ -56,14 +56,15 @@
   },
   "today": {
     "title": "Hoje",
-    "empty": "Nada para hoje. Adicione abaixo.",
     "overdue": "atrasada",
     "delete": "Excluir tarefa",
     "add-placeholder": "Nova tarefa para hoje. Ex.: ligar pro banco 15h",
     "progress": "{n} de {total}",
     "edit-hint": "Clique duas vezes para editar",
     "rename": "Editar tarefa",
-    "focus": "Focar nesta tarefa"
+    "focus": "Focar nesta tarefa",
+    "empty-title": "Dia livre. Que tal planejar algo?",
+    "new-task": "Nova tarefa"
   },
   "calendar": {
     "not-configured": "Agenda não configurada. Instale o khal e o vdirsyncer (veja o README).",
@@ -133,7 +134,7 @@
     "title": "Favoritos",
     "search": "Buscar favoritos",
     "add-placeholder": "Cole um link https://... e Enter",
-    "empty": "Nenhum favorito. Cole um link abaixo ou use a captura.",
+    "empty": "Cole um link no campo abaixo ou use a captura rápida.",
     "no-results": "Nada encontrado.",
     "open": "Abrir",
     "copy": "Copiar URL",
@@ -143,13 +144,15 @@
     "confirm-delete": "Excluir este favorito?",
     "saved": "Favorito salvo",
     "replaced": "Favorito atualizado",
-    "invalid": "Link inválido"
+    "invalid": "Link inválido",
+    "empty-title": "Nenhum favorito ainda.",
+    "add": "Adicionar link"
   },
   "notes": {
     "title": "Notas",
     "search": "Buscar notas",
     "new": "Nova nota",
-    "empty": "Nenhuma nota. Crie uma ou use /n na captura.",
+    "empty": "Crie uma nota ou use /n na captura rápida.",
     "no-results": "Nada encontrado.",
     "untitled": "Sem título",
     "copy": "Copiar",
@@ -160,7 +163,8 @@
     "close": "Fechar",
     "edited": "Editada {time}",
     "placeholder": "Escreva em Markdown...",
-    "keys": "Ctrl+E edita/visualiza · Ctrl+S salva · Esc fecha"
+    "keys": "Ctrl+E edita/visualiza · Ctrl+S salva · Esc fecha",
+    "empty-title": "Nenhuma nota ainda."
   },
   "confirm": {
     "ok": "OK",

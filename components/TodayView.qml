@@ -77,14 +77,13 @@ Card {
       }
     }
 
-    NText {
+    EmptyState {
       visible: root.items.length === 0
-      Layout.fillWidth: true
-      Layout.fillHeight: true
-      Layout.leftMargin: Math.round(6 * Style.uiScaleRatio)
-      text: root.tr("today.empty")
-      pointSize: Style.fontSizeS
-      color: Qt.alpha(Color.mOnSurface, 0.56)
+      icon: "list-check"
+      title: root.tr("today.empty-title")
+      actionText: root.tr("today.new-task")
+      actionIcon: "plus"
+      onAction: addField.forceActiveFocus()
     }
 
     NScrollView {
