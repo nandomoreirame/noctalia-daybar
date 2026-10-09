@@ -33,6 +33,25 @@ describe("parseWhen: days", () => {
     expect(parseWhen("comprar 2 pães", NOW)).toEqual({ title: "comprar 2 pães", date: null, start: null, end: null });
   });
 
+  it.each([
+    ["ler a sexta parte do livro"],
+    ["ir pra segunda reunião"],
+    ["revisar a quarta versão"],
+    ["matrícula na quinta série"]
+  ])("keeps ordinal adjectives as text: %s", (text) => {
+    expect(parseWhen(text, NOW)).toEqual({ title: text, date: null, start: null, end: null });
+  });
+
+  it.each([
+    ["segunda revisar PR", "revisar PR", "2026-10-12"],
+    ["pagar boleto sexta, sem falta", "pagar boleto , sem falta", "2026-10-16"],
+    ["ligar pro banco segunda-feira cedo", "ligar pro banco cedo", "2026-10-12"]
+  ])("still reads weekdays at the start, before punctuation or with -feira: %s", (text, title, date) => {
+    const r = parseWhen(text, NOW);
+    expect(r.title).toBe(title);
+    expect(r.date).toBe(date);
+  });
+
   it("does not match weekday names inside other words", () => {
     expect(parseWhen("segundas intenções", NOW).date).toBeNull();
   });
@@ -57,6 +76,14 @@ describe("parseWhen: times", () => {
   it("rejects impossible times", () => {
     expect(parseWhen("treino 25h", NOW)).toEqual({ title: "treino 25h", date: null, start: null, end: null });
     expect(parseWhen("treino 10h75", NOW).start).toBeNull();
+  });
+
+  it("does not read a bare number followed by a word as a range end", () => {
+    expect(parseWhen("aula 9h às 10 pessoas", NOW)).toEqual({ title: "aula às 10 pessoas", date: "2026-10-10", start: "09:00", end: null });
+  });
+
+  it("accepts a bare range end at the end of the text", () => {
+    expect(parseWhen("aula 9h às 10", NOW)).toEqual({ title: "aula", date: "2026-10-10", start: "09:00", end: "10:00" });
   });
 
   it("leaves a range whose end is not after its start as plain text", () => {
