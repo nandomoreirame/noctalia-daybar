@@ -25,7 +25,7 @@
       "event": "Event created",
       "reminder": "Reminder set",
       "note": "Note saved",
-      "link": "Link saved"
+      "link": "Bookmark saved"
     },
     "error": {
       "empty": "Nothing to save yet",
@@ -119,6 +119,51 @@
     "default-calendar-none": "khal default",
     "initial-tab": "Initial tab",
     "daily-goal": "Daily pomodoro goal",
-    "daily-goal-help": "Focus sessions per day. 0 turns the goal off."
+    "daily-goal-help": "Focus sessions per day. 0 turns the goal off.",
+    "fetch-previews": "Fetch link previews",
+    "fetch-previews-help": "When a bookmark is saved, download the page's title, description and image."
+  },
+  "bookmarks": {
+    "title": "Bookmarks",
+    "search": "Search bookmarks",
+    "add-placeholder": "Paste an https://... link and press Enter",
+    "empty": "No bookmarks. Paste a link below or use capture.",
+    "no-results": "Nothing found.",
+    "open": "Open",
+    "copy": "Copy URL",
+    "refresh": "Refresh preview",
+    "rename": "Edit title",
+    "delete": "Delete",
+    "confirm-delete": "Delete this bookmark?",
+    "saved": "Bookmark saved",
+    "replaced": "Bookmark updated",
+    "invalid": "Invalid link"
+  },
+  "notes": {
+    "title": "Notes",
+    "search": "Search notes",
+    "new": "New note",
+    "empty": "No notes. Create one or use /n in capture.",
+    "no-results": "Nothing found.",
+    "untitled": "Untitled",
+    "copy": "Copy",
+    "delete": "Delete",
+    "confirm-delete": "Delete this note?",
+    "edit": "Edit",
+    "preview": "Preview",
+    "close": "Close",
+    "edited": "Edited {time}",
+    "placeholder": "Write in Markdown...",
+    "keys": "Ctrl+E edit/preview · Ctrl+S save · Esc close"
+  },
+  "confirm": {
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+  "time": {
+    "now": "now",
+    "minutes": "{n} min ago",
+    "hours": "{n} h ago",
+    "days": "{n} d ago"
   }
 }

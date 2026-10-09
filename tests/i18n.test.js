@@ -32,7 +32,9 @@ const DYNAMIC = [
   "settings.short-break",
   "settings.long-break",
   "settings.sessions",
-  "settings.daily-goal"
+  "settings.daily-goal",
+  ...["now", "minutes", "hours", "days"].map((u) => "time." + u),
+  "bookmarks.saved", "bookmarks.replaced", "notes.untitled"
 ];
 
 describe("i18n", () => {

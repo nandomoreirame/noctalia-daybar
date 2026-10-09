@@ -25,7 +25,7 @@
       "event": "Evento criado",
       "reminder": "Lembrete agendado",
       "note": "Nota salva",
-      "link": "Link salvo"
+      "link": "Favorito salvo"
     },
     "error": {
       "empty": "Nada para salvar ainda",
@@ -119,6 +119,51 @@
     "default-calendar-none": "Padrão do khal",
     "initial-tab": "Aba inicial",
     "daily-goal": "Meta diária de pomodoros",
-    "daily-goal-help": "Sessões de foco por dia. 0 desliga a meta."
+    "daily-goal-help": "Sessões de foco por dia. 0 desliga a meta.",
+    "fetch-previews": "Buscar prévia dos links",
+    "fetch-previews-help": "Ao salvar um favorito, baixa título, descrição e imagem da página."
+  },
+  "bookmarks": {
+    "title": "Favoritos",
+    "search": "Buscar favoritos",
+    "add-placeholder": "Cole um link https://... e Enter",
+    "empty": "Nenhum favorito. Cole um link abaixo ou use a captura.",
+    "no-results": "Nada encontrado.",
+    "open": "Abrir",
+    "copy": "Copiar URL",
+    "refresh": "Atualizar prévia",
+    "rename": "Editar título",
+    "delete": "Excluir",
+    "confirm-delete": "Excluir este favorito?",
+    "saved": "Favorito salvo",
+    "replaced": "Favorito atualizado",
+    "invalid": "Link inválido"
+  },
+  "notes": {
+    "title": "Notas",
+    "search": "Buscar notas",
+    "new": "Nova nota",
+    "empty": "Nenhuma nota. Crie uma ou use /n na captura.",
+    "no-results": "Nada encontrado.",
+    "untitled": "Sem título",
+    "copy": "Copiar",
+    "delete": "Excluir",
+    "confirm-delete": "Excluir esta nota?",
+    "edit": "Editar",
+    "preview": "Visualizar",
+    "close": "Fechar",
+    "edited": "Editada {time}",
+    "placeholder": "Escreva em Markdown...",
+    "keys": "Ctrl+E edita/visualiza · Ctrl+S salva · Esc fecha"
+  },
+  "confirm": {
+    "ok": "OK",
+    "cancel": "Cancelar"
+  },
+  "time": {
+    "now": "agora",
+    "minutes": "há {n} min",
+    "hours": "há {n} h",
+    "days": "há {n} d"
   }
 }
