@@ -41,3 +41,9 @@ function nextType(current) {
   const i = CYCLE.indexOf(current);
   return CYCLE[(i + 1) % CYCLE.length];
 }
+
+// Shift+Tab: one step back; a type outside the cycle wraps to the last one.
+function prevType(current) {
+  const i = CYCLE.indexOf(current);
+  return CYCLE[i <= 0 ? CYCLE.length - 1 : i - 1];
+}

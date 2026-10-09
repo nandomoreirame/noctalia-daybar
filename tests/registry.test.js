@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolve, nextType, CYCLE } from "../utils/capture/registry.js";
+import { resolve, nextType, prevType, CYCLE } from "../utils/capture/registry.js";
 
 const NOW = new Date(2026, 9, 9, 15, 0);
 
@@ -39,5 +39,12 @@ describe("capture registry", () => {
     expect(nextType("task")).toBe("event");
     expect(nextType("link")).toBe("task");
     expect(nextType("calculation")).toBe("task");
+  });
+
+  it("cycles backwards with prevType (Shift+Tab)", () => {
+    expect(prevType("event")).toBe("task");
+    expect(prevType("task")).toBe("link");
+    expect(prevType("calculation")).toBe("link");
+    expect(CYCLE.map((t) => nextType(prevType(t)))).toEqual(CYCLE);
   });
 });

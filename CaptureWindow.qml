@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import qs.Commons
 import qs.Widgets
 import qs.Services.UI
+import "components/ui"
 import "utils/capture/registry.js" as Registry
 import "utils/format.js" as Format
 
@@ -24,6 +25,7 @@ PanelWindow {
   // Bumped on every open and close, so a slow khal write can tell whether the
   // overlay it was started from is still the one on screen.
   property int session: 0
+  readonly property var typeIcons: ({ task: "checkbox", event: "calendar-event", reminder: "bell", note: "note", link: "link", calculation: "calculator" })
 
   anchors.top: true
   anchors.left: true
@@ -76,10 +78,11 @@ PanelWindow {
     feedback = "";
   }
 
-  function cycleType() {
+  // step: 1 for Tab, -1 for Shift+Tab.
+  function cycleType(step) {
     if (result.type === "calculation")
       return;
-    forcedType = Registry.nextType(result.type);
+    forcedType = step < 0 ? Registry.prevType(result.type) : Registry.nextType(result.type);
     refresh();
   }
 
@@ -164,7 +167,7 @@ PanelWindow {
     y: parent.height * 0.28
     radius: Style.radiusL
     color: Color.mSurface
-    border.color: Color.mOutline
+    border.color: Qt.alpha(Color.mOnSurface, 0.08)
     border.width: Style.borderS
 
     // Swallow clicks so they do not reach the backdrop.
@@ -175,39 +178,24 @@ PanelWindow {
     ColumnLayout {
       id: column
       anchors.fill: parent
-      anchors.margins: Style.marginL
-      spacing: Style.marginM
+      anchors.margins: Math.round(14 * Style.uiScaleRatio)
+      spacing: Math.round(10 * Style.uiScaleRatio)
 
       RowLayout {
-        spacing: Style.marginS
+        spacing: Math.round(4 * Style.uiScaleRatio)
 
         Repeater {
           model: Registry.CYCLE
 
-          Rectangle {
+          Chip {
             required property string modelData
-            readonly property bool active: root.result.type === modelData
-            implicitWidth: chipLabel.implicitWidth + Style.marginM * 2
-            implicitHeight: chipLabel.implicitHeight + Style.marginXS * 2
-            radius: Style.radiusM
-            color: active ? Color.mPrimary : "transparent"
-
-            NText {
-              id: chipLabel
-              anchors.centerIn: parent
-              text: root.tr("capture.type." + modelData)
-              pointSize: Style.fontSizeS
-              color: parent.active ? Color.mOnPrimary : Color.mOnSurfaceVariant
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: {
-                root.forcedType = modelData;
-                root.refresh();
-                field.forceActiveFocus();
-              }
+            text: root.tr("capture.type." + modelData)
+            icon: root.typeIcons[modelData]
+            selected: root.result.type === modelData
+            onClicked: {
+              root.forcedType = modelData;
+              root.refresh();
+              field.forceActiveFocus();
             }
           }
         }
@@ -216,72 +204,87 @@ PanelWindow {
           Layout.fillWidth: true
         }
 
-        NText {
+        RowLayout {
           visible: root.result.type === "calculation"
-          text: root.tr("capture.type.calculation")
-          pointSize: Style.fontSizeS
-          color: Color.mPrimary
+          spacing: Math.round(5 * Style.uiScaleRatio)
+
+          NIcon {
+            icon: root.typeIcons.calculation
+            pointSize: Style.fontSizeM
+            color: Color.mPrimary
+          }
+
+          NText {
+            text: root.tr("capture.type.calculation")
+            pointSize: Style.fontSizeS
+            font.weight: Style.fontWeightSemiBold
+            color: Color.mPrimary
+          }
         }
       }
 
-      TextField {
-        id: field
+      RowLayout {
         Layout.fillWidth: true
-        font.pointSize: Style.fontSizeL * Style.uiScaleRatio
-        color: Color.mOnSurface
-        placeholderText: root.tr("capture.placeholder")
-        placeholderTextColor: Color.mOnSurfaceVariant
-        selectByMouse: true
-        maximumLength: 500
-        enabled: !root.busy
-        background: Rectangle {
-          radius: Style.radiusM
-          color: Color.mSurfaceVariant
-          border.color: field.activeFocus ? Color.mPrimary : Color.mOutline
-          border.width: Style.borderS
-        }
-        leftPadding: Style.marginM
-        rightPadding: Style.marginM
-        topPadding: Style.marginS
-        bottomPadding: Style.marginS
+        spacing: Math.round(8 * Style.uiScaleRatio)
 
-        onTextChanged: root.refresh()
+        Field {
+          id: field
+          Layout.fillWidth: true
+          font.pointSize: Style.fontSizeL * Style.uiScaleRatio
+          // Only shown while empty, when the type is the Tab choice or the task default.
+          placeholderText: root.tr("capture.placeholders." + (root.result.type === "calculation" ? "task" : root.result.type))
+          maximumLength: 500
+          enabled: !root.busy
+          error: root.feedback !== "" && root.feedbackIsError
 
-        Keys.onTabPressed: event => {
-          root.cycleType();
-          event.accepted = true;
+          onTextChanged: root.refresh()
+
+          Keys.onTabPressed: event => {
+            root.cycleType(1);
+            event.accepted = true;
+          }
+          Keys.onBacktabPressed: event => {
+            root.cycleType(-1);
+            event.accepted = true;
+          }
+          Keys.onEscapePressed: event => {
+            root.close();
+            event.accepted = true;
+          }
+          Keys.onReturnPressed: event => {
+            root.submit(event.modifiers & Qt.ShiftModifier);
+            event.accepted = true;
+          }
+          Keys.onEnterPressed: event => {
+            root.submit(event.modifiers & Qt.ShiftModifier);
+            event.accepted = true;
+          }
         }
-        Keys.onBacktabPressed: event => {
-          event.accepted = true;
-        }
-        Keys.onEscapePressed: event => {
-          root.close();
-          event.accepted = true;
-        }
-        Keys.onReturnPressed: event => {
-          root.submit(event.modifiers & Qt.ShiftModifier);
-          event.accepted = true;
-        }
-        Keys.onEnterPressed: event => {
-          root.submit(event.modifiers & Qt.ShiftModifier);
-          event.accepted = true;
+
+        PillButton {
+          primary: true
+          implicitHeight: field.implicitHeight
+          text: root.result.type === "calculation" ? root.tr("capture.copy") : root.tr("capture.save")
+          enabled: !root.busy
+          onClicked: root.submit(false)
         }
       }
 
       NText {
         Layout.fillWidth: true
         elide: Text.ElideRight
+        Layout.leftMargin: Math.round(4 * Style.uiScaleRatio)
         text: root.feedback !== "" ? root.feedback : root.previewText(root.result)
         pointSize: Style.fontSizeS
-        color: root.feedback !== "" && root.feedbackIsError ? Color.mError : Color.mOnSurfaceVariant
+        color: root.feedback !== "" && root.feedbackIsError ? Color.mError : Qt.alpha(Color.mOnSurface, 0.6)
       }
 
       NText {
         Layout.fillWidth: true
+        Layout.leftMargin: Math.round(4 * Style.uiScaleRatio)
         text: root.tr("capture.keys")
         pointSize: Style.fontSizeXS
-        color: Color.mOnSurfaceVariant
-        opacity: 0.7
+        color: Qt.alpha(Color.mOnSurface, 0.42)
       }
     }
   }
