@@ -1,0 +1,114 @@
+{
+  "tabs": {
+    "calendar": "Calendar",
+    "today": "Today",
+    "focus": "Focus",
+    "inbox": "Inbox",
+    "capture": "Capture"
+  },
+  "capture": {
+    "placeholder": "Buy bread tomorrow 9am, =2+2, /e meeting fri 3pm...",
+    "hint": "Type to capture. Tab changes the type.",
+    "keys": "Enter save · Shift+Enter save and keep open · Tab type · Esc close",
+    "copied": "Result copied to clipboard",
+    "type": {
+      "task": "Task",
+      "event": "Event",
+      "reminder": "Reminder",
+      "note": "Note",
+      "link": "Link",
+      "calculation": "Calculation"
+    },
+    "saved": {
+      "task": "Task saved",
+      "event": "Event created",
+      "reminder": "Reminder set",
+      "note": "Note saved",
+      "link": "Link saved"
+    },
+    "error": {
+      "empty": "Nothing to save yet",
+      "empty-title": "Add a description",
+      "needs-date-time": "Events need a date and time (e.g. fri 3pm)",
+      "needs-time": "Reminders need a time (e.g. 6pm)",
+      "invalid-url": "Not a valid http(s) link",
+      "syntax": "Incomplete or invalid expression",
+      "division-by-zero": "Division by zero",
+      "overflow": "Result too large",
+      "calendar-not-configured": "Calendar not configured (see README)",
+      "khal-failed": "khal could not create the event"
+    }
+  },
+  "when": {
+    "today": "today",
+    "tomorrow": "tomorrow"
+  },
+  "today": {
+    "title": "Today",
+    "empty": "Nothing for today. Add something below.",
+    "overdue": "overdue",
+    "delete": "Delete task",
+    "add-placeholder": "New task for today. E.g.: call the bank 3pm"
+  },
+  "calendar": {
+    "not-configured": "Calendar not configured. Install khal and vdirsyncer (see README).",
+    "nothing": "Nothing scheduled.",
+    "all-day": "all day",
+    "previous": "Previous month",
+    "next": "Next month",
+    "weekdays": "M T W T F S S"
+  },
+  "focus": {
+    "mode": {
+      "work": "Focus",
+      "short": "Short break",
+      "long": "Long break"
+    },
+    "no-task": "No task",
+    "cycle": "Cycle {n} of {total}",
+    "start": "Start",
+    "pause": "Pause",
+    "reset": "Reset",
+    "skip": "Skip",
+    "toast-title": "Focus",
+    "toast-work-done": "Focus session complete. Time for a break.",
+    "toast-break-done": "Break over. Ready to focus?"
+  },
+  "inbox": {
+    "links": "Links",
+    "notes": "Notes",
+    "no-links": "No saved links.",
+    "no-notes": "No notes.",
+    "open": "Open",
+    "archive": "Archive",
+    "copy": "Copy",
+    "delete": "Delete"
+  },
+  "reminder": {
+    "title": "Reminder"
+  },
+  "agenda": {
+    "sync-failed-title": "Calendar sync failed",
+    "sync-failed-body": "The event was saved locally and will sync on the next run."
+  },
+  "store": {
+    "corrupt-title": "Daybar data was unreadable",
+    "corrupt-body": "The old file was kept as data.json.bak and a new one was started."
+  },
+  "settings": {
+    "focus": "Focus",
+    "work-duration": "Focus duration",
+    "short-break": "Short break",
+    "long-break": "Long break",
+    "sessions": "Sessions before long break",
+    "auto-start-breaks": "Start breaks automatically",
+    "auto-start-work": "Start focus automatically",
+    "play-sound": "Play alarm sound",
+    "focus-command": "Focus mode command",
+    "focus-command-help": "Executable called with on/off when a focus session starts or stops. Leave empty to disable.",
+    "general": "General",
+    "default-calendar": "Default calendar",
+    "default-calendar-none": "khal default",
+    "initial-tab": "Initial tab"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "tabs": {
+    "calendar": "Calendário",
+    "today": "Hoje",
+    "focus": "Foco",
+    "inbox": "Caixa",
+    "capture": "Capturar"
+  },
+  "capture": {
+    "placeholder": "Comprar pão amanhã 9h, =2+2, /e reunião sexta 15h...",
+    "hint": "Digite para capturar. Tab troca o tipo.",
+    "keys": "Enter salva · Shift+Enter salva e continua · Tab tipo · Esc fecha",
+    "copied": "Resultado copiado",
+    "type": {
+      "task": "Tarefa",
+      "event": "Evento",
+      "reminder": "Lembrete",
+      "note": "Nota",
+      "link": "Link",
+      "calculation": "Cálculo"
+    },
+    "saved": {
+      "task": "Tarefa salva",
+      "event": "Evento criado",
+      "reminder": "Lembrete agendado",
+      "note": "Nota salva",
+      "link": "Link salvo"
+    },
+    "error": {
+      "empty": "Nada para salvar ainda",
+      "empty-title": "Adicione uma descrição",
+      "needs-date-time": "Evento precisa de data e hora (ex.: sexta 15h)",
+      "needs-time": "Lembrete precisa de hora (ex.: 18h)",
+      "invalid-url": "Link http(s) inválido",
+      "syntax": "Expressão incompleta ou inválida",
+      "division-by-zero": "Divisão por zero",
+      "overflow": "Resultado grande demais",
+      "calendar-not-configured": "Agenda não configurada (veja o README)",
+      "khal-failed": "O khal não conseguiu criar o evento"
+    }
+  },
+  "when": {
+    "today": "hoje",
+    "tomorrow": "amanhã"
+  },
+  "today": {
+    "title": "Hoje",
+    "empty": "Nada para hoje. Adicione abaixo.",
+    "overdue": "atrasada",
+    "delete": "Excluir tarefa",
+    "add-placeholder": "Nova tarefa para hoje. Ex.: ligar pro banco 15h"
+  },
+  "calendar": {
+    "not-configured": "Agenda não configurada. Instale o khal e o vdirsyncer (veja o README).",
+    "nothing": "Nada marcado para hoje.",
+    "all-day": "dia todo",
+    "previous": "Mês anterior",
+    "next": "Próximo mês",
+    "weekdays": "S T Q Q S S D"
+  },
+  "focus": {
+    "mode": {
+      "work": "Foco",
+      "short": "Pausa curta",
+      "long": "Pausa longa"
+    },
+    "no-task": "Sem tarefa",
+    "cycle": "Ciclo {n} de {total}",
+    "start": "Iniciar",
+    "pause": "Pausar",
+    "reset": "Reiniciar",
+    "skip": "Pular",
+    "toast-title": "Foco",
+    "toast-work-done": "Sessão de foco concluída. Hora da pausa.",
+    "toast-break-done": "Pausa encerrada. Pronto para focar?"
+  },
+  "inbox": {
+    "links": "Links",
+    "notes": "Notas",
+    "no-links": "Nenhum link salvo.",
+    "no-notes": "Nenhuma nota.",
+    "open": "Abrir",
+    "archive": "Arquivar",
+    "copy": "Copiar",
+    "delete": "Excluir"
+  },
+  "reminder": {
+    "title": "Lembrete"
+  },
+  "agenda": {
+    "sync-failed-title": "Falha ao sincronizar a agenda",
+    "sync-failed-body": "O evento ficou salvo localmente e sobe na próxima sincronização."
+  },
+  "store": {
+    "corrupt-title": "Dados do Daybar ilegíveis",
+    "corrupt-body": "O arquivo antigo foi guardado como data.json.bak e um novo foi iniciado."
+  },
+  "settings": {
+    "focus": "Foco",
+    "work-duration": "Duração do foco",
+    "short-break": "Pausa curta",
+    "long-break": "Pausa longa",
+    "sessions": "Sessões até a pausa longa",
+    "auto-start-breaks": "Iniciar pausas automaticamente",
+    "auto-start-work": "Iniciar foco automaticamente",
+    "play-sound": "Tocar alarme",
+    "focus-command": "Comando de modo foco",
+    "focus-command-help": "Executável chamado com on/off quando um foco começa ou para. Deixe vazio para desligar.",
+    "general": "Geral",
+    "default-calendar": "Agenda padrão",
+    "default-calendar-none": "Padrão do khal",
+    "initial-tab": "Aba inicial"
+  }
+}
