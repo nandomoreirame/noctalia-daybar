@@ -26,7 +26,13 @@ const DYNAMIC = [
   ...["calendar", "today", "focus", "inbox"].map((t) => "tabs." + t),
   ...["work", "short", "long"].map((m) => "focus.mode." + m),
   "focus.toast-work-done",
-  "focus.toast-break-done"
+  "focus.toast-break-done",
+  "focus.toast-goal-reached",
+  "settings.work-duration",
+  "settings.short-break",
+  "settings.long-break",
+  "settings.sessions",
+  "settings.daily-goal"
 ];
 
 describe("i18n", () => {

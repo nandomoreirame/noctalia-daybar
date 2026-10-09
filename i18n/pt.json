@@ -37,7 +37,8 @@
       "overflow": "Resultado grande demais",
       "calendar-not-configured": "Agenda não configurada (veja o README)",
       "khal-failed": "O khal não conseguiu criar o evento"
-    }
+    },
+    "failed-title": "Captura não salva"
   },
   "when": {
     "today": "hoje",
@@ -72,7 +73,13 @@
     "skip": "Pular",
     "toast-title": "Foco",
     "toast-work-done": "Sessão de foco concluída. Hora da pausa.",
-    "toast-break-done": "Pausa encerrada. Pronto para focar?"
+    "toast-break-done": "Pausa encerrada. Pronto para focar?",
+    "today-goal": "Hoje: {n} de {total}",
+    "today-count": "Hoje: {n} pomodoros",
+    "settings": "Ajustes do foco",
+    "settings-close": "Fechar ajustes",
+    "settings-help": "As mudanças valem na hora para um ciclo que ainda não começou. Meta 0 desliga a meta diária.",
+    "toast-goal-reached": "Meta diária de pomodoros atingida."
   },
   "inbox": {
     "links": "Links",
@@ -109,6 +116,8 @@
     "general": "Geral",
     "default-calendar": "Agenda padrão",
     "default-calendar-none": "Padrão do khal",
-    "initial-tab": "Aba inicial"
+    "initial-tab": "Aba inicial",
+    "daily-goal": "Meta diária de pomodoros",
+    "daily-goal-help": "Sessões de foco por dia. 0 desliga a meta."
   }
 }

@@ -37,7 +37,8 @@
       "overflow": "Result too large",
       "calendar-not-configured": "Calendar not configured (see README)",
       "khal-failed": "khal could not create the event"
-    }
+    },
+    "failed-title": "Capture not saved"
   },
   "when": {
     "today": "today",
@@ -72,7 +73,13 @@
     "skip": "Skip",
     "toast-title": "Focus",
     "toast-work-done": "Focus session complete. Time for a break.",
-    "toast-break-done": "Break over. Ready to focus?"
+    "toast-break-done": "Break over. Ready to focus?",
+    "today-goal": "Today: {n} of {total}",
+    "today-count": "Today: {n} pomodoros",
+    "settings": "Focus settings",
+    "settings-close": "Close settings",
+    "settings-help": "Changes apply right away to a cycle that has not started. A goal of 0 turns the daily goal off.",
+    "toast-goal-reached": "Daily pomodoro goal reached."
   },
   "inbox": {
     "links": "Links",
@@ -109,6 +116,8 @@
     "general": "General",
     "default-calendar": "Default calendar",
     "default-calendar-none": "khal default",
-    "initial-tab": "Initial tab"
+    "initial-tab": "Initial tab",
+    "daily-goal": "Daily pomodoro goal",
+    "daily-goal-help": "Focus sessions per day. 0 turns the goal off."
   }
 }

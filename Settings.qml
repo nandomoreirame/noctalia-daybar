@@ -14,6 +14,7 @@ ColumnLayout {
   property int shortBreakDuration: 5
   property int longBreakDuration: 15
   property int sessionsBeforeLongBreak: 4
+  property int dailyPomodoroGoal: 8
   property bool autoStartBreaks: false
   property bool autoStartWork: false
   property bool playSound: true
@@ -38,6 +39,7 @@ ColumnLayout {
     shortBreakDuration = value("shortBreakDuration");
     longBreakDuration = value("longBreakDuration");
     sessionsBeforeLongBreak = value("sessionsBeforeLongBreak");
+    dailyPomodoroGoal = value("dailyPomodoroGoal");
     autoStartBreaks = value("autoStartBreaks");
     autoStartWork = value("autoStartWork");
     playSound = value("playSound");
@@ -54,6 +56,7 @@ ColumnLayout {
     s.shortBreakDuration = shortBreakDuration;
     s.longBreakDuration = longBreakDuration;
     s.sessionsBeforeLongBreak = sessionsBeforeLongBreak;
+    s.dailyPomodoroGoal = dailyPomodoroGoal;
     s.autoStartBreaks = autoStartBreaks;
     s.autoStartWork = autoStartWork;
     s.playSound = playSound;
@@ -103,6 +106,15 @@ ColumnLayout {
     to: 12
     value: root.sessionsBeforeLongBreak
     onValueChanged: root.sessionsBeforeLongBreak = value
+  }
+
+  NSpinBox {
+    label: root.tr("settings.daily-goal")
+    description: root.tr("settings.daily-goal-help")
+    from: 0
+    to: 24
+    value: root.dailyPomodoroGoal
+    onValueChanged: root.dailyPomodoroGoal = value
   }
 
   NToggle {
