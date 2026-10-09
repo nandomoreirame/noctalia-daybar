@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isHttpUrl, normalizeUrl, domainOf, resolveUrl } from "../utils/url.js";
+import { isHttpUrl, normalizeUrl, domainOf, resolveUrl, isPublicHttpUrl } from "../utils/url.js";
 
 describe("url.isHttpUrl", () => {
   it.each([
@@ -54,5 +54,73 @@ describe("url.resolveUrl", () => {
     ["", ""]
   ])("%j -> %j", (ref, expected) => {
     expect(resolveUrl(ref, page)).toBe(expected);
+  });
+});
+
+describe("url.isPublicHttpUrl", () => {
+  it.each([
+    ["https://example.com/a.png", true],
+    ["http://cdn.example.org/x", true],
+    ["https://1.2.3.4/a.png", true],
+    ["https://localhost/a.png", false],
+    ["http://foo.localhost/x", false],
+    ["http://127.0.0.1/a", false],
+    ["http://127.1.2.3/a", false],
+    ["http://0.0.0.0/a", false],
+    ["http://10.0.0.1/a", false],
+    ["http://10.255.255.255/a", false],
+    ["http://172.16.0.1/a", false],
+    ["http://172.31.255.1/a", false],
+    ["http://172.15.0.1/a", true],
+    ["http://172.32.0.1/a", true],
+    ["http://192.168.1.1/a", false],
+    ["http://169.254.1.1/a", false],
+    ["http://[::1]/a", false],
+    ["http://[fc00::1]/a", false],
+    ["http://[fd12::1]/a", false],
+    ["http://[fe80::1]/a", false],
+    ["http://[2001:db8::1]/a", true],
+    ["http://intranet/a", false],
+    ["http://my-box/a", false],
+    ["ftp://example.com/a", false],
+    ["javascript:alert(1)", false],
+    ["", false],
+    ["not a url", false],
+    // Non-canonical / decimal / hex IPv4 forms curl still accepts
+    ["http://127.1/a", false],
+    ["http://2130706433/a", false],
+    ["http://0x7f.0.0.1/a", false],
+    ["http://0177.0.0.1/a", false],
+    ["http://0x7f000001/a", false],
+    // Trailing dot on host
+    ["http://localhost./a", false],
+    ["http://10.0.0.1./a", false],
+    // IPv6 unspecified, loopback expansions, IPv4-mapped
+    ["http://[::]/a", false],
+    ["http://[0:0:0:0:0:0:0:1]/a", false],
+    ["http://[::ffff:127.0.0.1]/a", false],
+    ["http://[::ffff:7f00:1]/a", false],
+    ["http://[::ffff:10.0.0.1]/a", false],
+    // Extra private / reserved IPv4 ranges
+    ["http://100.64.0.1/a", false],
+    ["http://100.127.255.255/a", false],
+    ["http://198.18.0.1/a", false],
+    ["http://198.19.255.255/a", false],
+    ["http://224.0.0.1/a", false],
+    ["http://255.255.255.255/a", false]
+  ])("%j -> %s", (url, expected) => {
+    expect(isPublicHttpUrl(url)).toBe(expected);
+  });
+});
+
+describe("url.isPublicHttpUrl: hex-letter domains are real domains", () => {
+  it.each(["https://cafe.de/x.png", "https://bad.de/a.png", "https://ace.be/i.jpg", "https://dead.beef.com/i.png"])("%s is public", async (u) => {
+    const { isPublicHttpUrl } = await import("../utils/url.js");
+    expect(isPublicHttpUrl(u)).toBe(true);
+  });
+
+  it.each(["http://127.1/", "http://0x7f.0.0.1/", "http://0177.0.0.1/", "http://2130706433/", "http://0x7f000001/"])("%s stays private", async (u) => {
+    const { isPublicHttpUrl } = await import("../utils/url.js");
+    expect(isPublicHttpUrl(u)).toBe(false);
   });
 });
