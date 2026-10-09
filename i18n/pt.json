@@ -82,16 +82,6 @@
     "settings-help": "As mudanças valem na hora para um ciclo que ainda não começou. Meta 0 desliga a meta diária.",
     "toast-goal-reached": "Meta diária de pomodoros atingida."
   },
-  "inbox": {
-    "links": "Links",
-    "notes": "Notas",
-    "no-links": "Nenhum link salvo.",
-    "no-notes": "Nenhuma nota.",
-    "open": "Abrir",
-    "archive": "Arquivar",
-    "copy": "Copiar",
-    "delete": "Excluir"
-  },
   "reminder": {
     "title": "Lembrete"
   },

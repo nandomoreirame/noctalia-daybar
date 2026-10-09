@@ -102,7 +102,7 @@ Item {
     }
   }
 
-  // Tasks / events / inbox (called by the UI)
+  // Tasks, events, bookmarks and notes (called by the UI)
   function addTask(fields) { commit(Tasks.addTask(data, fields, newId(), nowIso())); }
   function toggleTask(id) { commit(Tasks.toggleTask(data, id, nowIso())); }
   function deleteTask(id) { commit(Tasks.deleteTask(data, id)); }

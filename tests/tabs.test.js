@@ -9,7 +9,7 @@ describe("tabs", () => {
 
   it("prefers an IPC request, then the setting, then the last tab", () => {
     expect(initialTab("notes", "today", "focus")).toBe("notes");
-    expect(initialTab("", "last", "inbox")).toBe("today");
+    expect(initialTab("", "last", "removed")).toBe("today");
     expect(initialTab("", "calendar", "focus")).toBe("calendar");
     expect(initialTab("", "last", "focus")).toBe("focus");
   });

@@ -82,16 +82,6 @@
     "settings-help": "Changes apply right away to a cycle that has not started. A goal of 0 turns the daily goal off.",
     "toast-goal-reached": "Daily pomodoro goal reached."
   },
-  "inbox": {
-    "links": "Links",
-    "notes": "Notes",
-    "no-links": "No saved links.",
-    "no-notes": "No notes.",
-    "open": "Open",
-    "archive": "Archive",
-    "copy": "Copy",
-    "delete": "Delete"
-  },
   "reminder": {
     "title": "Reminder"
   },

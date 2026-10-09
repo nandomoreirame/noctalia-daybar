@@ -4,7 +4,7 @@ import qs.Commons
 import qs.Widgets
 import "components"
 
-// Bar toolbar: Calendar, Today, Focus and Inbox tabs plus the Capture button.
+// Bar toolbar: Calendar, Today, Focus, Bookmarks and Notes tabs plus the Capture button.
 Item {
   id: root
 
@@ -12,7 +12,7 @@ Item {
   readonly property var geometryPlaceholder: panelContainer
   readonly property bool allowAttach: true
   readonly property var mainInstance: pluginApi?.mainInstance ?? null
-  readonly property var tabKeys: ["calendar", "today", "focus", "inbox"]
+  readonly property var tabKeys: ["calendar", "today", "focus", "bookmarks", "notes"]
 
   property real contentPreferredWidth: 680 * Style.uiScaleRatio
   property real contentPreferredHeight: 380 * Style.uiScaleRatio
@@ -115,7 +115,12 @@ Item {
           mainInstance: root.mainInstance
         }
 
-        InboxView {
+        BookmarksView {
+          pluginApi: root.pluginApi
+          mainInstance: root.mainInstance
+        }
+
+        NotesView {
           pluginApi: root.pluginApi
           mainInstance: root.mainInstance
         }
