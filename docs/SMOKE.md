@@ -8,7 +8,7 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 |---|-----|------|----------|
 | 1 | REQ-021 | Reload the shell; `cat ~/.local/share/noctalia-daybar/data.json` after the first capture | File exists with `"version": 1` |
 | 2 | REQ-001 | `qs -c noctalia-shell ipc call plugin:daybar capture` | Centered overlay, cursor in the field |
-| 3 | REQ-001 | Run the same command again while open | No second window; focus stays in the field |
+| 3 | REQ-001 | Run the same command again while open | Overlay closes without saving; no second window |
 | 4 | REQ-002 | Copy `https://example.com`, open capture | Field prefilled and selected, type chip "Link" |
 | 5 | REQ-002 | Save it, copy the same URL, open capture | Field empty |
 | 6 | REQ-003, REQ-008 | Type `comprar pão amanhã 9h` | Preview "comprar pão · amanhã 09:00", chip "Tarefa" |
@@ -32,6 +32,8 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 | 24 | REQ-022 | `qs -c noctalia-shell ipc call plugin:daybar open focus` | Toolbar opens on Foco |
 | 25 | REQ-023 | Settings: change durations, default calendar, initial tab | Values persist and apply |
 | 26 | REQ-021 | Write `{oops` into data.json, reload | Toast about unreadable data; `data.json.bak` exists |
+
+
 ## Bookmarks and Notes
 
 | # | REQ | Step | Expected |

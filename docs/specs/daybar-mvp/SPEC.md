@@ -56,7 +56,7 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 
 **Capture overlay**
 
-1. **[REQ-001]** WHEN the IPC `capture` is called THEN the system SHALL open a centered overlay window with keyboard focus on the input field; if it is already open, it SHALL only refocus it.
+1. **[REQ-001]** WHEN the IPC `capture` is called THEN the system SHALL open a centered overlay window with keyboard focus on the input field; if it is already open, it SHALL close it without saving (the same shortcut toggles the overlay).
 2. **[REQ-002]** WHEN the overlay opens and the clipboard holds an http(s) URL not already saved in the Inbox THEN the system SHALL prefill the field with it, fully selected.
 3. **[REQ-003]** WHEN the user types THEN the system SHALL show a live preview of the inferred type and the parsed data (date, time, range, calculation result).
 4. **[REQ-004]** WHEN the text starts with `=` THEN the system SHALL evaluate the expression (`+ - * / ^`, postfix percent `%` as in `200*15%`, parentheses, comma or dot decimal) with its own parser, never `eval`/`Function`; an invalid expression SHALL show an error and Enter SHALL do nothing.
@@ -114,7 +114,7 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 - **Offline sync** - `vdirsyncer sync` failing keeps the event local; it syncs on the next timer run.
 - **Reminder while shell is down** - the local toast is lost; the Google alarm still fires on other devices.
 - **Recurring events** - checked state is per occurrence (`uid+date`).
-- **Overlay already open** - `capture` refocuses instead of opening a second window.
+- **Overlay already open** - `capture` closes it (toggle) instead of opening a second window.
 - **Corrupt data.json** - renamed to `.bak`, plugin starts empty, toast shown.
 - **Burst capture** - writes are debounced so Shift+Enter bursts do not rewrite the file per item.
 - **Calendar window** - navigating beyond -14/+31 days shows the grid without events (accepted MVP limit).
