@@ -20,8 +20,10 @@ function decodeEntities(text) {
   });
 }
 
+// Tags are stripped BEFORE decoding, so escaped text such as "vector&lt;T&gt;"
+// survives as "vector<T>"; the UI renders the result as PlainText.
 function clean(text, max) {
-  const plain = decodeEntities(text).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const plain = decodeEntities(String(text || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
   return plain.length > max ? plain.slice(0, max) : plain;
 }
 

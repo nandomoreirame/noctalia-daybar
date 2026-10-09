@@ -30,9 +30,12 @@ describe("pagemeta.parse", () => {
     expect(parse(html, PAGE)).toEqual({ title: "Fallback title", description: "Desc", image: "https://cdn.com/t.jpg" });
   });
 
-  it("decodes entities, strips tags and treats markup as text", () => {
+  it("strips real tags but keeps escaped markup as literal text (shown as PlainText)", () => {
     const html = `<meta property="og:title" content="&lt;script&gt;alert(1)&lt;/script&gt; Tom &amp; Jerry">`;
-    expect(parse(html, PAGE).title).toBe("alert(1) Tom & Jerry");
+    expect(parse(html, PAGE).title).toBe("<script>alert(1)</script> Tom & Jerry");
+    expect(parse(`<title>std::vector&lt;T&gt; - cppreference</title>`, PAGE).title).toBe("std::vector<T> - cppreference");
+    expect(parse(`<meta name="description" content="a &lt; b e c &gt; d">`, PAGE).description).toBe("a < b e c > d");
+    expect(parse(`<title><b>Bold</b> page</title>`, PAGE).title).toBe("Bold page");
   });
 
   it("caps title at 200 and description at 400 characters", () => {
