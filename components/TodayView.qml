@@ -13,7 +13,7 @@ NBox {
   property var pluginApi: null
   property var mainInstance: null
   property date now: new Date()
-  readonly property var items: mainInstance ? Today.buildToday(CalendarService.events, mainInstance.data, now) : []
+  readonly property var items: mainInstance ? Today.buildToday(mainInstance.visibleEvents, mainInstance.data, now) : []
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -58,7 +58,10 @@ NBox {
           model: root.items
 
           RowLayout {
+            id: row
             required property var modelData
+            readonly property bool hovered: rowHover.hovered
+            HoverHandler { id: rowHover }
             Layout.fillWidth: true
             spacing: Style.marginS
 
@@ -106,12 +109,34 @@ NBox {
               color: Color.mOnSurfaceVariant
             }
 
-            NIconButton {
-              visible: modelData.kind === "task"
-              icon: "trash"
-              baseSize: Style.baseWidgetSize * 0.7
-              tooltipText: root.tr("today.delete")
-              onClicked: root.mainInstance.deleteTask(modelData.id)
+            Item {
+              implicitWidth: Math.round(24 * Style.uiScaleRatio)
+              implicitHeight: implicitWidth
+              visible: row.modelData.kind === "task"
+
+              NIconButton {
+                anchors.fill: parent
+                icon: "trash"
+                baseSize: Style.baseWidgetSize * 0.7
+                tooltipText: root.tr("today.delete")
+                onClicked: root.mainInstance.deleteTask(row.modelData.id)
+              }
+            }
+
+            Item {
+              implicitWidth: Math.round(24 * Style.uiScaleRatio)
+              implicitHeight: implicitWidth
+              visible: row.modelData.kind === "event"
+
+              EventDeleteButton {
+                id: eventTrash
+                anchors.fill: parent
+                visible: (row.hovered || activeFocus || asking) && (root.mainInstance?.canDeleteEvent(row.modelData.calendar) ?? false)
+                pluginApi: root.pluginApi
+                mainInstance: root.mainInstance
+                uid: row.modelData.uid
+                calendar: row.modelData.calendar
+              }
             }
           }
         }
