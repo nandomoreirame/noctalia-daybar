@@ -41,3 +41,29 @@ function isReadOnlyCollection(id) {
 function isWritableCalendar(collections, calendarName) {
   return collections.some((c) => c.name === calendarName && !isReadOnlyCollection(c.id));
 }
+
+function escapeRegex(text) {
+  return String(text).replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+}
+
+// File names are not UIDs, so match the exact UID line (LF or CRLF endings).
+function findArgs(uid, roots) {
+  return ["grep", "-rlP", "--include=*.ics", "-e", "^UID:" + escapeRegex(uid) + "\\r?$", "--"].concat(roots);
+}
+
+function parsePaths(stdout) {
+  return String(stdout || "").split("\n").map((l) => l.trim()).filter((l) => /^\/.+\.ics$/.test(l));
+}
+
+function dirOf(path) {
+  return path.slice(0, path.lastIndexOf("/"));
+}
+
+// One match is used as is; several are narrowed to the event's calendar.
+function pickFile(paths, collections, calendarName) {
+  if (paths.length === 0) return { ok: false, error: "not-found" };
+  if (paths.length === 1) return { ok: true, path: paths[0] };
+  const dirs = collections.filter((c) => c.name === calendarName).map((c) => c.dir);
+  const hits = paths.filter((p) => dirs.indexOf(dirOf(p)) >= 0);
+  return hits.length === 1 ? { ok: true, path: hits[0] } : { ok: false, error: "ambiguous" };
+}
