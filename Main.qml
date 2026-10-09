@@ -19,6 +19,7 @@ import "utils/pomodoro.js" as Pomodoro
 import "utils/writequeue.js" as WriteQueue
 import "utils/focuslog.js" as FocusLog
 import "utils/dates.js" as Dates
+import "utils/tabs.js" as Tabs
 import "utils/eventdelete.js" as EventDelete
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
@@ -107,6 +108,16 @@ Item {
   function addTask(fields) { commit(Tasks.addTask(data, fields, newId(), nowIso())); }
   function toggleTask(id) { commit(Tasks.toggleTask(data, id, nowIso())); }
   function deleteTask(id) { commit(Tasks.deleteTask(data, id)); }
+  function renameTask(id, title) {
+    const next = Tasks.renameTask(data, id, title);
+    if (next !== data)
+      commit(next);
+  }
+  function setLastTab(key) {
+    const next = Tabs.setLastTab(data, key);
+    if (next !== data)
+      commit(next);
+  }
   function toggleEvent(uid, date) { commit(Tasks.toggleEventCheck(data, uid, date)); }
   // ---------------------------------------------------------------- bookmarks
 
@@ -275,8 +286,9 @@ Item {
       root.pluginApi.withCurrentScreen(screen => root.pluginApi.openPanel(screen));
     }
 
+    // Toggles, so the same shortcut opens and closes the overlay.
     function capture(): void {
-      root.openCapture();
+      root.toggleCapture();
     }
   }
 
@@ -435,6 +447,17 @@ Item {
       startWrite(r.start);
   }
 
+  readonly property bool syncing: syncState.running
+
+  // Toolbar reload: pull from Google, then reload the calendar service (done by
+  // syncProcess on exit). Without khal there is nothing to sync, just reload.
+  function refreshCalendar() {
+    if (calendarReady)
+      requestSync();
+    else
+      CalendarService.loadEvents();
+  }
+
   function requestSync() {
     const r = WriteQueue.requestSync(syncState);
     syncState = r.state;
@@ -545,6 +568,13 @@ Item {
           captureWindow.prefill(url);
       }
     }
+  }
+
+  function toggleCapture() {
+    if (captureWindow.visible)
+      captureWindow.close();
+    else
+      openCapture();
   }
 
   function openCapture() {
@@ -665,6 +695,20 @@ Item {
     pomodoroStopAlarm();
     pomodoroMode = mode;
     pomodoroRemaining = Pomodoro.durationFor(mode, pomodoroConfig);
+  }
+
+  readonly property bool canFocusTask: Pomodoro.canFocusTask(pomodoroRunning, pomodoroMode)
+
+  // Today's play button: link the task, switch to a focus phase (ending a running
+  // break) and start, then show the Focus tab.
+  function focusTask(id) {
+    if (!canFocusTask)
+      return;
+    linkedTaskId = id;
+    if (pomodoroMode !== Pomodoro.WORK)
+      pomodoroSetMode(Pomodoro.WORK);
+    pomodoroStart();
+    requestedTab = "focus";
   }
 
   function pomodoroStopAlarm() {

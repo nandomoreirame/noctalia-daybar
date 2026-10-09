@@ -22,6 +22,7 @@ const DYNAMIC = [
   ...["empty", "empty-title", "needs-date-time", "needs-time", "invalid-url", "syntax", "division-by-zero", "overflow", "calendar-not-configured", "khal-failed"].map((c) => "capture.error." + c),
   ...["task", "event", "reminder", "note", "link", "calculation"].map((t) => "capture.type." + t),
   ...["task", "event", "reminder", "note", "link"].map((t) => "capture.saved." + t),
+  ...["task", "event", "reminder", "note", "link"].map((t) => "capture.placeholders." + t),
   ...["today", "tomorrow"].map((d) => "when." + d),
   ...["calendar", "today", "focus", "bookmarks", "notes"].map((t) => "tabs." + t),
   ...["work", "short", "long"].map((m) => "focus.mode." + m),

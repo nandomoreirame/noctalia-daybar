@@ -31,6 +31,13 @@ function deleteTask(data, id) {
   return withTasks(data, data.tasks.filter((t) => t.id !== id));
 }
 
+// Keeps the task as is when the new title is blank.
+function renameTask(data, id, title) {
+  const clean = String(title || "").replace(/\s+/g, " ").trim();
+  if (!clean) return data;
+  return withTasks(data, data.tasks.map((t) => t.id !== id ? t : Object.assign({}, t, { title: clean })));
+}
+
 function addPomodoro(data, id) {
   return withTasks(data, data.tasks.map((t) => t.id !== id ? t : Object.assign({}, t, { pomodoros: t.pomodoros + 1 })));
 }

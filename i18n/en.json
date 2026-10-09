@@ -5,12 +5,12 @@
     "focus": "Focus",
     "bookmarks": "Bookmarks",
     "notes": "Notes",
-    "capture": "Capture"
+    "capture": "Capture",
+    "reload": "Refresh calendar"
   },
   "capture": {
-    "placeholder": "Buy bread tomorrow 9am, =2+2, /e meeting fri 3pm...",
-    "hint": "Type to capture. Tab changes the type.",
-    "keys": "Enter save · Shift+Enter save and keep open · Tab type · Esc close",
+    "hint": "Type to capture. Tab and Shift+Tab change the type.",
+    "keys": "Enter save · Shift+Enter save and keep open · Tab/Shift+Tab type · Esc close",
     "copied": "Result copied to clipboard",
     "type": {
       "task": "Task",
@@ -39,7 +39,16 @@
       "calendar-not-configured": "Calendar not configured (see README)",
       "khal-failed": "khal could not create the event"
     },
-    "failed-title": "Capture not saved"
+    "failed-title": "Capture not saved",
+    "save": "Save",
+    "copy": "Copy",
+    "placeholders": {
+      "task": "Buy bread tomorrow 9h (no date means today)",
+      "event": "Meeting friday 15h-16h (needs a date and time)",
+      "reminder": "Pay the bill tomorrow 18h (needs a time)",
+      "note": "An idea or a quick note",
+      "link": "Paste an https://... link to read later"
+    }
   },
   "when": {
     "today": "today",
@@ -50,7 +59,11 @@
     "empty": "Nothing for today. Add something below.",
     "overdue": "overdue",
     "delete": "Delete task",
-    "add-placeholder": "New task for today. E.g.: call the bank 3pm"
+    "add-placeholder": "New task for today. E.g.: call the bank 3pm",
+    "progress": "{n} of {total}",
+    "edit-hint": "Double-click to edit",
+    "rename": "Edit task",
+    "focus": "Focus on this task"
   },
   "calendar": {
     "not-configured": "Calendar not configured. Install khal and vdirsyncer (see README).",
@@ -110,6 +123,7 @@
     "initial-tab": "Initial tab",
     "daily-goal": "Daily pomodoro goal",
     "daily-goal-help": "Focus sessions per day. 0 turns the goal off.",
+    "initial-tab-last": "Last used tab",
     "fetch-previews": "Fetch link previews",
     "fetch-previews-help": "When a bookmark is saved, download the page's title, description and image."
   },

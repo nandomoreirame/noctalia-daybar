@@ -36,6 +36,12 @@ function idleRemaining(started, remaining, mode, cfg) {
   return started ? remaining : durationFor(mode, cfg);
 }
 
+// The "focus on this task" shortcut: allowed unless a focus session is already
+// counting down. A running break may be interrupted by it.
+function canFocusTask(running, mode) {
+  return !(running && mode === WORK);
+}
+
 // cfg: { work, short, long } in seconds, sessionsBeforeLong, autoStartBreaks, autoStartWork
 function durationFor(mode, cfg) {
   if (mode === SHORT) return cfg.short;

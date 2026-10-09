@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WORK, SHORT, LONG, durationFor, nextPhase, finish, formatClock, configFrom, idleRemaining } from "../utils/pomodoro.js";
+import { WORK, SHORT, LONG, durationFor, nextPhase, finish, formatClock, configFrom, idleRemaining, canFocusTask } from "../utils/pomodoro.js";
 
 const cfg = { work: 1500, short: 300, long: 900, sessionsBeforeLong: 2, autoStartBreaks: true, autoStartWork: false };
 
@@ -56,5 +56,15 @@ describe("pomodoro idle resize", () => {
 
   it("keeps the remaining time of a started (running or paused) phase", () => {
     expect(idleRemaining(true, 1234, WORK, { ...cfg, work: 3000 })).toBe(1234);
+  });
+});
+
+describe("pomodoro task shortcut", () => {
+  it("is blocked only while a focus session is running", () => {
+    expect(canFocusTask(true, WORK)).toBe(false);
+    expect(canFocusTask(false, WORK)).toBe(true);
+    expect(canFocusTask(true, SHORT)).toBe(true);
+    expect(canFocusTask(true, LONG)).toBe(true);
+    expect(canFocusTask(false, LONG)).toBe(true);
   });
 });

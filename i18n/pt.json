@@ -5,12 +5,12 @@
     "focus": "Foco",
     "bookmarks": "Favoritos",
     "notes": "Notas",
-    "capture": "Capturar"
+    "capture": "Capturar",
+    "reload": "Atualizar agenda"
   },
   "capture": {
-    "placeholder": "Comprar pão amanhã 9h, =2+2, /e reunião sexta 15h...",
-    "hint": "Digite para capturar. Tab troca o tipo.",
-    "keys": "Enter salva · Shift+Enter salva e continua · Tab tipo · Esc fecha",
+    "hint": "Digite para capturar. Tab e Shift+Tab trocam o tipo.",
+    "keys": "Enter salva · Shift+Enter salva e continua · Tab/Shift+Tab tipo · Esc fecha",
     "copied": "Resultado copiado",
     "type": {
       "task": "Tarefa",
@@ -39,7 +39,16 @@
       "calendar-not-configured": "Agenda não configurada (veja o README)",
       "khal-failed": "O khal não conseguiu criar o evento"
     },
-    "failed-title": "Captura não salva"
+    "failed-title": "Captura não salva",
+    "save": "Salvar",
+    "copy": "Copiar",
+    "placeholders": {
+      "task": "Comprar pão amanhã 9h (sem data, fica para hoje)",
+      "event": "Reunião sexta 15h-16h (precisa de data e hora)",
+      "reminder": "Pagar boleto amanhã 18h (precisa de horário)",
+      "note": "Uma ideia ou anotação rápida",
+      "link": "Cole um link https://... para ler depois"
+    }
   },
   "when": {
     "today": "hoje",
@@ -50,7 +59,11 @@
     "empty": "Nada para hoje. Adicione abaixo.",
     "overdue": "atrasada",
     "delete": "Excluir tarefa",
-    "add-placeholder": "Nova tarefa para hoje. Ex.: ligar pro banco 15h"
+    "add-placeholder": "Nova tarefa para hoje. Ex.: ligar pro banco 15h",
+    "progress": "{n} de {total}",
+    "edit-hint": "Clique duas vezes para editar",
+    "rename": "Editar tarefa",
+    "focus": "Focar nesta tarefa"
   },
   "calendar": {
     "not-configured": "Agenda não configurada. Instale o khal e o vdirsyncer (veja o README).",
@@ -110,6 +123,7 @@
     "initial-tab": "Aba inicial",
     "daily-goal": "Meta diária de pomodoros",
     "daily-goal-help": "Sessões de foco por dia. 0 desliga a meta.",
+    "initial-tab-last": "Última aba usada",
     "fetch-previews": "Buscar prévia dos links",
     "fetch-previews-help": "Ao salvar um favorito, baixa título, descrição e imagem da página."
   },
