@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calendarRoots, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, escapeRegex, findArgs, parsePaths, pickFile } from "../utils/eventdelete.js";
+import { calendarRoots, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, escapeRegex, findArgs, parsePaths, pickFile, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents } from "../utils/eventdelete.js";
 
 // Fixture home is /opt/u: a /home/<name> path is rejected by the commit hook.
 const HOME = "/opt/u";
@@ -84,5 +84,46 @@ describe("pickFile", () => {
   it("refuses when the calendar does not single one out", () => {
     expect(pickFile(["/r/me/1.ics", "/r/fam/9.ics"], cols, "Outra")).toEqual({ ok: false, error: "ambiguous" });
     expect(pickFile(["/r/me/1.ics", "/r/me/2.ics"], cols, "Eventos")).toEqual({ ok: false, error: "ambiguous" });
+  });
+});
+
+describe("recurrence", () => {
+  it("detects RRULE and RECURRENCE-ID, not the words inside other properties", () => {
+    expect(isRecurring("BEGIN:VEVENT\nRRULE:FREQ=WEEKLY\nEND:VEVENT")).toBe(true);
+    expect(isRecurring("BEGIN:VEVENT\r\nRECURRENCE-ID;TZID=X:20261010T100000\r\nEND:VEVENT")).toBe(true);
+    expect(isRecurring("BEGIN:VEVENT\nDESCRIPTION:no RRULE: here\nEND:VEVENT")).toBe(false);
+    expect(isRecurring("")).toBe(false);
+  });
+});
+
+describe("paths and commands", () => {
+  const roots = ["/opt/u/.local/share/calendars/google"];
+
+  it("deletes only .ics files strictly inside a root, without dot segments", () => {
+    expect(isDeletablePath("/opt/u/.local/share/calendars/google/me/1.ics", roots)).toBe(true);
+    expect(isDeletablePath("/opt/u/.local/share/calendars/google/me/../../../x.ics", roots)).toBe(false);
+    expect(isDeletablePath("/opt/u/.local/share/calendars/google/me/1.txt", roots)).toBe(false);
+    expect(isDeletablePath("/opt/u/.local/share/calendars/googleX/me/1.ics", roots)).toBe(false);
+    expect(isDeletablePath("/etc/passwd.ics", roots)).toBe(false);
+  });
+
+  it("builds rm and cat argv with the path after --", () => {
+    expect(deleteArgs("/r/me/1.ics")).toEqual(["rm", "-f", "--", "/r/me/1.ics"]);
+    expect(readArgs("/r/me/1.ics")).toEqual(["cat", "--", "/r/me/1.ics"]);
+  });
+});
+
+describe("data cleanup", () => {
+  it("removes every Today check of the UID", () => {
+    const data = { eventChecks: { "u1|2026-10-09": true, "u1|2026-10-10": true, "u2|2026-10-09": true } };
+    expect(removeEventChecks(data, "u1").eventChecks).toEqual({ "u2|2026-10-09": true });
+    expect(data.eventChecks["u1|2026-10-09"]).toBe(true);
+  });
+
+  it("hides every occurrence of hidden UIDs", () => {
+    const events = [{ uid: "a" }, { uid: "b" }, { uid: "a" }];
+    expect(hideEvents(events, ["a"])).toEqual([{ uid: "b" }]);
+    expect(hideEvents(events, [])).toBe(events);
+    expect(hideEvents(null, ["a"])).toEqual([]);
   });
 });

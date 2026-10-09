@@ -67,3 +67,35 @@ function pickFile(paths, collections, calendarName) {
   const hits = paths.filter((p) => dirs.indexOf(dirOf(p)) >= 0);
   return hits.length === 1 ? { ok: true, path: hits[0] } : { ok: false, error: "ambiguous" };
 }
+
+// Property names start a line; "RRULE:" inside a DESCRIPTION value does not.
+function isRecurring(icsText) {
+  return /^(RRULE|RECURRENCE-ID)[;:]/m.test(String(icsText || ""));
+}
+
+function isDeletablePath(path, roots) {
+  const p = String(path || "");
+  if (!/\.ics$/.test(p) || /(^|\/)\.{1,2}(\/|$)/.test(p)) return false;
+  return roots.some((r) => p.indexOf(r + "/") === 0);
+}
+
+function deleteArgs(path) {
+  return ["rm", "-f", "--", path];
+}
+
+function readArgs(path) {
+  return ["cat", "--", path];
+}
+
+function removeEventChecks(data, uid) {
+  const checks = {};
+  for (const key of Object.keys(data.eventChecks || {})) if (key.indexOf(uid + "|") !== 0) checks[key] = data.eventChecks[key];
+  return Object.assign({}, data, { eventChecks: checks });
+}
+
+// Same array back when nothing is hidden, so bindings do not churn.
+function hideEvents(events, hiddenUids) {
+  if (!events) return [];
+  if (hiddenUids.length === 0) return events;
+  return events.filter((ev) => hiddenUids.indexOf(ev.uid) < 0);
+}
