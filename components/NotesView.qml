@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import qs.Commons
 import qs.Widgets
 import "ui"
@@ -130,10 +131,22 @@ Card {
               color: Qt.alpha(Color.mOnSurface, 0.42)
             }
 
+            // Shown on hover, while keyboard focus is inside, or while the delete
+            // bubble is open (it lives outside the row, so hover/focus leave the row).
+            // Never disabled: disabled buttons can't take Tab focus or answer the bubble.
             RowLayout {
+              id: actions
+              readonly property bool focusInside: {
+                let f = Window.activeFocusItem;
+                while (f) {
+                  if (f === actions)
+                    return true;
+                  f = f.parent;
+                }
+                return false;
+              }
               spacing: Math.round(2 * Style.uiScaleRatio)
-              opacity: row.hovered || row.activeFocus ? 1 : 0
-              enabled: opacity > 0
+              opacity: row.hovered || focusInside || noteTrash.asking ? 1 : 0
 
               PillButton {
                 icon: "copy"
@@ -141,6 +154,7 @@ Card {
                 onClicked: root.mainInstance.copyText(row.modelData.text)
               }
               ConfirmButton {
+                id: noteTrash
                 icon: "trash"
                 tooltipText: root.tr("notes.delete")
                 question: root.tr("notes.confirm-delete")

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import qs.Commons
 import qs.Widgets
 
@@ -29,10 +30,17 @@ PillButton {
 
   Popup {
     id: bubble
-    // Opens below the button, right-aligned to it; flips above when there is no room.
+    // Opens below the button, right-aligned to it; flips above when the window
+    // has no room below (placed on each open, since rows scroll).
     readonly property real gap: Math.round(6 * Style.uiScaleRatio)
     x: root.width - width
     y: root.height + gap
+    onAboutToShow: {
+      const below = root.height + gap;
+      const win = root.Window.window;
+      const top = win ? root.mapToItem(null, 0, 0).y : 0;
+      y = win && top + below + implicitHeight > win.height ? -implicitHeight - gap : below;
+    }
     margins: Style.marginS
     padding: Math.round(10 * Style.uiScaleRatio)
     modal: false
