@@ -51,6 +51,10 @@ function normalizeBookmark(b) {
   return b && b.status === "pending" ? Object.assign({}, b, { status: "failed" }) : b;
 }
 
+function hasId(item) {
+  return !!item && typeof item === "object" && item.id !== undefined && item.id !== null;
+}
+
 function migrate(raw) {
   const checks = raw.eventChecks;
   return {
@@ -58,8 +62,8 @@ function migrate(raw) {
     tasks: list(raw.tasks).filter((t) => t && t.id !== undefined).map(normalizeTask),
     eventChecks: checks && typeof checks === "object" && !Array.isArray(checks) ? checks : {},
     reminders: list(raw.reminders),
-    bookmarks: raw.version >= 2 ? list(raw.bookmarks).map(normalizeBookmark) : [],
-    notes: raw.version >= 2 ? list(raw.notes) : [],
+    bookmarks: raw.version >= 2 ? list(raw.bookmarks).filter(hasId).map(normalizeBookmark) : [],
+    notes: raw.version >= 2 ? list(raw.notes).filter(hasId) : [],
     focusLog: normalizeFocusLog(raw.focusLog),
     ui: normalizeUi(raw.ui)
   };

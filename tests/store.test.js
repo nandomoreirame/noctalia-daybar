@@ -74,4 +74,11 @@ describe("store", () => {
     expect(makeId(1000, 0.5)).toBe("rs-" + (500000000).toString(36));
     expect(makeId(1000, 0.1)).not.toBe(makeId(1000, 0.2));
   });
+
+  it("drops bookmarks and notes without an id", () => {
+    const { data } = parse(JSON.stringify({ version: 2, bookmarks: [null, { url: "x" }, { id: "b", url: "https://x.com", status: "ok" }], notes: [null, { text: "x" }, { id: "n", text: "t" }] }));
+    expect(data.bookmarks.map((b) => b.id)).toEqual(["b"]);
+    expect(data.notes.map((n) => n.id)).toEqual(["n"]);
+  });
 });
+
