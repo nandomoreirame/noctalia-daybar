@@ -1,13 +1,15 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
+import "ui"
 import "../utils/pomodoro.js" as Pomodoro
 import "../utils/dates.js" as Dates
 
-// Pomodoro controls with an optional link to one of today's tasks, today's
-// progress against the daily goal and quick duration settings (gear button).
-NBox {
+// Pomodoro: mode chips, the clock, an optional link to one of today's tasks,
+// today's progress against the daily goal and quick settings (gear button).
+Card {
   id: root
 
   property var pluginApi: null
@@ -23,6 +25,7 @@ NBox {
       .filter(t => !t.done && (t.date || today) <= today)
       .map(t => ({ key: t.id, name: t.title })));
   }
+  readonly property bool running: mainInstance?.pomodoroRunning ?? false
   readonly property int sessionsToday: mainInstance?.todaySessions ?? 0
   readonly property int dailyGoal: mainInstance?.pomodoroConfig.dailyGoal ?? 0
   // [label key, setting key, min, max, suffix]
@@ -45,96 +48,112 @@ NBox {
 
   ColumnLayout {
     anchors.fill: parent
-    anchors.margins: Style.marginL
-    spacing: Style.marginM
+    anchors.margins: Math.round(12 * Style.uiScaleRatio)
+    spacing: Math.round(8 * Style.uiScaleRatio)
     visible: !root.showSettings
 
     RowLayout {
       Layout.fillWidth: true
-      Layout.fillHeight: true
-      spacing: Style.marginL
+      spacing: Math.round(4 * Style.uiScaleRatio)
 
-      NText {
-        text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
-        family: Settings.data.ui.fontFixed
-        pointSize: Style.fontSizeXXL * 1.6
-        font.weight: Style.fontWeightBold
-        color: root.mainInstance?.pomodoroRunning ? Color.mPrimary : Color.mOnSurface
+      Repeater {
+        model: root.modes
+
+        Chip {
+          required property var modelData
+          text: root.tr("focus.mode." + modelData[0])
+          selected: root.mainInstance?.pomodoroMode === modelData[1]
+          onClicked: root.mainInstance.pomodoroSetMode(modelData[1])
+        }
       }
 
-      ColumnLayout {
+      Item {
         Layout.fillWidth: true
-        spacing: Style.marginM
-
-        RowLayout {
-          spacing: Style.marginS
-
-          Repeater {
-            model: root.modes
-
-            NButton {
-              required property var modelData
-              text: root.tr("focus.mode." + modelData[0])
-              outlined: root.mainInstance?.pomodoroMode !== modelData[1]
-              onClicked: root.mainInstance.pomodoroSetMode(modelData[1])
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-
-          NComboBox {
-            model: root.taskOptions
-            currentKey: root.mainInstance?.linkedTaskId ?? ""
-            placeholder: root.tr("focus.no-task")
-            onSelected: key => root.mainInstance.linkedTaskId = key
-          }
-
-          NText {
-            text: root.tr("focus.cycle").replace("{n}", (root.mainInstance?.pomodoroCompleted ?? 0) + 1).replace("{total}", root.mainInstance?.pomodoroConfig.sessionsBeforeLong ?? 4)
-            color: Color.mOnSurfaceVariant
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginS
-
-          NButton {
-            text: root.mainInstance?.pomodoroRunning ? root.tr("focus.pause") : root.tr("focus.start")
-            icon: root.mainInstance?.pomodoroRunning ? "player-pause" : "player-play"
-            onClicked: root.mainInstance.pomodoroRunning ? root.mainInstance.pomodoroPause() : root.mainInstance.pomodoroStart()
-          }
-
-          NIconButton {
-            icon: "refresh"
-            tooltipText: root.tr("focus.reset")
-            onClicked: root.mainInstance.pomodoroReset()
-          }
-
-          NIconButton {
-            icon: "player-skip-forward"
-            tooltipText: root.tr("focus.skip")
-            onClicked: root.mainInstance.pomodoroSkip()
-          }
-
-          NIconButton {
-            icon: "settings"
-            tooltipText: root.tr("focus.settings")
-            onClicked: root.showSettings = true
-          }
-        }
       }
+
+      PillButton {
+        icon: "settings"
+        tooltipText: root.tr("focus.settings")
+        onClicked: root.showSettings = true
+      }
+    }
+
+    // Everything below the header is one centered stack: clock, cycle, controls,
+    // linked task and today's progress dots.
+    Item {
+      Layout.fillHeight: true
+    }
+
+    NText {
+      Layout.fillWidth: true
+      horizontalAlignment: Text.AlignHCenter
+      text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
+      family: Settings.data.ui.fontFixed
+      pointSize: Style.fontSizeXXXL * 2.6
+      font.weight: Style.fontWeightBold
+      color: root.running ? Color.mPrimary : Color.mOnSurface
+    }
+
+    NText {
+      Layout.fillWidth: true
+      Layout.topMargin: -Math.round(6 * Style.uiScaleRatio)
+      horizontalAlignment: Text.AlignHCenter
+      text: root.tr("focus.cycle").replace("{n}", (root.mainInstance?.pomodoroCompleted ?? 0) + 1).replace("{total}", root.mainInstance?.pomodoroConfig.sessionsBeforeLong ?? 4)
+      pointSize: Style.fontSizeS
+      color: Qt.alpha(Color.mOnSurface, 0.56)
+    }
+
+    RowLayout {
+      Layout.alignment: Qt.AlignHCenter
+      Layout.topMargin: Math.round(4 * Style.uiScaleRatio)
+      spacing: Math.round(8 * Style.uiScaleRatio)
+
+      PillButton {
+        icon: "refresh"
+        tooltipText: root.tr("focus.reset")
+        onClicked: root.mainInstance.pomodoroReset()
+      }
+
+      PillButton {
+        primary: true
+        implicitHeight: Math.round(34 * Style.uiScaleRatio)
+        icon: root.running ? "player-pause" : "player-play"
+        text: root.running ? root.tr("focus.pause") : root.tr("focus.start")
+        onClicked: root.running ? root.mainInstance.pomodoroPause() : root.mainInstance.pomodoroStart()
+      }
+
+      PillButton {
+        icon: "player-skip-forward"
+        tooltipText: root.tr("focus.skip")
+        onClicked: root.mainInstance.pomodoroSkip()
+      }
+    }
+
+    NComboBox {
+      // The empty built-in label would take any width beyond minimumWidth and push
+      // the box off center, so size the box through minimumWidth only.
+      Layout.alignment: Qt.AlignHCenter
+      minimumWidth: 320
+      model: root.taskOptions
+      currentKey: root.mainInstance?.linkedTaskId ?? ""
+      placeholder: root.tr("focus.no-task")
+      onSelected: key => root.mainInstance.linkedTaskId = key
+    }
+
+    Item {
+      Layout.fillHeight: true
     }
 
     // Today's progress: one dot per session of the daily goal.
     RowLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginS
+      Layout.alignment: Qt.AlignHCenter
+      spacing: Math.round(5 * Style.uiScaleRatio)
 
       NText {
+        Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
         text: root.progressText()
-        color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Color.mOnSurfaceVariant
+        pointSize: Style.fontSizeS
+        color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
       }
 
       Repeater {
@@ -142,25 +161,19 @@ NBox {
 
         Rectangle {
           required property int index
-          width: 8 * Style.uiScaleRatio
+          width: Math.round(7 * Style.uiScaleRatio)
           height: width
           radius: width / 2
-          color: index < root.sessionsToday ? Color.mPrimary : "transparent"
-          border.color: Color.mPrimary
-          border.width: Style.borderS
+          color: index < root.sessionsToday ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.12)
         }
-      }
-
-      Item {
-        Layout.fillWidth: true
       }
     }
   }
 
   ColumnLayout {
     anchors.fill: parent
-    anchors.margins: Style.marginL
-    spacing: Style.marginS
+    anchors.margins: Math.round(12 * Style.uiScaleRatio)
+    spacing: Math.round(8 * Style.uiScaleRatio)
     visible: root.showSettings
 
     RowLayout {
@@ -169,11 +182,12 @@ NBox {
       NText {
         Layout.fillWidth: true
         text: root.tr("focus.settings")
-        font.weight: Style.fontWeightBold
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightSemiBold
         color: Color.mOnSurface
       }
 
-      NIconButton {
+      PillButton {
         icon: "x"
         tooltipText: root.tr("focus.settings-close")
         onClicked: root.showSettings = false
@@ -181,12 +195,15 @@ NBox {
     }
 
     NScrollView {
+      id: settingsScroll
       Layout.fillWidth: true
       Layout.fillHeight: true
+      contentWidth: availableWidth
+      horizontalPolicy: ScrollBar.AlwaysOff
 
       ColumnLayout {
-        width: parent.width
-        spacing: Style.marginS
+        width: settingsScroll.availableWidth
+        spacing: Math.round(6 * Style.uiScaleRatio)
 
         Repeater {
           model: root.quickSettings
@@ -210,7 +227,7 @@ NBox {
           wrapMode: Text.WordWrap
           text: root.tr("focus.settings-help")
           pointSize: Style.fontSizeXS
-          color: Color.mOnSurfaceVariant
+          color: Qt.alpha(Color.mOnSurface, 0.56)
         }
       }
     }
