@@ -62,3 +62,43 @@ describe("markdown.prepare: every remote image form", () => {
     expect(prepare('<img alt="x" src="file:///data/u/a.png">')).toBe('<img alt="x" src="file:///data/u/a.png">');
   });
 });
+
+describe("markdown.prepare: remote-image bypasses", () => {
+  it("turns images with nested brackets in the alt text into links", () => {
+    expect(prepare("![a [b] c](http://evil/x.png)")).toBe("[a [b] c](http://evil/x.png)");
+  });
+
+  it("turns angle-bracket destinations that contain spaces into links", () => {
+    expect(prepare("![a](<http://evil/a b.png>)")).toBe("[a](http://evil/a b.png)");
+  });
+
+  it("drops <img> whose src is a remote URL hidden behind HTML entities", () => {
+    expect(prepare('<img src="&#104;ttp://evil/x.png">')).toBe("");
+    expect(prepare('<img src="&#x68;ttp://evil/x.png">')).toBe("");
+    expect(prepare('<img src="http&colon;//evil/x.png">')).toBe("");
+    expect(prepare('<img src="http:&sol;&sol;evil/x.png">')).toBe("");
+  });
+
+  it("drops <img> whose src hides a scheme via numeric entities without a semicolon", () => {
+    expect(prepare('<img src="&#104ttp://evil/x.png">')).toBe("");
+    expect(prepare('<img src="&#x68ttp://evil/x.png">')).toBe("");
+  });
+
+  it("drops <img> whose src has leading whitespace or control chars before a remote scheme", () => {
+    expect(prepare('<img src=" http://evil/x.png">')).toBe("");
+  });
+
+  it("drops relative and unknown-scheme <img> src; keeps absolute local paths", () => {
+    expect(prepare('<img src="rel/a.png">')).toBe("");
+    expect(prepare('<img src="/data/u/a.png">')).toBe('<img src="/data/u/a.png">');
+    expect(prepare('<img src="file:///data/u/a.png">')).toBe('<img src="file:///data/u/a.png">');
+  });
+
+  it("keeps local <img> even when the path uses an entity for an ampersand", () => {
+    expect(prepare('<img src="/data/u/a&amp;b.png">')).toBe('<img src="/data/u/a&amp;b.png">');
+  });
+
+  it("keeps relative markdown images under the existing isLocalSource rule", () => {
+    expect(prepare("![a](rel/a.png)")).toBe("![a](rel/a.png)");
+  });
+});
