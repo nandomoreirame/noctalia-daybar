@@ -6,7 +6,7 @@
 var VERSION = 1;
 
 function createEmpty() {
-  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [] };
+  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [], focusLog: {} };
 }
 
 function list(value) {
@@ -28,6 +28,17 @@ function normalizeTask(t) {
   };
 }
 
+// Keeps only "YYYY-MM-DD": positive integer pairs.
+function normalizeFocusLog(log) {
+  const out = {};
+  if (!log || typeof log !== "object" || Array.isArray(log)) return out;
+  for (const date of Object.keys(log)) {
+    const n = log[date];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date) && typeof n === "number" && Number.isInteger(n) && n > 0) out[date] = n;
+  }
+  return out;
+}
+
 function migrate(raw) {
   const checks = raw.eventChecks;
   return {
@@ -36,7 +47,8 @@ function migrate(raw) {
     eventChecks: checks && typeof checks === "object" && !Array.isArray(checks) ? checks : {},
     reminders: list(raw.reminders),
     links: list(raw.links),
-    notes: list(raw.notes)
+    notes: list(raw.notes),
+    focusLog: normalizeFocusLog(raw.focusLog)
   };
 }
 

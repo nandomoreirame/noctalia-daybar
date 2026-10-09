@@ -17,7 +17,7 @@ describe("manifest", () => {
 
   it("ships the default settings the services read", () => {
     expect(Object.keys(manifest.metadata.defaultSettings).sort()).toEqual([
-      "autoStartBreaks", "autoStartWork", "defaultCalendar", "focusModeCommand", "initialTab",
+      "autoStartBreaks", "autoStartWork", "dailyPomodoroGoal", "defaultCalendar", "focusModeCommand", "initialTab",
       "longBreakDuration", "playSound", "sessionsBeforeLongBreak", "shortBreakDuration", "workDuration"
     ]);
   });

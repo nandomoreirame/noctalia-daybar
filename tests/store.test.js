@@ -3,7 +3,7 @@ import { VERSION, createEmpty, parse, serialize, makeId } from "../utils/store.j
 
 describe("store", () => {
   it("creates an empty versioned store", () => {
-    expect(createEmpty()).toEqual({ version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [] });
+    expect(createEmpty()).toEqual({ version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [], focusLog: {} });
   });
 
   it("treats empty or missing text as a fresh store", () => {
@@ -27,6 +27,12 @@ describe("store", () => {
     }]);
     expect(data.eventChecks).toEqual({});
     expect(data.links).toEqual([]);
+    expect(data.focusLog).toEqual({});
+  });
+
+  it("keeps valid focus log counts and drops junk entries", () => {
+    const { data } = parse(JSON.stringify({ focusLog: { "2026-10-09": 3, "2026-10-08": "x", "oops": 2, "2026-10-07": -1 } }));
+    expect(data.focusLog).toEqual({ "2026-10-09": 3 });
   });
 
   it("round-trips through serialize", () => {

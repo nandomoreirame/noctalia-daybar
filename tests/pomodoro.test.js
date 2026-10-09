@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WORK, SHORT, LONG, durationFor, nextPhase, finish, formatClock } from "../utils/pomodoro.js";
+import { WORK, SHORT, LONG, durationFor, nextPhase, finish, formatClock, configFrom, idleRemaining } from "../utils/pomodoro.js";
 
 const cfg = { work: 1500, short: 300, long: 900, sessionsBeforeLong: 2, autoStartBreaks: true, autoStartWork: false };
 
@@ -28,5 +28,33 @@ describe("pomodoro", () => {
     expect(formatClock(59)).toBe("00:59");
     expect(formatClock(3725)).toBe("1:02:05");
     expect(formatClock(-3)).toBe("00:00");
+  });
+});
+
+describe("pomodoro config", () => {
+  const defaults = { workDuration: 25, shortBreakDuration: 5, longBreakDuration: 15, sessionsBeforeLongBreak: 4, dailyPomodoroGoal: 8, autoStartBreaks: false, autoStartWork: true };
+
+  it("converts minutes to seconds and keeps the flags", () => {
+    expect(configFrom(defaults)).toEqual({ work: 1500, short: 300, long: 900, sessionsBeforeLong: 4, dailyGoal: 8, autoStartBreaks: false, autoStartWork: true });
+  });
+
+  it("clamps out-of-range and non-numeric values", () => {
+    const cfg = configFrom({ ...defaults, workDuration: 0, shortBreakDuration: 999, longBreakDuration: "x", sessionsBeforeLongBreak: -3, dailyPomodoroGoal: 99 });
+    expect(cfg).toMatchObject({ work: 60, short: 3600, long: 900, sessionsBeforeLong: 1, dailyGoal: 24 });
+  });
+
+  it("allows a zero daily goal (disabled)", () => {
+    expect(configFrom({ ...defaults, dailyPomodoroGoal: 0 }).dailyGoal).toBe(0);
+  });
+});
+
+describe("pomodoro idle resize", () => {
+  it("follows the new duration while the phase has not started", () => {
+    expect(idleRemaining(false, 1500, WORK, { ...cfg, work: 3000 })).toBe(3000);
+    expect(idleRemaining(false, 300, SHORT, { ...cfg, short: 600 })).toBe(600);
+  });
+
+  it("keeps the remaining time of a started (running or paused) phase", () => {
+    expect(idleRemaining(true, 1234, WORK, { ...cfg, work: 3000 })).toBe(1234);
   });
 });

@@ -23,6 +23,7 @@
       "shortBreakDuration": 5,
       "longBreakDuration": 15,
       "sessionsBeforeLongBreak": 4,
+      "dailyPomodoroGoal": 8,
       "autoStartBreaks": false,
       "autoStartWork": false,
       "playSound": true,
