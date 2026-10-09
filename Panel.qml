@@ -3,6 +3,8 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
 import "components"
+import "components/ui"
+import "utils/tabs.js" as Tabs
 
 // Bar toolbar: Calendar, Today, Focus, Bookmarks and Notes tabs plus the Capture button.
 Item {
@@ -12,10 +14,10 @@ Item {
   readonly property var geometryPlaceholder: panelContainer
   readonly property bool allowAttach: true
   readonly property var mainInstance: pluginApi?.mainInstance ?? null
-  readonly property var tabKeys: ["calendar", "today", "focus", "bookmarks", "notes"]
+  readonly property var tabKeys: Tabs.TABS
 
   property real contentPreferredWidth: 680 * Style.uiScaleRatio
-  property real contentPreferredHeight: 380 * Style.uiScaleRatio
+  property real contentPreferredHeight: 360 * Style.uiScaleRatio
   property bool initialTabApplied: false
 
   anchors.fill: parent
@@ -24,7 +26,7 @@ Item {
     return pluginApi ? pluginApi.tr(key) : key;
   }
 
-  // An IPC `open <tab>` wins over the configured initial tab, once.
+  // An IPC `open <tab>` wins over the configured initial tab ("last" by default), once.
   // onMainInstanceChanged runs before the tab bar exists and again from
   // onCompleted; consuming the request on the first call made the second
   // call fall back to the initial tab.
@@ -34,12 +36,14 @@ Item {
     const requested = mainInstance.requestedTab;
     if (initialTabApplied && requested === "")
       return;
-    const fallback = mainInstance.setting("initialTab");
-    const index = tabKeys.indexOf(requested !== "" ? requested : fallback);
-    tabBar.currentIndex = index >= 0 ? index : 1;
+    const key = Tabs.initialTab(requested, mainInstance.setting("initialTab"), mainInstance.data.ui?.lastTab);
+    tabBar.currentIndex = tabKeys.indexOf(key);
     initialTabApplied = true;
-    if (requested !== "")
+    if (requested !== "") {
+      // A tab opened by IPC counts as visited.
+      mainInstance.setLastTab(key);
       mainInstance.requestedTab = "";
+    }
   }
 
   onMainInstanceChanged: pickInitialTab()
@@ -60,37 +64,42 @@ Item {
 
     ColumnLayout {
       anchors.fill: parent
-      anchors.margins: Style.marginM
-      spacing: Style.marginM
+      anchors.margins: Math.round(10 * Style.uiScaleRatio)
+      spacing: Math.round(8 * Style.uiScaleRatio)
 
       RowLayout {
         Layout.fillWidth: true
         spacing: Style.marginS
 
-        NTabBar {
+        IconTabs {
           id: tabBar
-          Layout.fillWidth: true
-
-          Repeater {
-            model: root.tabKeys
-
-            NTabButton {
-              required property string modelData
-              required property int index
-              text: root.tr("tabs." + modelData)
-              tabIndex: index
-              checked: tabBar.currentIndex === index
-            }
-          }
+          model: root.tabKeys.map(k => ({ key: k, icon: Tabs.ICONS[k], label: root.tr("tabs." + k) }))
+          // Remembered once the initial tab is in place, so opening never overwrites it.
+          onCurrentIndexChanged: if (root.initialTabApplied && root.mainInstance) root.mainInstance.setLastTab(root.tabKeys[currentIndex])
         }
 
-        NIconButton {
+        Item {
+          Layout.fillWidth: true
+        }
+
+        PillButton {
+          icon: "refresh"
+          busy: root.mainInstance?.syncing ?? false
+          enabled: !busy
+          tooltipText: root.tr("tabs.reload")
+          onClicked: root.mainInstance?.refreshCalendar()
+        }
+
+        PillButton {
           icon: "bolt"
-          tooltipText: root.tr("tabs.capture")
+          text: root.tr("tabs.capture")
+          // Close on the screen the panel opened on (the cursor may be elsewhere),
+          // then open the overlay.
           onClicked: {
+            if (root.pluginApi)
+              root.pluginApi.closePanel(root.pluginApi.panelOpenScreen);
             if (root.mainInstance)
               root.mainInstance.openCapture();
-            root.pluginApi?.withCurrentScreen(screen => root.pluginApi.closePanel(screen));
           }
         }
       }

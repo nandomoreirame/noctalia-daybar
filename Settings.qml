@@ -20,8 +20,8 @@ ColumnLayout {
   property bool playSound: true
   property string focusModeCommand: ""
   property string defaultCalendar: ""
+  property string initialTab: "last"
   property bool fetchPreviews: true
-  property string initialTab: "today"
 
   spacing: Style.marginM
 
@@ -46,8 +46,8 @@ ColumnLayout {
     playSound = value("playSound");
     focusModeCommand = value("focusModeCommand");
     defaultCalendar = value("defaultCalendar");
-    fetchPreviews = value("fetchPreviews");
     initialTab = value("initialTab");
+    fetchPreviews = value("fetchPreviews");
   }
 
   function saveSettings() {
@@ -64,8 +64,8 @@ ColumnLayout {
     s.playSound = playSound;
     s.focusModeCommand = focusModeCommand.trim();
     s.defaultCalendar = defaultCalendar;
-    s.fetchPreviews = fetchPreviews;
     s.initialTab = initialTab;
+    s.fetchPreviews = fetchPreviews;
     pluginApi.saveSettings();
   }
 
@@ -168,7 +168,7 @@ ColumnLayout {
 
   NComboBox {
     label: root.tr("settings.initial-tab")
-    model: ["calendar", "today", "focus", "bookmarks", "notes"].map(k => ({ key: k, name: root.tr("tabs." + k) }))
+    model: [{ key: "last", name: root.tr("settings.initial-tab-last") }].concat(["calendar", "today", "focus", "bookmarks", "notes"].map(k => ({ key: k, name: root.tr("tabs." + k) })))
     currentKey: root.initialTab
     onSelected: key => root.initialTab = key
   }
