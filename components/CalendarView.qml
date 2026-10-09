@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
 import qs.Services.Location
+import "ui"
 import "../utils/month.js" as Month
 import "../utils/events.js" as Events
 
@@ -18,8 +19,8 @@ NBox {
   property int year: today.getFullYear()
   property int month: today.getMonth()
   property string selected: Qt.formatDate(today, "yyyy-MM-dd")
-  readonly property var cells: Month.monthGrid(year, month, today, CalendarService.events)
-  readonly property var dayEvents: Events.eventsOn(CalendarService.events, selected)
+  readonly property var cells: Month.monthGrid(year, month, today, root.mainInstance ? root.mainInstance.visibleEvents : CalendarService.events)
+  readonly property var dayEvents: Events.eventsOn(root.mainInstance ? root.mainInstance.visibleEvents : CalendarService.events, selected)
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -82,12 +83,12 @@ NBox {
       Repeater {
         model: root.dayEvents
 
-        RowLayout {
+        ListRow {
+          id: dayRow
           required property var modelData
-          spacing: Style.marginS
 
           NText {
-            text: modelData.time || root.tr("calendar.all-day")
+            text: dayRow.modelData.time || root.tr("calendar.all-day")
             family: Settings.data.ui.fontFixed
             color: Color.mPrimary
           }
@@ -95,8 +96,22 @@ NBox {
           NText {
             Layout.fillWidth: true
             elide: Text.ElideRight
-            text: modelData.summary
+            text: dayRow.modelData.summary
             color: Color.mOnSurface
+          }
+
+          Item {
+            implicitWidth: Math.round(24 * Style.uiScaleRatio)
+            implicitHeight: implicitWidth
+
+            EventDeleteButton {
+              anchors.fill: parent
+              visible: (dayRow.hovered || activeFocus || asking) && (root.mainInstance?.canDeleteEvent(dayRow.modelData.calendar) ?? false)
+              pluginApi: root.pluginApi
+              mainInstance: root.mainInstance
+              uid: dayRow.modelData.uid
+              calendar: dayRow.modelData.calendar
+            }
           }
         }
       }
