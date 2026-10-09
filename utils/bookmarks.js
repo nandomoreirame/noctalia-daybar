@@ -5,7 +5,8 @@
 // Bookmark operations. Pure; every function returns a NEW data object (or the
 // same one when nothing changes). `token` increases on every (re)save so results
 // from a superseded fetch are ignored.
-// bookmark: { id, url, title, description, image, imageUrl, status, token, createdAt, savedAt }
+// bookmark: { id, url, title, description, image, imageUrl, status, token,
+//             createdAt, savedAt, customTitle? }
 // status: "pending" (fetch queued/running), "ok", "failed", "off" (fetching disabled)
 
 function findByUrl(data, url) {
@@ -45,12 +46,16 @@ function update(data, id, token, patch) {
 }
 
 function applyPreview(data, id, token, meta) {
-  return update(data, id, token, (b) => ({
-    title: meta.title || Url.domainOf(b.url),
-    description: meta.description || "",
-    imageUrl: meta.image || "",
-    status: "ok"
-  }));
+  return update(data, id, token, (b) => {
+    const patch = {
+      description: meta.description || "",
+      imageUrl: meta.image || "",
+      status: "ok"
+    };
+    if (!b.customTitle)
+      patch.title = meta.title || Url.domainOf(b.url);
+    return patch;
+  });
 }
 
 function setImage(data, id, token, path) {
@@ -71,10 +76,30 @@ function isCurrent(data, id, token) {
   return data.bookmarks.some((b) => b.id === id && b.token === token);
 }
 
+// Refresh bumps the token and requeues a fetch without clearing title /
+// description / image and without moving the bookmark to the top.
+function refresh(data, id, nowIso, fetchEnabled) {
+  const target = data.bookmarks.find((b) => b.id === id);
+  if (!target) return null;
+  if (!fetchEnabled) {
+    return { data: data, bookmark: target };
+  }
+  const bookmark = Object.assign({}, target, {
+    status: "pending",
+    token: target.token + 1
+  });
+  return {
+    data: Object.assign({}, data, {
+      bookmarks: data.bookmarks.map((b) => b.id === id ? bookmark : b)
+    }),
+    bookmark: bookmark
+  };
+}
+
 function rename(data, id, title) {
   const clean = String(title || "").replace(/\s+/g, " ").trim();
   if (!clean) return data;
-  return update(data, id, null, () => ({ title: clean }));
+  return update(data, id, null, () => ({ title: clean, customTitle: true }));
 }
 
 function remove(data, id) {

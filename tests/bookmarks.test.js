@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { add, applyPreview, setImage, markFailed, markOff, isCurrent, rename, remove, sorted, search, prefillFromClipboard, hasUrl } from "../utils/bookmarks.js";
+import { add, applyPreview, setImage, markFailed, markOff, isCurrent, rename, remove, sorted, search, prefillFromClipboard, hasUrl, refresh } from "../utils/bookmarks.js";
 
 const T0 = "2026-10-09T15:00:00.000Z";
 const T1 = "2026-10-09T16:00:00.000Z";
@@ -106,3 +106,47 @@ describe("bookmarks fetch bookkeeping", () => {
   });
 });
 
+
+describe("bookmarks.refresh and customTitle", () => {
+  it("bumps the token and sets pending without clearing title, description or image", () => {
+    let data = add(empty(), "https://site.com/a", "b1", T0, true).data;
+    data = applyPreview(data, "b1", 1, { title: "Title", description: "Desc", image: "https://cdn.com/i.png" });
+    data = setImage(data, "b1", 1, "/t/b1");
+    const r = refresh(data, "b1", T1, true);
+    expect(r.bookmark).toMatchObject({
+      id: "b1", title: "Title", description: "Desc", image: "/t/b1", imageUrl: "https://cdn.com/i.png",
+      status: "pending", token: 2, savedAt: T0, createdAt: T0
+    });
+    expect(r.data.bookmarks.map((b) => b.id)).toEqual(["b1"]);
+  });
+
+  it("keeps everything and returns the same bookmark when fetching is off", () => {
+    let data = add(empty(), "https://site.com/a", "b1", T0, false).data;
+    data = rename(data, "b1", "Mine");
+    const r = refresh(data, "b1", T1, false);
+    expect(r.bookmark).toMatchObject({ title: "Mine", status: "off", token: 1 });
+    expect(r.data.bookmarks[0].title).toBe("Mine");
+  });
+
+  it("returns null for an unknown id", () => {
+    expect(refresh(empty(), "zz", T1, true)).toBeNull();
+  });
+
+  it("rename sets customTitle and applyPreview keeps that title", () => {
+    let data = add(empty(), "https://site.com/a", "b1", T0, true).data;
+    data = rename(data, "b1", "My title");
+    expect(data.bookmarks[0].customTitle).toBe(true);
+    data = applyPreview(data, "b1", 1, { title: "Page Title", description: "D", image: "" });
+    expect(data.bookmarks[0].title).toBe("My title");
+    expect(data.bookmarks[0].description).toBe("D");
+  });
+
+  it("a duplicate save clears customTitle and replaces as before", () => {
+    let data = add(empty(), "https://site.com/a", "b1", T0, true).data;
+    data = rename(data, "b1", "Mine");
+    const r = add(data, "https://site.com/a", "b9", T1, true);
+    expect(r.replaced).toBe(true);
+    expect(r.bookmark.customTitle).toBeFalsy();
+    expect(r.bookmark.title).toBe("site.com");
+  });
+});
