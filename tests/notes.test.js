@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { titleOf, snippetOf, isBlank, add, update, remove, sorted, search } from "../utils/notes.js";
+import { titleOf, snippetOf, isBlank, add, update, remove, sorted, search, closeAction } from "../utils/notes.js";
 
 const T0 = "2026-10-09T15:00:00.000Z";
 const T1 = "2026-10-09T16:00:00.000Z";
@@ -56,3 +56,15 @@ describe("notes operations", () => {
     expect(remove(data, "a").notes.map((n) => n.id)).toEqual(["b"]);
   });
 });
+
+describe("notes.closeAction", () => {
+  it("discards a note created in this window that ends blank", () => {
+    expect(closeAction(true, "  \n ")).toBe("discard");
+    expect(closeAction(true, "x")).toBe("save");
+  });
+
+  it("never discards a note that existed before the window opened", () => {
+    expect(closeAction(false, "")).toBe("save");
+  });
+});
+

@@ -43,6 +43,12 @@ function isBlank(text) {
   return String(text || "").trim() === "";
 }
 
+// What closing the note window does: a note created in this window that ends
+// blank is discarded (REQ-015); anything else is saved.
+function closeAction(createdHere, text) {
+  return createdHere && isBlank(text) ? "discard" : "save";
+}
+
 function add(data, text, id, nowIso) {
   const note = { id: id, text: String(text || "").trim(), createdAt: nowIso, updatedAt: nowIso };
   return Object.assign({}, data, { notes: data.notes.concat([note]) });

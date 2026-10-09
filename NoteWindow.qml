@@ -18,6 +18,9 @@ PanelWindow {
   property var pluginApi: null
   property var mainInstance: null
   property string noteId: ""      // "" = new note not saved yet
+  // True when this window created the note (autosave of a "New note"), so a note
+  // emptied again before closing is discarded instead of saved blank.
+  property bool createdHere: false
   property bool editing: false
   property string text: ""
   readonly property var note: mainInstance && noteId !== "" ? mainInstance.data.notes.find(n => n.id === noteId) || null : null
@@ -41,7 +44,8 @@ PanelWindow {
 
   function openOn(targetScreen, id) {
     if (visible)
-      save();
+      closeWindow();
+    createdHere = false;
     screen = targetScreen;
     noteId = id;
     const n = id !== "" ? mainInstance.data.notes.find(x => x.id === id) : null;
@@ -60,13 +64,23 @@ PanelWindow {
 
   function save() {
     saveTimer.stop();
+    const wasNew = noteId === "";
     noteId = mainInstance.saveNoteText(noteId, text);
+    if (wasNew && noteId !== "")
+      createdHere = true;
   }
 
   // save=false when the note was just deleted.
   function closeWindow(saveFirst) {
-    if (saveFirst !== false)
+    if (saveFirst !== false) {
+      if (noteId !== "" && Notes.closeAction(createdHere, text) === "discard") {
+        saveTimer.stop();
+        mainInstance.deleteNote(noteId);
+        return;
+      }
       save();
+    }
+    createdHere = false;
     visible = false;
     editing = false;
     noteId = "";
@@ -107,9 +121,11 @@ PanelWindow {
     enabled: root.visible
     onActivated: root.save()
   }
+  // Disabled while the delete bubble is open: its own Esc must only cancel it,
+  // and two Escape shortcuts in one window are ambiguous (neither fires).
   Shortcut {
     sequence: "Escape"
-    enabled: root.visible
+    enabled: root.visible && !noteTrash.asking
     onActivated: root.closeWindow()
   }
 
@@ -179,6 +195,7 @@ PanelWindow {
           onClicked: root.mainInstance.copyText(root.text)
         }
         ConfirmButton {
+          id: noteTrash
           visible: root.noteId !== ""
           icon: "trash"
           tooltipText: root.tr("notes.delete")
