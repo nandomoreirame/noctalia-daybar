@@ -212,7 +212,7 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 
 | ID | Description | Priority | Status |
 |----|-------------|----------|--------|
-| REQ-001 | Capture overlay via IPC, refocus if open | P1 | Pending |
+| REQ-001 | Capture overlay via IPC, refocus if open | P1 | Done |
 | REQ-002 | Clipboard URL prefill | P1 | Pending |
 | REQ-003 | Live type/data preview | P1 | Pending |
 | REQ-004 | Safe calculator | P1 | Pending |
@@ -227,13 +227,13 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 | REQ-013 | Today list and ordering | P1 | Pending |
 | REQ-014 | Toggle, add, delete in Today | P1 | Pending |
 | REQ-015 | Calendar tab | P1 | Pending |
-| REQ-016 | Calendar not configured state | P1 | Pending |
+| REQ-016 | Calendar not configured state | P1 | Done |
 | REQ-017 | Pomodoro timer | P1 | Pending |
 | REQ-018 | Task-linked pomodoro count | P1 | Pending |
 | REQ-019 | Bar widget | P1 | Pending |
 | REQ-020 | Inbox tab | P1 | Pending |
 | REQ-021 | Persistence and recovery | P1 | Pending |
-| REQ-022 | IPC commands | P1 | Pending |
+| REQ-022 | IPC commands | P1 | Done |
 | REQ-023 | Settings | P1 | Pending |
 | REQ-024 | Edit note | P2 | Pending |
 | REQ-025 | Google Tasks sync | P3 | Pending |
