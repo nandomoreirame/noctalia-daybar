@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import { VERSION, createEmpty, parse, serialize, makeId } from "../utils/store.js";
 
 describe("store", () => {
-  it("creates an empty versioned store", () => {
-    expect(createEmpty()).toEqual({ version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [], focusLog: {} });
+  it("creates an empty v2 store", () => {
+    expect(VERSION).toBe(2);
+    expect(createEmpty()).toEqual({ version: 2, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "" } });
   });
 
   it("treats empty or missing text as a fresh store", () => {
@@ -26,13 +27,41 @@ describe("store", () => {
       pomodoros: 0, source: "local", externalId: null, createdAt: null
     }]);
     expect(data.eventChecks).toEqual({});
-    expect(data.links).toEqual([]);
+    expect(data.bookmarks).toEqual([]);
+    expect(data.links).toBeUndefined();
     expect(data.focusLog).toEqual({});
+  });
+
+  it("drops v1 links and notes without migrating them", () => {
+    const { data } = parse(JSON.stringify({ version: 1, links: [{ id: "l", url: "https://x.com" }], notes: [{ id: "n", text: "x" }], tasks: [{ id: "t", title: "keep" }] }));
+    expect(data.bookmarks).toEqual([]);
+    expect(data.notes).toEqual([]);
+    expect(data.tasks.map((t) => t.id)).toEqual(["t"]);
+    expect(data.links).toBeUndefined();
+  });
+
+  it("keeps v2 bookmarks and notes", () => {
+    const b = { id: "b", url: "https://x.com", title: "x.com", description: "", image: "", imageUrl: "", status: "ok", token: 1, createdAt: "t", savedAt: "t" };
+    const n = { id: "n", text: "# hi", createdAt: "t", updatedAt: "t" };
+    const { data } = parse(JSON.stringify({ version: 2, bookmarks: [b], notes: [n] }));
+    expect(data.bookmarks).toEqual([b]);
+    expect(data.notes).toEqual([n]);
+  });
+
+  it("resets a pending bookmark fetch left over from a previous run", () => {
+    const b = { id: "b", url: "https://x.com", title: "x.com", description: "", image: "", imageUrl: "", status: "pending", token: 3, createdAt: "t", savedAt: "t" };
+    expect(parse(JSON.stringify({ version: 2, bookmarks: [b] })).data.bookmarks[0].status).toBe("failed");
   });
 
   it("keeps valid focus log counts and drops junk entries", () => {
     const { data } = parse(JSON.stringify({ focusLog: { "2026-10-09": 3, "2026-10-08": "x", "oops": 2, "2026-10-07": -1 } }));
     expect(data.focusLog).toEqual({ "2026-10-09": 3 });
+  });
+
+  it("keeps a known last tab and drops anything else", () => {
+    expect(parse(JSON.stringify({ ui: { lastTab: "focus" } })).data.ui).toEqual({ lastTab: "focus" });
+    expect(parse(JSON.stringify({ ui: { lastTab: "nope" } })).data.ui).toEqual({ lastTab: "" });
+    expect(parse(JSON.stringify({ ui: "x" })).data.ui).toEqual({ lastTab: "" });
   });
 
   it("round-trips through serialize", () => {

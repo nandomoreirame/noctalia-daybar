@@ -158,7 +158,7 @@ ColumnLayout {
 
   NComboBox {
     label: root.tr("settings.initial-tab")
-    model: ["calendar", "today", "focus", "inbox"].map(k => ({ key: k, name: root.tr("tabs." + k) }))
+    model: ["calendar", "today", "focus", "bookmarks", "notes"].map(k => ({ key: k, name: root.tr("tabs." + k) }))
     currentKey: root.initialTab
     onSelected: key => root.initialTab = key
   }

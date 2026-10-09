@@ -3,7 +3,8 @@
     "calendar": "Calendar",
     "today": "Today",
     "focus": "Focus",
-    "inbox": "Inbox",
+    "bookmarks": "Bookmarks",
+    "notes": "Notes",
     "capture": "Capture"
   },
   "capture": {

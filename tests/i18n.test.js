@@ -23,7 +23,7 @@ const DYNAMIC = [
   ...["task", "event", "reminder", "note", "link", "calculation"].map((t) => "capture.type." + t),
   ...["task", "event", "reminder", "note", "link"].map((t) => "capture.saved." + t),
   ...["today", "tomorrow"].map((d) => "when." + d),
-  ...["calendar", "today", "focus", "inbox"].map((t) => "tabs." + t),
+  ...["calendar", "today", "focus", "bookmarks", "notes"].map((t) => "tabs." + t),
   ...["work", "short", "long"].map((m) => "focus.mode." + m),
   "focus.toast-work-done",
   "focus.toast-break-done",

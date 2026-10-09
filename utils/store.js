@@ -1,12 +1,14 @@
 .pragma library
+.import "tabs.js" as Tabs
 
 // data.json schema, parsing and migration. Pure: file I/O lives in Main.qml.
 // Tasks carry `source`/`externalId` so a future Google Tasks sync can map them.
+// v2: links were replaced by bookmarks; v1 links/notes are dropped (test data).
 
-var VERSION = 1;
+var VERSION = 2;
 
 function createEmpty() {
-  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [], focusLog: {} };
+  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "" } };
 }
 
 function list(value) {
@@ -39,6 +41,16 @@ function normalizeFocusLog(log) {
   return out;
 }
 
+function normalizeUi(ui) {
+  const lastTab = ui && typeof ui === "object" && Tabs.isTab(ui.lastTab) ? ui.lastTab : "";
+  return { lastTab: lastTab };
+}
+
+// A fetch cannot survive a restart; a bookmark still "pending" on load failed.
+function normalizeBookmark(b) {
+  return b && b.status === "pending" ? Object.assign({}, b, { status: "failed" }) : b;
+}
+
 function migrate(raw) {
   const checks = raw.eventChecks;
   return {
@@ -46,9 +58,10 @@ function migrate(raw) {
     tasks: list(raw.tasks).filter((t) => t && t.id !== undefined).map(normalizeTask),
     eventChecks: checks && typeof checks === "object" && !Array.isArray(checks) ? checks : {},
     reminders: list(raw.reminders),
-    links: list(raw.links),
-    notes: list(raw.notes),
-    focusLog: normalizeFocusLog(raw.focusLog)
+    bookmarks: raw.version >= 2 ? list(raw.bookmarks).map(normalizeBookmark) : [],
+    notes: raw.version >= 2 ? list(raw.notes) : [],
+    focusLog: normalizeFocusLog(raw.focusLog),
+    ui: normalizeUi(raw.ui)
   };
 }
 
