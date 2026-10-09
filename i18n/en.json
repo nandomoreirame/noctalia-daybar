@@ -173,6 +173,7 @@
       "title": "Calendar",
       "not-found": "Event not found",
       "ambiguous": "Could not delete: ambiguous event",
+      "read-only": "This calendar is read-only",
       "failed": "Could not delete the event file"
     }
   },

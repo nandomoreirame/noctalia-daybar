@@ -37,7 +37,7 @@ const DYNAMIC = [
   ...["now", "minutes", "hours", "days"].map((u) => "time." + u),
   "bookmarks.saved", "bookmarks.replaced", "notes.untitled",
   "events.confirm-delete", "events.confirm-delete-recurring",
-  ...["not-found", "ambiguous", "failed"].map((e) => "events.error." + e)
+  ...["not-found", "ambiguous", "read-only", "failed"].map((e) => "events.error." + e)
 ];
 
 describe("i18n", () => {

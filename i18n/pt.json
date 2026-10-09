@@ -173,6 +173,7 @@
       "title": "Agenda",
       "not-found": "Evento não encontrado",
       "ambiguous": "Não foi possível excluir: evento ambíguo",
+      "read-only": "Esta agenda é só de leitura",
       "failed": "Não foi possível excluir o arquivo do evento"
     }
   },

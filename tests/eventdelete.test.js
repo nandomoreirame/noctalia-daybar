@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { calendarRoots, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, escapeRegex, findArgs, parsePaths, pickFile, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents } from "../utils/eventdelete.js";
+import { calendarRoots, calendarSections, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, escapeRegex, findArgs, parsePaths, pickFile, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents, eventKey } from "../utils/eventdelete.js";
 
-// Fixture home is /opt/u: a /home/<name> path is rejected by the commit hook.
+// Fixture home is /opt/u: absolute user-home paths are rejected by the commit hook.
 const HOME = "/opt/u";
 
 describe("calendarRoots", () => {
@@ -10,10 +10,40 @@ describe("calendarRoots", () => {
     expect(calendarRoots(config, HOME)).toEqual(["/opt/u/.local/share/calendars/google", "/data/cal/work"]);
   });
 
+  it("expands $HOME/ and ${HOME}/ like ~/, and strips trailing slashes before /*", () => {
+    const config = "path = $HOME/.local/share/calendars/a/*\npath = ${HOME}/.local/share/calendars/b/\npath = /data/cal/c/*/\n";
+    expect(calendarRoots(config, HOME)).toEqual([
+      "/opt/u/.local/share/calendars/a",
+      "/opt/u/.local/share/calendars/b",
+      "/data/cal/c"
+    ]);
+  });
+
   it("drops duplicates and relative paths; empty config gives no roots", () => {
     expect(calendarRoots("path = rel/dir\npath = /a\npath = /a/", HOME)).toEqual(["/a"]);
     expect(calendarRoots("", HOME)).toEqual([]);
     expect(calendarRoots(null, HOME)).toEqual([]);
+  });
+});
+
+describe("calendarSections", () => {
+  it("maps [[name]] sections with type and path", () => {
+    const config = `[calendars]
+[[google]]
+path = ~/.local/share/calendars/google/*
+type = discover
+[[work]]
+path = /data/cal/work/
+type = calendar
+[[birthdays]]
+path = /data/cal/bd/
+type = calendar
+`;
+    expect(calendarSections(config, HOME)).toEqual([
+      { name: "google", path: "/opt/u/.local/share/calendars/google", type: "discover" },
+      { name: "work", path: "/data/cal/work", type: "calendar" },
+      { name: "birthdays", path: "/data/cal/bd", type: "calendar" }
+    ]);
   });
 });
 
@@ -30,9 +60,24 @@ describe("collections", () => {
     ]);
   });
 
-  it("treats virtual and holiday collections as read-only", () => {
+  it("names a type=calendar collection by its section name", () => {
+    const out = "/data/cal/work/displayname:Whatever\n";
+    const sections = [{ name: "work", path: "/data/cal/work", type: "calendar" }, { name: "google", path: "/r/g", type: "discover" }];
+    expect(parseCollections(out, sections)).toEqual([
+      { dir: "/data/cal/work", id: "work", name: "work" }
+    ]);
+    expect(parseCollections("", sections)).toEqual([
+      { dir: "/data/cal/work", id: "work", name: "work" }
+    ]);
+  });
+
+  it("treats virtual, holiday, birthday, import and group calendars as read-only", () => {
     expect(isReadOnlyCollection("e1q2@virtual")).toBe(true);
     expect(isReadOnlyCollection("pt.brazilian#holiday@group.v.calendar.google.com")).toBe(true);
+    expect(isReadOnlyCollection("#contacts@group.v.calendar.google.com")).toBe(true);
+    expect(isReadOnlyCollection("abc#contacts@group.v.calendar.google.com")).toBe(true);
+    expect(isReadOnlyCollection("xyz@import.calendar.google.com")).toBe(true);
+    expect(isReadOnlyCollection("abc@group.v.calendar.google.com")).toBe(true);
     expect(isReadOnlyCollection("me@gmail.com")).toBe(false);
   });
 
@@ -72,9 +117,14 @@ describe("pickFile", () => {
     expect(pickFile([], cols, "Eventos")).toEqual({ ok: false, error: "not-found" });
   });
 
-  it("accepts a single match", () => {
+  it("accepts a single match only when it sits in the event's writable calendar", () => {
     expect(pickFile(["/r/me/1.ics"], cols, "Eventos")).toEqual({ ok: true, path: "/r/me/1.ics" });
-    expect(pickFile(["/r/other/1.ics"], cols, "Eventos")).toEqual({ ok: true, path: "/r/other/1.ics" });
+    expect(pickFile(["/r/other/1.ics"], cols, "Eventos")).toEqual({ ok: false, error: "ambiguous" });
+  });
+
+  it("refuses a single match in a read-only collection", () => {
+    const ro = [{ dir: "/r/hol", id: "h@virtual", name: "Feriados" }];
+    expect(pickFile(["/r/hol/1.ics"], ro, "Feriados")).toEqual({ ok: false, error: "read-only" });
   });
 
   it("picks the copy in the event's calendar when the UID is in several", () => {
@@ -93,6 +143,11 @@ describe("recurrence", () => {
     expect(isRecurring("BEGIN:VEVENT\r\nRECURRENCE-ID;TZID=X:20261010T100000\r\nEND:VEVENT")).toBe(true);
     expect(isRecurring("BEGIN:VEVENT\nDESCRIPTION:no RRULE: here\nEND:VEVENT")).toBe(false);
     expect(isRecurring("")).toBe(false);
+  });
+
+  it("ignores RRULE inside a VTIMEZONE block", () => {
+    const ics = "BEGIN:VCALENDAR\nBEGIN:VTIMEZONE\nTZID:X\nBEGIN:STANDARD\nRRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU\nEND:STANDARD\nEND:VTIMEZONE\nBEGIN:VEVENT\nUID:a\nSUMMARY:Once\nEND:VEVENT\nEND:VCALENDAR";
+    expect(isRecurring(ics)).toBe(false);
   });
 });
 
@@ -120,10 +175,17 @@ describe("data cleanup", () => {
     expect(data.eventChecks["u1|2026-10-09"]).toBe(true);
   });
 
-  it("hides every occurrence of hidden UIDs", () => {
-    const events = [{ uid: "a" }, { uid: "b" }, { uid: "a" }];
-    expect(hideEvents(events, ["a"])).toEqual([{ uid: "b" }]);
+  it("hides only events whose uid AND calendar match", () => {
+    const events = [
+      { uid: "a", calendar: "Work" },
+      { uid: "a", calendar: "Home" },
+      { uid: "b", calendar: "Work" }
+    ];
+    expect(hideEvents(events, [eventKey("a", "Work")])).toEqual([
+      { uid: "a", calendar: "Home" },
+      { uid: "b", calendar: "Work" }
+    ]);
     expect(hideEvents(events, [])).toBe(events);
-    expect(hideEvents(null, ["a"])).toEqual([]);
+    expect(hideEvents(null, [eventKey("a", "Work")])).toEqual([]);
   });
 });
