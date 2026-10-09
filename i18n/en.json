@@ -71,7 +71,9 @@
     "all-day": "all day",
     "previous": "Previous month",
     "next": "Next month",
-    "weekdays": "M T W T F S S"
+    "weekdays": "M T W T F S S",
+    "nothing-day": "Nothing on this day.",
+    "more": "and {n} more"
   },
   "focus": {
     "mode": {

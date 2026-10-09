@@ -29,6 +29,20 @@ function compareTasks(a, b) {
   return String(a.createdAt || "") < String(b.createdAt || "") ? -1 : 1;
 }
 
+function taskItem(t, iso) {
+  return {
+    kind: "task",
+    id: t.id,
+    uid: null,
+    calendar: "",
+    title: t.title,
+    time: t.time,
+    done: t.done,
+    overdue: (t.date || iso) < iso,
+    pomodoros: t.pomodoros
+  };
+}
+
 function taskItems(data, iso) {
   return data.tasks
     .filter((t) => {
@@ -37,17 +51,18 @@ function taskItems(data, iso) {
     })
     .slice()
     .sort(compareTasks)
-    .map((t) => ({
-      kind: "task",
-      id: t.id,
-      uid: null,
-      calendar: "",
-      title: t.title,
-      time: t.time,
-      done: t.done,
-      overdue: (t.date || iso) < iso,
-      pomodoros: t.pomodoros
-    }));
+    .map((t) => taskItem(t, iso));
+}
+
+// Calendar day list for any day: that day's events, then the tasks dated on it
+// (an undated task belongs to today). No overdue carry-over: that is Today's job.
+function dayItems(events, data, iso, todayIso) {
+  const tasks = data.tasks
+    .filter((t) => (t.date || todayIso) === iso)
+    .slice()
+    .sort(compareTasks)
+    .map((t) => Object.assign(taskItem(t, iso), { overdue: false }));
+  return eventItems(events, data, iso).concat(tasks);
 }
 
 function buildToday(events, data, now) {

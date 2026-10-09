@@ -18,6 +18,17 @@ describe("monthGrid", () => {
     expect(grid.filter((c) => c.hasEvents).map((c) => c.date)).toEqual(["2026-10-12"]);
   });
 
+  it("marks days with pending tasks; done tasks and other months do not count", () => {
+    const tasks = [
+      { id: "a", title: "a", date: "2026-10-15", done: false },
+      { id: "b", title: "b", date: "2026-10-16", done: true },
+      { id: "c", title: "c", date: null, done: false }
+    ];
+    const g = monthGrid(2026, 9, NOW, [], tasks);
+    expect(g.filter((c) => c.hasTasks).map((c) => c.date)).toEqual(["2026-10-09", "2026-10-15"]);
+    expect(monthGrid(2026, 9, NOW, []).some((c) => c.hasTasks)).toBe(false);
+  });
+
   it("handles a month starting on Monday", () => {
     expect(monthGrid(2026, 5, NOW, [])[0].date).toBe("2026-06-01");
   });

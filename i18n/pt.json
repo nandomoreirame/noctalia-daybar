@@ -71,7 +71,9 @@
     "all-day": "dia todo",
     "previous": "Mês anterior",
     "next": "Próximo mês",
-    "weekdays": "S T Q Q S S D"
+    "weekdays": "S T Q Q S S D",
+    "nothing-day": "Nada marcado neste dia.",
+    "more": "e mais {n}"
   },
   "focus": {
     "mode": {

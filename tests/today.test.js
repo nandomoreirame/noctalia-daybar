@@ -46,3 +46,24 @@ describe("buildToday", () => {
     expect(items.filter((i) => i.kind === "task").every((i) => i.calendar === "")).toBe(true);
   });
 });
+
+describe("dayItems (Calendar day list)", () => {
+  it("lists the day's events then its tasks; undated tasks belong to today only", async () => {
+    const { dayItems } = await import("../utils/today.js");
+    const at = (d, h) => new Date(2026, 9, d, h).getTime() / 1000;
+    const events = [{ uid: "e1", calendar: "Eventos", summary: "Reunião", start: at(15, 10), end: at(15, 11) }];
+    const data = {
+      eventChecks: {},
+      tasks: [
+        { id: "t1", title: "Com hora", date: "2026-10-15", time: "09:00", done: false, pomodoros: 0, createdAt: "1" },
+        { id: "t2", title: "Dia todo", date: "2026-10-15", time: null, done: true, pomodoros: 0, createdAt: "2" },
+        { id: "t3", title: "Sem data", date: null, time: null, done: false, pomodoros: 0, createdAt: "3" },
+        { id: "t4", title: "Atrasada", date: "2026-10-01", time: null, done: false, pomodoros: 0, createdAt: "4" }
+      ]
+    };
+    const day = dayItems(events, data, "2026-10-15", "2026-10-09");
+    expect(day.map((i) => [i.kind, i.title, i.time])).toEqual([["event", "Reunião", "10:00"], ["task", "Com hora", "09:00"], ["task", "Dia todo", null]]);
+    expect(day.every((i) => i.overdue === false)).toBe(true);
+    expect(dayItems([], data, "2026-10-09", "2026-10-09").map((i) => i.title)).toEqual(["Sem data"]);
+  });
+});

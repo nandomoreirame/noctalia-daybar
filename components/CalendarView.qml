@@ -5,7 +5,7 @@ import qs.Widgets
 import qs.Services.Location
 import "ui"
 import "../utils/month.js" as Month
-import "../utils/events.js" as Events
+import "../utils/today.js" as Today
 
 // Clock + selected day's events on the left, Monday-first month grid on the right.
 Card {
@@ -19,8 +19,18 @@ Card {
   property int year: today.getFullYear()
   property int month: today.getMonth()
   property string selected: Qt.formatDate(today, "yyyy-MM-dd")
-  readonly property var cells: Month.monthGrid(year, month, today, root.mainInstance ? root.mainInstance.visibleEvents : CalendarService.events)
-  readonly property var dayEvents: Events.eventsOn(root.mainInstance ? root.mainInstance.visibleEvents : CalendarService.events, selected)
+  readonly property var events: root.mainInstance ? root.mainInstance.visibleEvents : CalendarService.events
+  readonly property string todayIso: Qt.formatDate(today, "yyyy-MM-dd")
+  readonly property var cells: Month.monthGrid(year, month, today, events, root.mainInstance ? root.mainInstance.data.tasks : [])
+  // Selected day: events, then tasks dated that day. Frozen while a delete bubble
+  // is open so a data commit does not recreate the row under it.
+  readonly property int maxRows: 5
+  property int asking: 0
+  property var frozenDay: []
+  readonly property var liveDay: root.mainInstance ? Today.dayItems(events, root.mainInstance.data, selected, todayIso) : []
+  readonly property var dayItems: asking > 0 ? frozenDay : liveDay
+  onLiveDayChanged: if (asking === 0) frozenDay = liveDay
+  onAskingChanged: if (asking === 0) frozenDay = liveDay
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -78,14 +88,14 @@ Card {
       }
 
       NText {
-        visible: root.mainInstance?.calendarReady && root.dayEvents.length === 0
-        text: root.tr("calendar.nothing")
+        visible: root.dayItems.length === 0
+        text: root.selected === root.todayIso ? root.tr("calendar.nothing") : root.tr("calendar.nothing-day")
         pointSize: Style.fontSizeS
         color: Qt.alpha(Color.mOnSurface, 0.56)
       }
 
       Repeater {
-        model: root.dayEvents
+        model: root.dayItems.slice(0, root.maxRows)
 
         ListRow {
           id: dayRow
@@ -95,21 +105,30 @@ Card {
             text: dayRow.modelData.time || root.tr("calendar.all-day")
             family: Settings.data.ui.fontFixed
             pointSize: Style.fontSizeS
-            color: Qt.alpha(Color.mOnSurface, 0.56)
+            color: dayRow.modelData.time ? Qt.alpha(Color.mOnSurface, 0.56) : Color.mPrimary
+          }
+
+          NIcon {
+            visible: dayRow.modelData.kind === "task"
+            icon: dayRow.modelData.done ? "square-check" : "checkbox"
+            pointSize: Style.fontSizeS
+            color: Qt.alpha(Color.mOnSurface, 0.42)
           }
 
           NText {
             Layout.fillWidth: true
             elide: Text.ElideRight
-            text: dayRow.modelData.summary
+            textFormat: Text.PlainText
+            text: dayRow.modelData.title
             pointSize: Style.fontSizeM
-            color: Color.mOnSurface
+            color: dayRow.modelData.done ? Qt.alpha(Color.mOnSurface, 0.42) : Color.mOnSurface
+            font.strikeout: dayRow.modelData.done
           }
 
           Item {
             implicitWidth: Math.round(24 * Style.uiScaleRatio)
             implicitHeight: implicitWidth
-            visible: root.mainInstance?.canDeleteEvent(dayRow.modelData.calendar) ?? false
+            visible: dayRow.modelData.kind === "event" && (root.mainInstance?.canDeleteEvent(dayRow.modelData.calendar) ?? false)
 
             EventDeleteButton {
               anchors.fill: parent
@@ -118,9 +137,19 @@ Card {
               mainInstance: root.mainInstance
               uid: dayRow.modelData.uid
               calendar: dayRow.modelData.calendar
+              onOpened: root.asking++
+              onClosed: root.asking = Math.max(0, root.asking - 1)
             }
           }
         }
+      }
+
+      NText {
+        visible: root.dayItems.length > root.maxRows
+        Layout.leftMargin: Math.round(6 * Style.uiScaleRatio)
+        text: root.tr("calendar.more").replace("{n}", root.dayItems.length - root.maxRows)
+        pointSize: Style.fontSizeXS
+        color: Qt.alpha(Color.mOnSurface, 0.42)
       }
 
       Item {
@@ -197,7 +226,7 @@ Card {
             }
 
             Rectangle {
-              visible: modelData.hasEvents
+              visible: modelData.hasEvents || modelData.hasTasks
               width: 4
               height: 4
               radius: 2
