@@ -6,13 +6,14 @@
 // Builds the Today checklist:
 //   1. today's calendar events (untimed first, then by time)
 //   2. today's tasks and overdue undone tasks, timed by time, then untimed
-// Item: { kind, id, uid, title, time, done, overdue, pomodoros }
+// Item: { kind, id, uid, calendar, title, time, done, overdue, pomodoros }
 
 function eventItems(events, data, iso) {
   return Events.eventsOn(events, iso).map((ev) => ({
     kind: "event",
     id: Tasks.eventKey(ev.uid, iso),
     uid: ev.uid,
+    calendar: ev.calendar || "",
     title: ev.summary,
     time: ev.time,
     done: !!data.eventChecks[Tasks.eventKey(ev.uid, iso)],
@@ -40,6 +41,7 @@ function taskItems(data, iso) {
       kind: "task",
       id: t.id,
       uid: null,
+      calendar: "",
       title: t.title,
       time: t.time,
       done: t.done,

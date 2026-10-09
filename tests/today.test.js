@@ -18,9 +18,9 @@ describe("buildToday", () => {
   data = toggleEventCheck(data, "e-am", "2026-10-09");
 
   const events = [
-    { uid: "e-pm", summary: "reunião", start: at(14), end: at(15) },
-    { uid: "e-am", summary: "café", start: at(8), end: at(9) },
-    { uid: "e-next", summary: "amanhã", start: at(9, 0, 10), end: at(10, 0, 10) }
+    { uid: "e-pm", summary: "reunião", start: at(14), end: at(15), calendar: "Eventos" },
+    { uid: "e-am", summary: "café", start: at(8), end: at(9), calendar: "Eventos" },
+    { uid: "e-next", summary: "amanhã", start: at(9, 0, 10), end: at(10, 0, 10), calendar: "Eventos" }
   ];
 
   it("orders events by time, then timed tasks, then untimed tasks", () => {
@@ -38,5 +38,11 @@ describe("buildToday", () => {
 
   it("works with no calendar events", () => {
     expect(buildToday(null, createEmpty(), NOW)).toEqual([]);
+  });
+
+  it("carries the calendar name on events and an empty one on tasks", () => {
+    const items = buildToday(events, data, NOW);
+    expect(items.filter((i) => i.kind === "event").map((i) => i.calendar)).toEqual(["Eventos", "Eventos"]);
+    expect(items.filter((i) => i.kind === "task").every((i) => i.calendar === "")).toBe(true);
   });
 });
