@@ -1,0 +1,34 @@
+{
+  "id": "daybar",
+  "name": "Daybar",
+  "version": "0.1.0",
+  "minNoctaliaVersion": "4.0.0",
+  "author": "Fernando Moreira Costa",
+  "license": "MIT",
+  "repository": "https://github.com/nandomoreirame/noctalia-daybar",
+  "description": "Quick capture, today's checklist, Google Calendar and focus timer in one bar toolbar.",
+  "tags": [
+    "Bar",
+    "Productivity"
+  ],
+  "entryPoints": {
+    "main": "Main.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "workDuration": 25,
+      "shortBreakDuration": 5,
+      "longBreakDuration": 15,
+      "sessionsBeforeLongBreak": 4,
+      "autoStartBreaks": false,
+      "autoStartWork": false,
+      "playSound": true,
+      "focusModeCommand": "",
+      "defaultCalendar": "",
+      "initialTab": "today"
+    }
+  }
+}
