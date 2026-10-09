@@ -250,12 +250,11 @@ Item {
     return id;
   }
 
-  // Enabled when NoteWindow.qml exists.
-  // NoteWindow {
-  //   id: noteWindow
-  //   pluginApi: root.pluginApi
-  //   mainInstance: root
-  // }
+  NoteWindow {
+    id: noteWindow
+    pluginApi: root.pluginApi
+    mainInstance: root
+  }
 
 
   // ---------------------------------------------------------------- IPC
