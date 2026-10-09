@@ -13,6 +13,16 @@ PillButton {
   property string okText: "OK"
   property string cancelText: "Cancel"
   signal confirmed
+  // false while the action is being prepared (OK disabled, question can say so).
+  property bool ready: true
+  // True while the bubble is open: parents that show the button on hover keep it
+  // visible, or hiding it would close the bubble under the pointer.
+  readonly property bool asking: bubble.visible
+  signal opened
+
+  function close() {
+    bubble.close();
+  }
 
   danger: true
   onClicked: bubble.open()
@@ -28,7 +38,7 @@ PillButton {
     modal: false
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-    onOpened: cancelButton.forceActiveFocus()
+    onOpened: { cancelButton.forceActiveFocus(); root.opened(); }
 
     background: Rectangle {
       radius: Math.round(12 * Style.uiScaleRatio)
@@ -58,6 +68,7 @@ PillButton {
 
         PillButton {
           primary: true
+          enabled: root.ready
           text: root.okText
           onClicked: {
             bubble.close();
