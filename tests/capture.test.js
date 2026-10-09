@@ -32,7 +32,7 @@ describe("capture handlers", () => {
   it("note and link", () => {
     expect(Note.build("  ideia: app  ")).toEqual({ ok: true, type: "note", action: "addNote", payload: { text: "ideia: app" } });
     expect(Note.build("   ").ok).toBe(false);
-    expect(Link.build("https://a.dev").payload).toEqual({ url: "https://a.dev" });
+    expect(Link.build("https://a.dev")).toEqual({ ok: true, type: "link", action: "addBookmark", payload: { url: "https://a.dev" } });
     expect(Link.build("a.dev")).toEqual({ ok: false, type: "link", error: "invalid-url" });
   });
 
