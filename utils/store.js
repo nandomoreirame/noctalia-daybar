@@ -1,0 +1,67 @@
+.pragma library
+
+// data.json schema, parsing and migration. Pure: file I/O lives in Main.qml.
+// Tasks carry `source`/`externalId` so a future Google Tasks sync can map them.
+
+var VERSION = 1;
+
+function createEmpty() {
+  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], links: [], notes: [] };
+}
+
+function list(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeTask(t) {
+  return {
+    id: String(t.id),
+    title: String(t.title || ""),
+    date: t.date || null,
+    time: t.time || null,
+    done: !!t.done,
+    doneAt: t.doneAt || null,
+    pomodoros: Number(t.pomodoros) || 0,
+    source: t.source || "local",
+    externalId: t.externalId || null,
+    createdAt: t.createdAt || null
+  };
+}
+
+function migrate(raw) {
+  const checks = raw.eventChecks;
+  return {
+    version: VERSION,
+    tasks: list(raw.tasks).filter((t) => t && t.id !== undefined).map(normalizeTask),
+    eventChecks: checks && typeof checks === "object" && !Array.isArray(checks) ? checks : {},
+    reminders: list(raw.reminders),
+    links: list(raw.links),
+    notes: list(raw.notes)
+  };
+}
+
+// Returns { data, corrupt }. Empty/missing text is a fresh store, not corruption.
+function parse(text) {
+  if (text === null || text === undefined || String(text).trim() === "") {
+    return { data: createEmpty(), corrupt: false };
+  }
+  let raw;
+  try {
+    raw = JSON.parse(text);
+  } catch (e) {
+    return { data: createEmpty(), corrupt: true };
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { data: createEmpty(), corrupt: true };
+  }
+  return { data: migrate(raw), corrupt: false };
+}
+
+function serialize(data) {
+  return JSON.stringify(data, null, 2) + "\n";
+}
+
+// Collision-resistant id: time base36 + random base36. `rand` is injectable for tests.
+function makeId(nowMs, rand) {
+  return nowMs.toString(36) + "-" + Math.floor(rand * 1e9).toString(36);
+}
