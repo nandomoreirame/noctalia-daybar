@@ -19,6 +19,7 @@ import "utils/pomodoro.js" as Pomodoro
 import "utils/writequeue.js" as WriteQueue
 import "utils/focuslog.js" as FocusLog
 import "utils/dates.js" as Dates
+import "utils/eventdelete.js" as EventDelete
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
 // the capture overlay. UI files only read state from here and call these functions.
@@ -296,6 +297,105 @@ Item {
     stdout: StdioCollector {
       onStreamFinished: root.calendars = Khal.parseCalendars(text)
     }
+  }
+
+  readonly property string khalConfigPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/khal/config"
+  property var calendarRootsList: []
+  property var collections: []
+  property var hiddenEventUids: []
+  // CalendarService.events without the events deleted in this session (until reload).
+  readonly property var visibleEvents: EventDelete.hideEvents(CalendarService.events, hiddenEventUids)
+
+  function canDeleteEvent(calendarName) {
+    return calendarReady && EventDelete.isWritableCalendar(collections, calendarName);
+  }
+
+  Process {
+    id: khalConfigProcess
+    command: EventDelete.readArgs(root.khalConfigPath)
+    running: root.calendarReady
+    stdout: StdioCollector {
+      onStreamFinished: {
+        root.calendarRootsList = EventDelete.calendarRoots(text, Quickshell.env("HOME"));
+        if (root.calendarRootsList.length > 0) {
+          collectionsProcess.command = EventDelete.collectionsArgs(root.calendarRootsList);
+          collectionsProcess.running = true;
+        }
+      }
+    }
+  }
+
+  Process {
+    id: collectionsProcess
+    stdout: StdioCollector {
+      onStreamFinished: root.collections = EventDelete.parseCollections(text)
+    }
+  }
+
+  Component {
+    id: eventLookup
+    Process {
+      property var done: null
+      stdout: StdioCollector {
+        id: lookupOut
+      }
+      onExited: {
+        done(lookupOut.text);
+        destroy();
+      }
+    }
+  }
+
+  function runOnce(command, done) {
+    const p = eventLookup.createObject(root, { command: command, done: done });
+    p.running = true;
+  }
+
+  // done({ ok, path, recurring } | { ok: false, error })
+  function resolveEvent(uid, calendarName, done) {
+    if (calendarRootsList.length === 0)
+      return done({ ok: false, error: "not-found" });
+    runOnce(EventDelete.findArgs(uid, calendarRootsList), function (out) {
+      const pick = EventDelete.pickFile(EventDelete.parsePaths(out), root.collections, calendarName);
+      if (!pick.ok) {
+        if (pick.error === "not-found")
+          CalendarService.loadEvents();
+        return done(pick);
+      }
+      runOnce(EventDelete.readArgs(pick.path), function (ics) {
+        done({ ok: true, path: pick.path, recurring: EventDelete.isRecurring(ics) });
+      });
+    });
+  }
+
+  Component {
+    id: eventRemover
+    Process {
+      property string uid: ""
+      onExited: function (exitCode) {
+        root.onEventFileRemoved(uid, exitCode === 0);
+        destroy();
+      }
+    }
+  }
+
+  function deleteEvent(uid, path) {
+    if (!EventDelete.isDeletablePath(path, calendarRootsList)) {
+      ToastService.showWarning(pluginApi?.tr("events.error.title"), pluginApi?.tr("events.error.failed"));
+      return;
+    }
+    const p = eventRemover.createObject(root, { uid: uid, command: EventDelete.deleteArgs(path) });
+    p.running = true;
+  }
+
+  function onEventFileRemoved(uid, ok) {
+    if (!ok) {
+      ToastService.showWarning(pluginApi?.tr("events.error.title"), pluginApi?.tr("events.error.failed"));
+      return;
+    }
+    hiddenEventUids = hiddenEventUids.concat([uid]);
+    commit(EventDelete.removeEventChecks(data, uid));
+    requestSync();
   }
 
   function enqueueEvent(payload, done) {
