@@ -109,10 +109,11 @@ Card {
           Item {
             implicitWidth: Math.round(24 * Style.uiScaleRatio)
             implicitHeight: implicitWidth
+            visible: root.mainInstance?.canDeleteEvent(dayRow.modelData.calendar) ?? false
 
             EventDeleteButton {
               anchors.fill: parent
-              visible: (dayRow.hovered || activeFocus || asking) && (root.mainInstance?.canDeleteEvent(dayRow.modelData.calendar) ?? false)
+              opacity: dayRow.hovered || dayRow.focusInside || asking ? 1 : 0
               pluginApi: root.pluginApi
               mainInstance: root.mainInstance
               uid: dayRow.modelData.uid

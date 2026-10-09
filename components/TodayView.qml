@@ -15,7 +15,14 @@ Card {
   property var pluginApi: null
   property var mainInstance: null
   property date now: new Date()
-  readonly property var items: mainInstance ? Today.buildToday(mainInstance.visibleEvents, mainInstance.data, now) : []
+  // Freeze the list while a delete bubble is open so the Repeater does not
+  // destroy the delegate under the Popup.
+  property int asking: 0
+  property var frozenItems: []
+  readonly property var liveItems: mainInstance ? Today.buildToday(mainInstance.visibleEvents, mainInstance.data, now) : []
+  readonly property var items: asking > 0 ? frozenItems : liveItems
+  onLiveItemsChanged: if (asking === 0) frozenItems = liveItems
+  onAskingChanged: if (asking === 0) frozenItems = liveItems
   readonly property int doneCount: items.filter(i => i.done).length
   // Id of the task whose title is being edited in place, or "".
   property string editingId: ""
@@ -236,16 +243,18 @@ Card {
             Item {
               implicitWidth: Math.round(24 * Style.uiScaleRatio)
               implicitHeight: implicitWidth
-              visible: row.modelData.kind === "event"
+              visible: row.modelData.kind === "event" && (root.mainInstance?.canDeleteEvent(row.modelData.calendar) ?? false)
 
               EventDeleteButton {
                 id: eventTrash
                 anchors.fill: parent
-                visible: (row.hovered || activeFocus || asking) && (root.mainInstance?.canDeleteEvent(row.modelData.calendar) ?? false)
+                opacity: row.hovered || row.focusInside || asking ? 1 : 0
                 pluginApi: root.pluginApi
                 mainInstance: root.mainInstance
                 uid: row.modelData.uid
                 calendar: row.modelData.calendar
+                onOpened: root.asking++
+                onClosed: root.asking = Math.max(0, root.asking - 1)
               }
             }
           }

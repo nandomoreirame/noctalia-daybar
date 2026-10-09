@@ -20,6 +20,7 @@ PillButton {
   // visible, or hiding it would close the bubble under the pointer.
   readonly property bool asking: bubble.visible
   signal opened
+  signal closed
 
   function close() {
     bubble.close();
@@ -47,6 +48,7 @@ PillButton {
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     onOpened: { cancelButton.forceActiveFocus(); root.opened(); }
+    onClosed: root.closed()
 
     background: Rectangle {
       radius: Math.round(12 * Style.uiScaleRatio)

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Window
 import qs.Commons
 import qs.Widgets
 import "ui"
@@ -17,8 +16,13 @@ Card {
   property var mainInstance: null
   property string query: ""
   property date now: new Date()
+  property int asking: 0
+  property var frozenItems: []
   readonly property var all: mainInstance ? Notes.sorted(mainInstance.data.notes) : []
-  readonly property var items: Notes.search(all, query)
+  readonly property var liveItems: Notes.search(all, query)
+  readonly property var items: asking > 0 ? frozenItems : liveItems
+  onLiveItemsChanged: if (asking === 0) frozenItems = liveItems
+  onAskingChanged: if (asking === 0) frozenItems = liveItems
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -26,7 +30,8 @@ Card {
 
   function when(iso) {
     const r = Format.relativeTime(iso, now);
-    return r.unit === "date" ? r.date : tr("time." + r.unit).replace("{n}", r.n);
+    const k = Format.relativeKey(r);
+    return k.key === "" ? k.date : tr(k.key).replace("{n}", k.n);
   }
 
   Timer {
@@ -136,17 +141,8 @@ Card {
             // Never disabled: disabled buttons can't take Tab focus or answer the bubble.
             RowLayout {
               id: actions
-              readonly property bool focusInside: {
-                let f = Window.activeFocusItem;
-                while (f) {
-                  if (f === actions)
-                    return true;
-                  f = f.parent;
-                }
-                return false;
-              }
               spacing: Math.round(2 * Style.uiScaleRatio)
-              opacity: row.hovered || focusInside || noteTrash.asking ? 1 : 0
+              opacity: row.hovered || row.focusInside || noteTrash.asking ? 1 : 0
 
               PillButton {
                 icon: "copy"
@@ -161,6 +157,8 @@ Card {
                 okText: root.tr("confirm.ok")
                 cancelText: root.tr("confirm.cancel")
                 onConfirmed: root.mainInstance.deleteNote(row.modelData.id)
+                onOpened: root.asking++
+                onClosed: root.asking = Math.max(0, root.asking - 1)
               }
             }
 

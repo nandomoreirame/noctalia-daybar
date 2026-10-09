@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Window
 import qs.Commons
 import qs.Widgets
 import "ui"
@@ -19,8 +18,13 @@ Card {
   property string query: ""
   property string editingId: ""
   property string feedback: ""
+  property int asking: 0
+  property var frozenItems: []
   readonly property var all: mainInstance ? Bookmarks.sorted(mainInstance.data.bookmarks) : []
-  readonly property var items: Bookmarks.search(all, query)
+  readonly property var liveItems: Bookmarks.search(all, query)
+  readonly property var items: asking > 0 ? frozenItems : liveItems
+  onLiveItemsChanged: if (asking === 0) frozenItems = liveItems
+  onAskingChanged: if (asking === 0) frozenItems = liveItems
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -167,17 +171,8 @@ Card {
             // Never disabled: disabled buttons can't take Tab focus or answer the bubble.
             RowLayout {
               id: actions
-              readonly property bool focusInside: {
-                let f = Window.activeFocusItem;
-                while (f) {
-                  if (f === actions)
-                    return true;
-                  f = f.parent;
-                }
-                return false;
-              }
               spacing: Math.round(2 * Style.uiScaleRatio)
-              opacity: row.hovered || focusInside || bookmarkTrash.asking ? 1 : 0
+              opacity: row.hovered || row.focusInside || bookmarkTrash.asking ? 1 : 0
 
               PillButton {
                 icon: "copy"
@@ -203,6 +198,8 @@ Card {
                 okText: root.tr("confirm.ok")
                 cancelText: root.tr("confirm.cancel")
                 onConfirmed: root.mainInstance.deleteBookmark(row.modelData.id)
+                onOpened: root.asking++
+                onClosed: root.asking = Math.max(0, root.asking - 1)
               }
             }
 
