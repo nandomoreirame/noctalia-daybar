@@ -1,3 +1,4 @@
 node_modules/
 *.qmlc
 *.jsc
+settings.json
