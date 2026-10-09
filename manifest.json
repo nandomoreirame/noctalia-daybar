@@ -12,7 +12,8 @@
     "Productivity"
   ],
   "entryPoints": {
-    "main": "Main.qml"
+    "main": "Main.qml",
+    "panel": "Panel.qml"
   },
   "dependencies": {
     "plugins": []
