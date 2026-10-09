@@ -21,6 +21,9 @@ PanelWindow {
   property bool busy: false
   property string feedback: ""
   property bool feedbackIsError: false
+  // Bumped on every open and close, so a slow khal write can tell whether the
+  // overlay it was started from is still the one on screen.
+  property int session: 0
 
   anchors.top: true
   anchors.left: true
@@ -44,6 +47,7 @@ PanelWindow {
       return;
     }
     screen = targetScreen;
+    session += 1;
     forcedType = "";
     busy = false;
     field.text = "";
@@ -63,6 +67,7 @@ PanelWindow {
 
   function close() {
     visible = false;
+    session += 1;
     field.text = "";
   }
 
@@ -110,7 +115,18 @@ PanelWindow {
       return;
     }
     busy = true;
+    const startedIn = session;
+    const typedText = field.text;
     mainInstance.executeCapture(r, function (ok, error) {
+      if (startedIn !== root.session) {
+        // The overlay was closed or reopened meanwhile: report through a toast
+        // and leave the current field alone.
+        if (ok)
+          ToastService.showNotice(tr("capture.saved." + r.type), previewText(r), "check");
+        else
+          ToastService.showWarning(tr("capture.failed-title"), tr("capture.error." + error) + "\n" + typedText);
+        return;
+      }
       busy = false;
       if (!ok) {
         feedback = tr("capture.error." + error);
