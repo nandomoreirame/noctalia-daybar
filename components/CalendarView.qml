@@ -8,7 +8,7 @@ import "../utils/month.js" as Month
 import "../utils/events.js" as Events
 
 // Clock + selected day's events on the left, Monday-first month grid on the right.
-NBox {
+Card {
   id: root
 
   property var pluginApi: null
@@ -46,8 +46,8 @@ NBox {
 
   RowLayout {
     anchors.fill: parent
-    anchors.margins: Style.marginM
-    spacing: Style.marginL
+    anchors.margins: Math.round(14 * Style.uiScaleRatio)
+    spacing: Math.round(18 * Style.uiScaleRatio)
 
     ColumnLayout {
       Layout.preferredWidth: parent.width * 0.38
@@ -56,14 +56,16 @@ NBox {
 
       NText {
         text: Qt.formatTime(root.now, "HH:mm")
-        pointSize: Style.fontSizeXXL * 1.6
+        family: Settings.data.ui.fontFixed
+        pointSize: Style.fontSizeXXXL * 1.6
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
       }
 
       NText {
         text: root.now.toLocaleDateString(Qt.locale(), "dddd, d MMMM")
-        color: Color.mOnSurfaceVariant
+        pointSize: Style.fontSizeS
+        color: Qt.alpha(Color.mOnSurface, 0.56)
       }
 
       NText {
@@ -71,13 +73,15 @@ NBox {
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
         text: root.tr("calendar.not-configured")
+        pointSize: Style.fontSizeS
         color: Color.mError
       }
 
       NText {
         visible: root.mainInstance?.calendarReady && root.dayEvents.length === 0
         text: root.tr("calendar.nothing")
-        color: Color.mOnSurfaceVariant
+        pointSize: Style.fontSizeS
+        color: Qt.alpha(Color.mOnSurface, 0.56)
       }
 
       Repeater {
@@ -90,13 +94,15 @@ NBox {
           NText {
             text: dayRow.modelData.time || root.tr("calendar.all-day")
             family: Settings.data.ui.fontFixed
-            color: Color.mPrimary
+            pointSize: Style.fontSizeS
+            color: Qt.alpha(Color.mOnSurface, 0.56)
           }
 
           NText {
             Layout.fillWidth: true
             elide: Text.ElideRight
             text: dayRow.modelData.summary
+            pointSize: Style.fontSizeM
             color: Color.mOnSurface
           }
 
@@ -132,20 +138,19 @@ NBox {
         NText {
           Layout.fillWidth: true
           text: new Date(root.year, root.month, 1).toLocaleDateString(Qt.locale(), "MMMM yyyy")
-          font.weight: Style.fontWeightBold
+          pointSize: Style.fontSizeL
+          font.weight: Style.fontWeightSemiBold
           color: Color.mOnSurface
         }
 
-        NIconButton {
+        PillButton {
           icon: "chevron-left"
-          baseSize: Style.baseWidgetSize * 0.7
           tooltipText: root.tr("calendar.previous")
           onClicked: root.shift(-1)
         }
 
-        NIconButton {
+        PillButton {
           icon: "chevron-right"
-          baseSize: Style.baseWidgetSize * 0.7
           tooltipText: root.tr("calendar.next")
           onClicked: root.shift(1)
         }
@@ -167,7 +172,7 @@ NBox {
             horizontalAlignment: Text.AlignHCenter
             text: modelData
             pointSize: Style.fontSizeXS
-            color: Color.mOnSurfaceVariant
+            color: Qt.alpha(Color.mOnSurface, 0.42)
           }
         }
 
@@ -178,14 +183,16 @@ NBox {
             required property var modelData
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: Style.radiusS
-            color: modelData.date === root.selected ? Color.mPrimary : (modelData.today ? Color.mHover : "transparent")
+            radius: height / 2
+            color: modelData.date === root.selected ? Color.mOnSurface : (modelData.today ? Qt.alpha(Color.mOnSurface, 0.1) : (cellMouse.containsMouse ? Qt.alpha(Color.mOnSurface, 0.05) : "transparent"))
 
             NText {
               anchors.centerIn: parent
               text: modelData.day
-              color: modelData.date === root.selected ? Color.mOnPrimary : (modelData.inMonth ? Color.mOnSurface : Color.mOnSurfaceVariant)
-              opacity: modelData.inMonth ? 1 : 0.5
+              pointSize: Style.fontSizeS
+              font.weight: modelData.today || modelData.date === root.selected ? Style.fontWeightSemiBold : Style.fontWeightRegular
+              color: modelData.date === root.selected ? Color.mSurface : Color.mOnSurface
+              opacity: modelData.inMonth ? 1 : 0.35
             }
 
             Rectangle {
@@ -196,11 +203,13 @@ NBox {
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               anchors.bottomMargin: 2
-              color: modelData.date === root.selected ? Color.mOnPrimary : Color.mPrimary
+              color: modelData.date === root.selected ? Color.mSurface : Color.mPrimary
             }
 
             MouseArea {
+              id: cellMouse
               anchors.fill: parent
+              hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: root.selected = modelData.date
             }
