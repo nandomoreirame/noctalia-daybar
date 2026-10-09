@@ -150,6 +150,18 @@
     "ok": "OK",
     "cancel": "Cancel"
   },
+  "events": {
+    "delete": "Delete event",
+    "locating": "Locating event...",
+    "confirm-delete": "Delete this event?",
+    "confirm-delete-recurring": "This event repeats. Delete all occurrences?",
+    "error": {
+      "title": "Calendar",
+      "not-found": "Event not found",
+      "ambiguous": "Could not delete: ambiguous event",
+      "failed": "Could not delete the event file"
+    }
+  },
   "time": {
     "now": "now",
     "minutes": "{n} min ago",

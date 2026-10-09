@@ -34,7 +34,9 @@ const DYNAMIC = [
   "settings.sessions",
   "settings.daily-goal",
   ...["now", "minutes", "hours", "days"].map((u) => "time." + u),
-  "bookmarks.saved", "bookmarks.replaced", "notes.untitled"
+  "bookmarks.saved", "bookmarks.replaced", "notes.untitled",
+  "events.confirm-delete", "events.confirm-delete-recurring",
+  ...["not-found", "ambiguous", "failed"].map((e) => "events.error." + e)
 ];
 
 describe("i18n", () => {
