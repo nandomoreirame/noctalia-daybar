@@ -7,7 +7,12 @@ import qs.Services.System
 import qs.Services.Location
 import "utils/store.js" as Store
 import "utils/tasks.js" as Tasks
-import "utils/inbox.js" as Inbox
+import "utils/url.js" as Url
+import "utils/bookmarks.js" as Bookmarks
+import "utils/notes.js" as Notes
+import "utils/pagemeta.js" as PageMeta
+import "utils/fetch.js" as Fetch
+import "utils/fetchpool.js" as FetchPool
 import "utils/reminders.js" as Reminders
 import "utils/khal.js" as Khal
 import "utils/pomodoro.js" as Pomodoro
@@ -102,19 +107,156 @@ Item {
   function toggleTask(id) { commit(Tasks.toggleTask(data, id, nowIso())); }
   function deleteTask(id) { commit(Tasks.deleteTask(data, id)); }
   function toggleEvent(uid, date) { commit(Tasks.toggleEventCheck(data, uid, date)); }
-  function addLink(url) { commit(Inbox.addLink(data, url, newId(), nowIso())); }
-  function archiveLink(id) { commit(Inbox.archiveLink(data, id)); }
-  function addNote(text) { commit(Inbox.addNote(data, text, newId(), nowIso())); }
-  function deleteNote(id) { commit(Inbox.deleteNote(data, id)); }
+  // ---------------------------------------------------------------- bookmarks
+
+  readonly property string thumbsDir: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/noctalia-daybar/thumbs"
+  readonly property bool fetchPreviews: setting("fetchPreviews") !== false
+  property var fetchPool: FetchPool.createPool(3)
+
+  Process {
+    command: ["mkdir", "-p", root.thumbsDir]
+    running: true
+  }
+
+  onFetchPreviewsChanged: if (!fetchPreviews) fetchPool = FetchPool.clearQueue(fetchPool)
+
+  // Returns "saved", "replaced" or "invalid".
+  function addBookmark(url) {
+    const r = Bookmarks.add(data, url, newId(), nowIso(), fetchPreviews);
+    if (!r)
+      return "invalid";
+    commit(r.data);
+    if (fetchPreviews)
+      requestPreview(r.bookmark);
+    return r.replaced ? "replaced" : "saved";
+  }
+
+  function refreshBookmark(id) {
+    const b = data.bookmarks.find(x => x.id === id);
+    if (b)
+      addBookmark(b.url);
+  }
+
+  function renameBookmark(id, title) { commit(Bookmarks.rename(data, id, title)); }
+
+  function deleteBookmark(id) {
+    const path = Fetch.thumbPath(thumbsDir, id);
+    commit(Bookmarks.remove(data, id));
+    if (path)
+      Quickshell.execDetached(Fetch.removeArgs(path));
+  }
+
+  function requestPreview(bookmark) {
+    const r = FetchPool.request(fetchPool, { id: bookmark.id, token: bookmark.token, url: bookmark.url });
+    fetchPool = r.pool;
+    r.start.forEach(startPreview);
+  }
+
+  function finishPreview(id) {
+    const r = FetchPool.finish(fetchPool, id);
+    fetchPool = r.pool;
+    r.start.forEach(startPreview);
+  }
+
+  Component {
+    id: pageFetcher
+    Process {
+      property var job: null
+      stdout: StdioCollector {
+        id: pageOut
+      }
+      onExited: function (exitCode) {
+        root.onPageFetched(job, exitCode, pageOut.text);
+        destroy();
+      }
+    }
+  }
+
+  Component {
+    id: imageFetcher
+    Process {
+      property var job: null
+      property string path: ""
+      onExited: function (exitCode) {
+        // Keep the file only if the bookmark still exists with this token
+        // (it may have been deleted or re-saved while downloading).
+        const current = root.data.bookmarks.some(b => b.id === job.id && b.token === job.token);
+        if (exitCode === 0 && current)
+          root.commit(Bookmarks.setImage(root.data, job.id, job.token, path));
+        else if (!root.data.bookmarks.some(b => b.id === job.id))
+          Quickshell.execDetached(Fetch.removeArgs(path));
+        root.finishPreview(job.id);
+        destroy();
+      }
+    }
+  }
+
+  function startPreview(job) {
+    const p = pageFetcher.createObject(root, { job: job, command: Fetch.pageArgs(job.url) });
+    p.running = true;
+  }
+
+  function onPageFetched(job, exitCode, html) {
+    const meta = Fetch.isUsableExit(exitCode) ? PageMeta.parse(html, job.url) : null;
+    if (!meta || (!meta.title && !meta.description && !meta.image)) {
+      commit(Bookmarks.markFailed(data, job.id, job.token));
+      finishPreview(job.id);
+      return;
+    }
+    commit(Bookmarks.applyPreview(data, job.id, job.token, meta));
+    const path = Fetch.thumbPath(thumbsDir, job.id);
+    const current = data.bookmarks.find(b => b.id === job.id);
+    if (!meta.image || !path || !current || current.token !== job.token) {
+      finishPreview(job.id);
+      return;
+    }
+    const img = imageFetcher.createObject(root, { job: job, path: path, command: Fetch.imageArgs(meta.image, path) });
+    img.running = true;
+  }
 
   function copyText(text) {
     Quickshell.execDetached(["wl-copy", "--", String(text)]);
   }
 
   function openUrl(url) {
-    if (Inbox.isHttpUrl(url))
+    if (Url.isHttpUrl(url))
       Quickshell.execDetached(["xdg-open", url]);
   }
+
+  // ---------------------------------------------------------------- notes
+
+  function addNote(text) { commit(Notes.add(data, text, newId(), nowIso())); }
+  function updateNote(id, text) { commit(Notes.update(data, id, text, nowIso())); }
+  function deleteNote(id) {
+    commit(Notes.remove(data, id));
+    if (noteWindow.noteId === id)
+      noteWindow.closeWindow(false);
+  }
+
+  // New notes are created on first non-blank save, so an untouched one leaves nothing behind.
+  function openNote(id) { pluginApi?.withCurrentScreen(screen => noteWindow.openOn(screen, id)); }
+  function newNote() { pluginApi?.withCurrentScreen(screen => noteWindow.openOn(screen, "")); }
+
+  // Called by the note window: creates the note on first save when it is new.
+  function saveNoteText(id, text) {
+    if (id === "") {
+      if (Notes.isBlank(text))
+        return "";
+      const newIdValue = newId();
+      commit(Notes.add(data, text, newIdValue, nowIso()));
+      return newIdValue;
+    }
+    updateNote(id, text);
+    return id;
+  }
+
+  // Enabled when NoteWindow.qml exists.
+  // NoteWindow {
+  //   id: noteWindow
+  //   pluginApi: root.pluginApi
+  //   mainInstance: root
+  // }
+
 
   // ---------------------------------------------------------------- IPC
 
@@ -265,9 +407,9 @@ Item {
     } else if (result.action === "addNote") {
       addNote(p.text);
       done(true, "");
-    } else if (result.action === "addLink") {
-      addLink(p.url);
-      done(true, "");
+    } else if (result.action === "addBookmark") {
+      const outcome = addBookmark(p.url);
+      done(outcome !== "invalid", outcome === "invalid" ? "invalid-url" : "");
     } else if (result.action === "createEvent") {
       if (!calendarReady)
         return done(false, "calendar-not-configured");
@@ -299,7 +441,7 @@ Item {
     command: ["wl-paste", "--no-newline", "--type", "text"]
     stdout: StdioCollector {
       onStreamFinished: {
-        const url = Inbox.prefillFromClipboard(text, root.data);
+        const url = Bookmarks.prefillFromClipboard(text, root.data);
         if (url)
           captureWindow.prefill(url);
       }
