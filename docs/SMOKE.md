@@ -32,3 +32,26 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 | 24 | REQ-022 | `qs -c noctalia-shell ipc call plugin:daybar open focus` | Toolbar opens on Foco |
 | 25 | REQ-023 | Settings: change durations, default calendar, initial tab | Values persist and apply |
 | 26 | REQ-021 | Write `{oops` into data.json, reload | Toast about unreadable data; `data.json.bak` exists |
+## Bookmarks and Notes
+
+| # | REQ | Step | Expected |
+|---|-----|------|----------|
+| 27 | BN-REQ-001 | Open the toolbar | Five tabs; Bookmarks and Notes after Focus |
+| 28 | BN-REQ-002 | Start with a v1 `data.json` holding links/notes | `version: 2`, no links/notes |
+| 29 | BN-REQ-003 | Capture `https://github.com` | Row appears at once with `github.com` |
+| 30 | BN-REQ-004 | Capture `https://github.com/?utm_source=x` | Same row moves to top, refetched |
+| 31 | BN-REQ-005 | Wait a few seconds | Title and description from the page |
+| 32 | BN-REQ-006 | `ls ~/.cache/noctalia-daybar/thumbs/` | File named after the bookmark id |
+| 33 | BN-REQ-007 | Capture `https://nonexistent.invalid` | Domain title, no toast, refresh on hover |
+| 34 | BN-REQ-008 | Look at a row; click it | Thumbnail, title, 2-line description, domain · date; browser opens |
+| 35 | BN-REQ-009 | Hover: copy, refresh, rename | Clipboard has URL; spinner; Enter saves title |
+| 36 | BN-REQ-010 | Search `acao` with a title "Ação" | Row stays; others hidden |
+| 37 | BN-REQ-011 | Open Notes | Title, snippet, "há N min", newest edit first |
+| 38 | BN-REQ-012 | Click a note | Large centered window, rendered Markdown |
+| 39 | BN-REQ-013 | Ctrl+E twice; double-click text | Editor (monospace) then preview; double-click edits |
+| 40 | BN-REQ-014 | Type, wait 1 s, `cat data.json` | Text saved; Ctrl+S saves at once; Esc closes |
+| 41 | BN-REQ-015 | New note, close without typing | No new note in data.json |
+| 42 | BN-REQ-016 | Note with `![x](https://example.com/a.png)` and `[js](javascript:alert(1))` | Image shown as a link; js link does nothing |
+| 43 | BN-REQ-017 | Capture `/n uma ideia` | Note "uma ideia" in Notes |
+| 44 | BN-REQ-018 | Delete a note and a bookmark | Bubble with OK/Cancel; Esc cancels; OK deletes and removes the thumbnail |
+| 45 | BN-REQ-019 | Turn "Fetch link previews" off, capture a link | Domain title only; no curl process |

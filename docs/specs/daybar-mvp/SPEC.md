@@ -87,7 +87,7 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 
 **Inbox**
 
-20. **[REQ-020]** WHEN the Inbox tab is shown THEN the system SHALL list links (open via `xdg-open`, archive) and notes (view, copy, delete).
+20. **[REQ-020]** WHEN the Inbox tab is shown THEN the system SHALL list links (open via `xdg-open`, archive) and notes (view, copy, delete). Superseded by `docs/specs/inbox-bookmarks-notes/SPEC.md`.
 
 **Infrastructure**
 
@@ -97,7 +97,7 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 
 ### P2 (Should Have)
 
-24. **[REQ-024]** WHEN the user edits a note in the Inbox THEN the system SHALL save the new content.
+24. **[REQ-024]** WHEN the user edits a note in the Inbox THEN the system SHALL save the new content. Superseded by `docs/specs/inbox-bookmarks-notes/SPEC.md`.
 
 ### P3 (Nice to Have)
 
@@ -231,10 +231,10 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 | REQ-017 | Pomodoro timer | P1 | Pending |
 | REQ-018 | Task-linked pomodoro count | P1 | Pending |
 | REQ-019 | Bar widget | P1 | Pending |
-| REQ-020 | Inbox tab | P1 | Pending |
+| REQ-020 | Inbox tab | P1 | Superseded |
 | REQ-021 | Persistence and recovery | P1 | Pending |
 | REQ-022 | IPC commands | P1 | Done |
 | REQ-023 | Settings | P1 | Pending |
-| REQ-024 | Edit note | P2 | Pending |
+| REQ-024 | Edit note | P2 | Superseded |
 | REQ-025 | Google Tasks sync | P3 | Pending |
 | REQ-026 | Configurable calendar window | P3 | Pending |

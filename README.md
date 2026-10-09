@@ -2,7 +2,7 @@
 
 A [Noctalia Shell](https://github.com/noctalia-dev/noctalia) plugin for the day:
 a centered quick-capture field and a bar toolbar with Calendar (Google Calendar),
-Today, Focus (pomodoro) and Inbox.
+Today, Focus (pomodoro), Bookmarks and Notes.
 
 ## Capture
 
@@ -13,12 +13,30 @@ Open it with a shortcut (see [niri binding](#shortcuts)) and type:
 | `comprar pão amanhã 9h` | task for tomorrow 09:00 (no date = today) |
 | `/e reunião sexta 15h-16h` | Google Calendar event (1h when there is no end) |
 | `/l pagar boleto 18h` | reminder: 15-minute event with alarm + local toast |
-| `/n uma ideia` | note in the Inbox |
-| `https://...` | read-later link in the Inbox (prefilled from the clipboard) |
+| `/n uma ideia` | note, listed in Notes |
+| `https://...` | bookmark with page preview (prefilled from the clipboard) |
 | `=200*15%` | calculation; Enter copies the result |
 
 `Tab` cycles the type, `Enter` saves and closes, `Shift+Enter` saves and keeps the
 field open, `Esc` closes.
+
+## Bookmarks
+
+The Bookmarks tab lists saved links with a thumbnail, title, description and
+domain. Pasting an https URL and pressing Enter saves the row at once. The page
+preview is fetched once and the thumbnail is cached under
+`~/.cache/noctalia-daybar/thumbs/`. Saving the same URL again replaces the row
+and refetches it. Search ignores accents. Hover the row to copy, refresh, rename
+or delete; delete asks first. With "Fetch link previews" off, the row keeps the
+domain and nothing is downloaded.
+
+## Notes
+
+The Notes tab lists notes newest-edit first, with a derived title, a one-line
+snippet and a relative time. Opening one shows a centered overlay: Markdown
+preview by default, a plain-text editor after Ctrl+E. The text is saved about
+600 ms after the last keystroke, and at once with Ctrl+S. Esc closes. A new note
+closed while still empty is not stored. Remote images are shown as links.
 
 ## Requirements
 
@@ -123,7 +141,7 @@ with `khal new`. vdirsyncer keeps khal and Google in sync.
    ~~~
 6. In Noctalia Settings > Location keep **Show calendar events** on.
 
-Without khal the Calendar tab shows "Calendar not configured"; tasks, notes, links,
+Without khal the Calendar tab shows "Calendar not configured"; tasks, notes, bookmarks,
 calculations and the focus timer keep working.
 
 ## Shortcuts
@@ -151,8 +169,10 @@ starts and `off` when it stops (pause, break, finish). Leave it empty to disable
 
 ## Data
 
-`~/.local/share/noctalia-daybar/data.json` (tasks, event checks, reminders, links,
-notes). A corrupt file is kept as `data.json.bak` and a fresh one is started.
+`~/.local/share/noctalia-daybar/data.json` (tasks, event checks, reminders,
+bookmarks, notes). Bookmark thumbnails live in
+`~/.cache/noctalia-daybar/thumbs/`. A corrupt file is kept as `data.json.bak`
+and a fresh one is started.
 
 ## Development
 
