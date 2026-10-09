@@ -36,3 +36,29 @@ describe("markdown.isOpenableLink", () => {
     expect(isOpenableLink(url)).toBe(expected);
   });
 });
+
+describe("markdown.prepare: every remote image form", () => {
+  it.each([
+    ["![a](https://x/p.png 'tit')", "[a](https://x/p.png)"],
+    ["![a](https://x/p.png (tit))", "[a](https://x/p.png)"],
+    ["![a](<https://x/p.png>)", "[a](https://x/p.png)"],
+    ["![a](//x/p.png)", "[a](//x/p.png)"]
+  ])("%j -> %j", (input, expected) => {
+    expect(prepare(input)).toBe(expected);
+  });
+
+  it("turns reference-style remote images into links", () => {
+    const md = "![logo][r] and ![r] and ![r][]\n\n[r]: https://tracker/pixel.png";
+    expect(prepare(md)).toBe("[logo][r] and [r] and [r][]\n\n[r]: https://tracker/pixel.png");
+  });
+
+  it("keeps reference-style local images", () => {
+    const md = "![logo][l]\n\n[l]: /data/u/logo.png";
+    expect(prepare(md)).toBe(md);
+  });
+
+  it("drops any <img> that is not local, whatever the quoting", () => {
+    expect(prepare("a <img src=https://x/t.gif> b")).toBe("a  b");
+    expect(prepare('<img alt="x" src="file:///data/u/a.png">')).toBe('<img alt="x" src="file:///data/u/a.png">');
+  });
+});
