@@ -15,10 +15,15 @@ var OPS = {
   "^": { prec: 4, right: true, unary: false }
 };
 
-// "2,5" -> 2.5, "1.234,5" -> 1234.5, "2.5" -> 2.5, "1.2.3" -> null
+// pt-BR first: a comma is the decimal mark and dots are thousands separators.
+// Without a comma, dots grouping exact thousands ("1.000", "1.000.000") are
+// thousands separators too; any other single dot is a decimal mark.
+// "2,5" -> 2.5, "1.234,5" -> 1234.5, "1.000" -> 1000, "2.5" -> 2.5, "1.2.3" -> null
 function parseNumber(raw) {
   let norm = raw;
-  if (raw.indexOf(",") >= 0) {
+  if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(raw)) {
+    norm = raw.replace(/\./g, "");
+  } else if (raw.indexOf(",") >= 0) {
     if (raw.split(",").length > 2) return null;
     norm = raw.replace(/\./g, "").replace(",", ".");
   } else if (raw.split(".").length > 2) {
@@ -139,8 +144,9 @@ function evaluate(expr) {
   return evalRpn(rpn);
 }
 
-// pt-BR display/copy format: comma decimal, float noise rounded away.
+// pt-BR display/copy format: comma decimal, float noise rounded away. Rounds to
+// 12 significant digits, so the cleanup scales with the magnitude of the result.
 function formatNumber(value) {
-  const rounded = Math.round(value * 1e10) / 1e10;
+  const rounded = Number(value.toPrecision(12));
   return String(rounded).replace(".", ",");
 }

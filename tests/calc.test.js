@@ -16,7 +16,11 @@ describe("calc.evaluate", () => {
     ["10/4", 2.5],
     ["200*15%", 30],
     ["(50+50)%", 1],
-    [" 7 - 10 ", -3]
+    [" 7 - 10 ", -3],
+    ["1.000*2", 2000],
+    ["1.000.000", 1000000],
+    ["0.125*8", 1],
+    ["2.50*2", 5]
   ])("%s = %s", (expr, value) => {
     expect(evaluate(expr)).toEqual({ ok: true, value });
   });
@@ -45,5 +49,11 @@ describe("calc.formatNumber", () => {
     expect(formatNumber(2.5)).toBe("2,5");
     expect(formatNumber(4)).toBe("4");
     expect(formatNumber(-1.5)).toBe("-1,5");
+  });
+
+  it("rounds to significant digits so large results carry no float noise", () => {
+    expect(formatNumber(1500000 * 1.1)).toBe("1650000");
+    expect(formatNumber(12345678.9 * 1.1)).toBe("13580246,79");
+    expect(formatNumber(1 / 3)).toBe("0,333333333333");
   });
 });
