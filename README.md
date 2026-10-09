@@ -62,6 +62,8 @@ the bar. Disable the standalone pomodoro plugin if you used it.
 Daybar reads events through Noctalia's calendar service (khal provider) and writes
 with `khal new`. vdirsyncer keeps khal and Google in sync.
 
+Events can be deleted from the panel. Read-only calendars are excluded.
+
 1. **OAuth client.** In Google Cloud Console create a project, enable the
    **CalDAV API**, configure the OAuth consent screen as *External* and **publish it
    ("In production")**. In *Testing* status Google expires the refresh token every

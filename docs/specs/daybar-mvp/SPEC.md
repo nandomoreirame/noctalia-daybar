@@ -187,7 +187,7 @@ bar, with a centered quick-capture overlay as the main entry point for everythin
 |------|--------|
 | Expense capture | No destination to consult; revisit with a finance module |
 | Google Tasks sync | P3; data model prepared (`source`, `externalId`) |
-| Editing or deleting Google events from the plugin | Create only; edit in Google Calendar |
+| Editing Google events | Deleting is covered by calendar-event-delete; edit in Google Calendar |
 | Automated vdirsyncer/OAuth setup | README guide; one-time setup |
 | Calendar beyond -14/+31 days | P3; touches a global Noctalia service |
 | Characters/mascots | Not part of this app |

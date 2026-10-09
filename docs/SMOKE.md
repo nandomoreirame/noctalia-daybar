@@ -55,3 +55,14 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 | 43 | BN-REQ-017 | Capture `/n uma ideia` | Note "uma ideia" in Notes |
 | 44 | BN-REQ-018 | Delete a note and a bookmark | Bubble with OK/Cancel; Esc cancels; OK deletes and removes the thumbnail |
 | 45 | BN-REQ-019 | Turn "Fetch link previews" off, capture a link | Domain title only; no curl process |
+
+## Event delete
+
+| # | REQ | Step | Expected |
+|---|-----|------|----------|
+| 46 | ED-REQ-001 | Hover a normal event, then a holiday | Trash on the event; none on the holiday |
+| 47 | ED-REQ-002 | Click the trash | "Localizando evento..." with OK disabled, then the question |
+| 48 | ED-REQ-003 | Same on `daybar teste recorrente` | "Este evento se repete. Excluir todas as ocorrências?" |
+| 49 | ED-REQ-004 | OK on `daybar teste exclusao`; offline once | Row gone at once; gone in Google after sync; offline shows the sync warning and it does not come back |
+| 50 | ED-REQ-005 | Delete the event on the phone, then try in Daybar | "Evento não encontrado"; calendar reloads |
+| 51 | ED-REQ-006 | `ps -ef \| grep -E "grep -rlP\|rm -f --"` while deleting | argv processes only, no `sh -c` |
