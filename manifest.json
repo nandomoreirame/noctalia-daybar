@@ -29,7 +29,8 @@
       "playSound": true,
       "focusModeCommand": "",
       "defaultCalendar": "",
-      "initialTab": "today"
+      "initialTab": "today",
+      "fetchPreviews": true
     }
   }
 }

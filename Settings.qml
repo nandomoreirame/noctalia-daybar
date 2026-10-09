@@ -20,6 +20,7 @@ ColumnLayout {
   property bool playSound: true
   property string focusModeCommand: ""
   property string defaultCalendar: ""
+  property bool fetchPreviews: true
   property string initialTab: "today"
 
   spacing: Style.marginM
@@ -45,6 +46,7 @@ ColumnLayout {
     playSound = value("playSound");
     focusModeCommand = value("focusModeCommand");
     defaultCalendar = value("defaultCalendar");
+    fetchPreviews = value("fetchPreviews");
     initialTab = value("initialTab");
   }
 
@@ -62,6 +64,7 @@ ColumnLayout {
     s.playSound = playSound;
     s.focusModeCommand = focusModeCommand.trim();
     s.defaultCalendar = defaultCalendar;
+    s.fetchPreviews = fetchPreviews;
     s.initialTab = initialTab;
     pluginApi.saveSettings();
   }
@@ -145,6 +148,13 @@ ColumnLayout {
 
   NHeader {
     label: root.tr("settings.general")
+  }
+
+  NToggle {
+    label: root.tr("settings.fetch-previews")
+    description: root.tr("settings.fetch-previews-help")
+    checked: root.fetchPreviews
+    onToggled: checked => root.fetchPreviews = checked
   }
 
   NComboBox {
