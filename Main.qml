@@ -21,6 +21,7 @@ import "utils/focuslog.js" as FocusLog
 import "utils/dates.js" as Dates
 import "utils/tabs.js" as Tabs
 import "utils/eventdelete.js" as EventDelete
+import "utils/today.js" as Today
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
 // the capture overlay. UI files only read state from here and call these functions.
@@ -673,6 +674,9 @@ Item {
   // ---------------------------------------------------------------- reminders
 
   property string todayIso: Dates.isoDate(new Date())
+  // done/total shown next to the Today and Calendar labels in the bar.
+  readonly property var todayProgress: loaded && data?.tasks ? Today.todayProgress(visibleEvents, data, todayIso) : null
+  readonly property var calendarProgress: loaded && data?.tasks ? Today.dayProgress(visibleEvents, data, todayIso) : null
 
   Timer {
     interval: 30000

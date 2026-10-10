@@ -5,8 +5,9 @@ import qs.Commons
 import qs.Widgets
 import "utils/pomodoro.js" as Pomodoro
 import "utils/tabs.js" as Tabs
+import "utils/today.js" as Today
 
-// Bar entry: an icon, plus the focus clock while a pomodoro is running.
+// Bar entry: the next tab's icon and label, or the focus clock while a pomodoro is running.
 // Left click toggles the toolbar, middle click starts/pauses the timer.
 Item {
   id: root
@@ -20,11 +21,13 @@ Item {
 
   readonly property var mainInstance: pluginApi?.mainInstance ?? null
   readonly property bool timerVisible: !!mainInstance && (mainInstance.pomodoroRunning || mainInstance.pomodoroSoundPlaying)
-  // Icon of the tab the panel will open on, so the bar tells where a click lands.
-  readonly property string nextTabIcon: mainInstance ? Tabs.ICONS[Tabs.initialTab("", mainInstance.setting("initialTab"), mainInstance.data.ui?.lastTab)] : Tabs.ICONS[Tabs.FALLBACK]
+  // Tab the panel will open on, so the bar tells where a click lands.
+  readonly property string nextTab: mainInstance ? Tabs.initialTab("", mainInstance.setting("initialTab"), mainInstance.data.ui?.lastTab) : Tabs.FALLBACK
+  readonly property string nextTabIcon: Tabs.ICONS[nextTab]
+  readonly property var nextTabProgress: !mainInstance ? null : nextTab === "today" ? mainInstance.todayProgress : nextTab === "calendar" ? mainInstance.calendarProgress : null
   readonly property bool barIsVertical: (Settings.data.bar.position || "top") === "left" || Settings.data.bar.position === "right"
 
-  implicitWidth: barIsVertical || !timerVisible ? Style.capsuleHeight : contentRow.implicitWidth + Style.marginM * 2
+  implicitWidth: barIsVertical ? Style.capsuleHeight : contentRow.implicitWidth + Style.marginM * 2
   implicitHeight: Style.capsuleHeight
 
   Rectangle {
@@ -40,9 +43,17 @@ Item {
       spacing: Style.marginS
 
       NIcon {
-        icon: root.timerVisible ? "brain" : root.nextTabIcon
+        icon: root.timerVisible ? Tabs.ICONS.focus : root.nextTabIcon
         applyUiScale: false
         color: root.timerVisible ? Color.mPrimary : (mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface)
+      }
+
+      NText {
+        visible: !root.timerVisible && !root.barIsVertical
+        text: Today.withProgress(root.pluginApi?.tr("tabs." + root.nextTab) ?? "", root.nextTabProgress)
+        pointSize: Style.barFontSize
+        font.weight: Style.fontWeightSemiBold
+        color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
       }
 
       NText {

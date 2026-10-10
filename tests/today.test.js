@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createEmpty } from "../utils/store.js";
 import { addTask, toggleTask, toggleEventCheck } from "../utils/tasks.js";
-import { buildToday } from "../utils/today.js";
+import { buildToday, progress, todayProgress, dayProgress, withProgress } from "../utils/today.js";
 
 const NOW = new Date(2026, 9, 9, 15, 0);
 const at = (h, mi = 0, d = 9) => new Date(2026, 9, d, h, mi).getTime() / 1000;
@@ -65,5 +65,30 @@ describe("dayItems (Calendar day list)", () => {
     expect(day.map((i) => [i.kind, i.title, i.time])).toEqual([["event", "Reunião", "10:00"], ["task", "Com hora", "09:00"], ["task", "Dia todo", null]]);
     expect(day.every((i) => i.overdue === false)).toBe(true);
     expect(dayItems([], data, "2026-10-09", "2026-10-09").map((i) => i.title)).toEqual(["Sem data"]);
+  });
+});
+
+describe("progress counts", () => {
+  let data = createEmpty();
+  data = addTask(data, { title: "hoje", date: "2026-10-09" }, "t-today", T0);
+  data = addTask(data, { title: "feita", date: "2026-10-09" }, "t-done", T0);
+  data = toggleTask(data, "t-done", T0);
+  data = addTask(data, { title: "atrasada", date: "2026-10-07" }, "t-late", T0);
+  data = addTask(data, { title: "amanhã", date: "2026-10-10" }, "t-tomorrow", T0);
+  const events = [{ uid: "e-1", summary: "reunião", start: at(14), end: at(15), calendar: "Eventos" }];
+
+  it("counts done and total items of a list", () => {
+    expect(progress([{ done: true }, { done: false }, { done: true }])).toEqual({ done: 2, total: 3 });
+    expect(progress([])).toEqual({ done: 0, total: 0 });
+  });
+
+  it("counts Today with overdue tasks, and the calendar day without them", () => {
+    expect(todayProgress(events, data, "2026-10-09")).toEqual({ done: 1, total: 4 });
+    expect(dayProgress(events, data, "2026-10-09")).toEqual({ done: 1, total: 3 });
+  });
+
+  it("appends (done/total) to a label only when there is something", () => {
+    expect(withProgress("Hoje", { done: 1, total: 3 })).toBe("Hoje (1/3)");
+    expect(withProgress("Hoje", { done: 0, total: 0 })).toBe("Hoje");
   });
 });

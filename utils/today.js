@@ -69,3 +69,23 @@ function buildToday(events, data, now) {
   const iso = Dates.isoDate(now);
   return eventItems(events, data, iso).concat(taskItems(data, iso));
 }
+
+// { done, total } of a checklist.
+function progress(items) {
+  return { done: items.filter((i) => i.done).length, total: items.length };
+}
+
+// Same list as the Today tab (events, today's and overdue tasks).
+function todayProgress(events, data, iso) {
+  return progress(eventItems(events, data, iso).concat(taskItems(data, iso)));
+}
+
+// Same list as the Calendar day list for that day.
+function dayProgress(events, data, iso) {
+  return progress(dayItems(events, data, iso, iso));
+}
+
+// "Label (done/total)", or just the label when the list is empty.
+function withProgress(label, p) {
+  return p && p.total > 0 ? label + " (" + p.done + "/" + p.total + ")" : label;
+}
