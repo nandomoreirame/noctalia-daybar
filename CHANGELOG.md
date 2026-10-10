@@ -4,6 +4,32 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-10-09
+
+### Added
+
+- **Bar label**: the bar widget shows the label of the tab the panel opens on, with
+  today's done/total count for Today (`Hoje (1/3)`).
+- **Next event in the bar**: when the panel opens on Calendar, the bar shows
+  today's next timed event (`15:00 Reunião`), cut with an ellipsis and shown in
+  full on hover. With nothing left today it shows "Nada marcado para hoje.",
+  dimmed and in italics.
+- **Tab counts**: the active panel tab shows done/total for Calendar and Today,
+  and the number of items for Bookmarks and Notes.
+- **Screenshots** in the README and in `screenshots/`.
+
+### Changed
+
+- The running focus timer uses the hourglass icon in the bar.
+- Opening a note closes the toolbar panel, leaving only the note window.
+- Note and bookmark rows show a pointer cursor.
+- The empty-day message in the Calendar tab is dimmed and in italics.
+- The README states Noctalia v4 support (tested on 4.7.7) and the planned v5 port.
+
+### Fixed
+
+- Text in the note preview can be selected and copied.
+
 ## [0.1.0] - 2026-10-09
 
 First public release. Requires Noctalia Shell v4 (`noctalia-shell` 4.7.x, tested on
@@ -41,4 +67,5 @@ First public release. Requires Noctalia Shell v4 (`noctalia-shell` 4.7.x, tested
 - Preview image downloads refuse private, local and numeric hosts.
 - External commands are argv arrays only; user text is never passed through a shell.
 
+[0.2.0]: https://github.com/nandomoreirame/noctalia-daybar/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nandomoreirame/noctalia-daybar/releases/tag/v0.1.0

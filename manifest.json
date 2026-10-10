@@ -1,7 +1,7 @@
 {
   "id": "daybar",
   "name": "Daybar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minNoctaliaVersion": "4.0.0",
   "author": "Fernando Moreira Costa",
   "license": "MIT",
