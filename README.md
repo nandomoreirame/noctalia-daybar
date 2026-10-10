@@ -4,6 +4,18 @@ A [Noctalia Shell](https://github.com/noctalia-dev/noctalia) plugin for the day:
 a centered quick-capture field and a bar toolbar with Calendar (Google Calendar),
 Today, Focus (pomodoro), Bookmarks and Notes.
 
+![Daybar calendar tab](screenshots/calendar.png)
+
+![Quick capture](screenshots/capture-event.png)
+
+| Today | Focus |
+|-------|-------|
+| ![Today tab](screenshots/today.png) | ![Focus tab](screenshots/focus.png) |
+| **Bookmarks** | **Notes** |
+| ![Bookmarks tab](screenshots/bookmarks.png) | ![Notes tab](screenshots/notes.png) |
+
+More in [screenshots/](screenshots/): every capture type and the note window.
+
 ## Capture
 
 Open it with a shortcut (see [niri binding](#shortcuts)) and type:
@@ -33,7 +45,11 @@ domain and nothing is downloaded.
 ## Notes
 
 The Notes tab lists notes newest-edit first, with a derived title, a one-line
-snippet and a relative time. Opening one shows a centered overlay: Markdown
+snippet and a relative time.
+
+![Note window](screenshots/note-window.png)
+
+Opening one shows a centered overlay: Markdown
 preview by default, a plain-text editor after Ctrl+E. The text is saved about
 600 ms after the last keystroke, and at once with Ctrl+S. Esc closes. A new note
 closed while still empty is not stored. Remote images are shown as links.
