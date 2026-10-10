@@ -4,6 +4,12 @@ A [Noctalia Shell](https://github.com/noctalia-dev/noctalia) plugin for the day:
 a centered quick-capture field and a bar toolbar with Calendar (Google Calendar),
 Today, Focus (pomodoro), Bookmarks and Notes.
 
+> [!IMPORTANT]
+> Daybar is a **Noctalia Shell v4** plugin (QML, `manifest.json`), tested on
+> **noctalia-shell 4.7.7**. It does **not** run on Noctalia v5, whose plugin system
+> is a different one (Luau scripts with a `plugin.toml` manifest). A v5 port is
+> planned. See [Compatibility](#compatibility).
+
 ![Daybar calendar tab](screenshots/calendar.png)
 
 ![Quick capture](screenshots/capture-event.png)
@@ -54,9 +60,25 @@ preview by default, a plain-text editor after Ctrl+E. The text is saved about
 600 ms after the last keystroke, and at once with Ctrl+S. Esc closes. A new note
 closed while still empty is not stored. Remote images are shown as links.
 
+## Compatibility
+
+| Noctalia | Status |
+|----------|--------|
+| v4 (`noctalia-shell` 4.7.x, run as `qs -c noctalia-shell`) | Supported, tested on 4.7.7 |
+| v4 before 4.7 | Untested |
+| v5 (`noctalia` 5.x) | Not supported: v5 plugins are written in Luau, so Daybar would need a rewrite |
+
+**v5 is planned.** I intend to port Daybar to Noctalia v5 once I have it installed
+and tested on my CachyOS setup. Until then, v4 is the only supported target.
+
+On Arch/CachyOS the v4 shell is the `noctalia-shell` package and v5 is `noctalia`;
+both can be installed side by side. Check the installed v4 version with
+`pacman -Q noctalia-shell`, and make sure the bar you use is started with
+`qs -c noctalia-shell`.
+
 ## Requirements
 
-- noctalia-shell 4.x
+- noctalia-shell 4.7.x (see [Compatibility](#compatibility))
 - `khal`, `vdirsyncer`, `wl-clipboard`, `xdg-utils`
 
 ~~~bash
@@ -181,7 +203,7 @@ IPC target `plugin:daybar`:
 ~~~bash
 qs -c noctalia-shell ipc call plugin:daybar capture      # quick capture
 qs -c noctalia-shell ipc call plugin:daybar toggle       # toolbar
-qs -c noctalia-shell ipc call plugin:daybar open today   # calendar | today | focus | inbox
+qs -c noctalia-shell ipc call plugin:daybar open today   # calendar | today | focus | bookmarks | notes
 ~~~
 
 niri (`~/.config/niri/config.kdl`):

@@ -14,7 +14,7 @@ The plan is the source of truth for file contents and order. When code and plan 
 
 ## What it is
 
-`daybar` is a Noctalia Shell plugin (noctalia-shell 4.7.x, Quickshell/QML, run as `qs -c noctalia-shell`) with a centered quick-capture overlay (task, event, reminder, note, link, calculation) and a bar toolbar with Calendar, Today, Focus (pomodoro) and Inbox tabs. Noctalia 5 is not a target.
+`daybar` is a Noctalia Shell plugin (noctalia-shell 4.7.x, Quickshell/QML, run as `qs -c noctalia-shell`) with a centered quick-capture overlay (task, event, reminder, note, link, calculation) and a bar toolbar with Calendar, Today, Focus (pomodoro) and Inbox tabs. Noctalia 5 is not a target: its plugins are Luau scripts with a `plugin.toml` manifest, a different system from the v4 QML plugins (tested on noctalia-shell 4.7.7).
 
 ## Commands
 

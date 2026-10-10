@@ -6,7 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.1.0] - 2026-10-09
 
-First public release.
+First public release. Requires Noctalia Shell v4 (`noctalia-shell` 4.7.x, tested on
+4.7.7); Noctalia v5 is not supported.
 
 ### Added
 
