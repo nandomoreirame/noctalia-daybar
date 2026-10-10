@@ -228,21 +228,35 @@ PanelWindow {
         Layout.fillHeight: true
         contentWidth: availableWidth
         horizontalPolicy: ScrollBar.AlwaysOff
+        // A mouse drag selects text instead of flicking; the wheel still scrolls
+        // through NScrollView's WheelHandler.
+        Component.onCompleted: if (contentItem) contentItem.interactive = false
 
         // Own renderer (utils/mdrender.js): Qt's MarkdownText takes no styling.
         // Theme colors are flattened to opaque "#rrggbb" for the rich text.
-        NText {
+        // A read-only TextEdit (not Text) so the preview can be selected and copied.
+        TextEdit {
+          id: preview
           width: previewScroll.availableWidth
-          wrapMode: Text.Wrap
-          textFormat: Text.RichText
+          readOnly: true
+          selectByMouse: true
+          persistentSelection: true
+          wrapMode: TextEdit.Wrap
+          textFormat: TextEdit.RichText
           text: MdRender.render(root.text, root.markdownTheme)
-          pointSize: Style.fontSizeL
-          lineHeight: 1.15
+          font.family: Settings.data.ui.fontDefault
+          font.weight: Style.fontWeightMedium
+          font.pointSize: Math.max(1, Style.fontSizeL * Settings.data.ui.fontDefaultScale * Style.uiScaleRatio)
           color: Color.mOnSurface
-          linkColor: Color.mPrimary
+          selectionColor: Qt.alpha(Color.mPrimary, 0.35)
+          selectedTextColor: Color.mOnSurface
           onLinkActivated: link => {
             if (Markdown.isOpenableLink(link))
               Quickshell.execDetached(["xdg-open", link]);
+          }
+
+          HoverHandler {
+            cursorShape: preview.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.IBeamCursor
           }
 
           TapHandler {
