@@ -208,6 +208,11 @@ Card {
               enabled: !row.editing
               onTapped: root.mainInstance.openUrl(row.modelData.url)
             }
+
+            HoverHandler {
+              enabled: !row.editing
+              cursorShape: Qt.PointingHandCursor
+            }
           }
         }
       }

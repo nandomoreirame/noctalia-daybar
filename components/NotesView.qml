@@ -167,6 +167,10 @@ Card {
             TapHandler {
               onTapped: root.mainInstance.openNote(row.modelData.id)
             }
+
+            HoverHandler {
+              cursorShape: Qt.PointingHandCursor
+            }
           }
         }
       }
