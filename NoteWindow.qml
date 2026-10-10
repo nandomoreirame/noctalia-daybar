@@ -8,6 +8,7 @@ import qs.Widgets
 import "components/ui"
 import "utils/notes.js" as Notes
 import "utils/markdown.js" as Markdown
+import "utils/mdrender.js" as MdRender
 import "utils/format.js" as Format
 
 // Large overlay for one note: Markdown preview by default, plain-text editor on
@@ -25,6 +26,14 @@ PanelWindow {
   property string text: ""
   readonly property var note: mainInstance && noteId !== "" ? mainInstance.data.notes.find(n => n.id === noteId) || null : null
   readonly property string title: Notes.titleOf(text) || tr("notes.untitled")
+  readonly property var markdownTheme: ({
+      text: String(Color.mOnSurface),
+      dim: String(Qt.tint(Color.mSurface, Qt.alpha(Color.mOnSurface, 0.6))),
+      link: String(Color.mPrimary),
+      codeBg: String(Qt.tint(Color.mSurface, Qt.alpha(Color.mOnSurface, 0.08))),
+      codeFg: String(Color.mTertiary),
+      border: String(Qt.tint(Color.mSurface, Qt.alpha(Color.mOnSurface, 0.18)))
+    })
 
   anchors.top: true
   anchors.left: true
@@ -220,12 +229,15 @@ PanelWindow {
         contentWidth: availableWidth
         horizontalPolicy: ScrollBar.AlwaysOff
 
+        // Own renderer (utils/mdrender.js): Qt's MarkdownText takes no styling.
+        // Theme colors are flattened to opaque "#rrggbb" for the rich text.
         NText {
           width: previewScroll.availableWidth
           wrapMode: Text.Wrap
-          markdownTextEnabled: true
-          text: Markdown.prepare(root.text)
-          pointSize: Style.fontSizeM
+          textFormat: Text.RichText
+          text: MdRender.render(root.text, root.markdownTheme)
+          pointSize: Style.fontSizeL
+          lineHeight: 1.15
           color: Color.mOnSurface
           linkColor: Color.mPrimary
           onLinkActivated: link => {
