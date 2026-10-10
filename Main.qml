@@ -22,6 +22,7 @@ import "utils/dates.js" as Dates
 import "utils/tabs.js" as Tabs
 import "utils/eventdelete.js" as EventDelete
 import "utils/today.js" as Today
+import "utils/events.js" as Events
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
 // the capture overlay. UI files only read state from here and call these functions.
@@ -677,6 +678,10 @@ Item {
   // done/total shown next to the Today and Calendar labels in the bar.
   readonly property var todayProgress: loaded && data?.tasks ? Today.todayProgress(visibleEvents, data, todayIso) : null
   readonly property var calendarProgress: loaded && data?.tasks ? Today.dayProgress(visibleEvents, data, todayIso) : null
+  // Refreshed by the 30 s timer below, so the next event moves on once it ends.
+  property date clockNow: new Date()
+  // Shown instead of the Calendar label in the bar: { uid, summary, date, time } or null.
+  readonly property var upcomingEvent: Events.nextEvent(visibleEvents, clockNow)
 
   Timer {
     interval: 30000
@@ -684,7 +689,8 @@ Item {
     running: root.loaded
     triggeredOnStart: true
     onTriggered: {
-      const today = Dates.isoDate(new Date());
+      root.clockNow = new Date();
+      const today = Dates.isoDate(root.clockNow);
       if (today !== root.todayIso)
         root.todayIso = today;
       const due = Reminders.dueReminders(root.data, new Date());

@@ -3,9 +3,11 @@ import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Widgets
+import qs.Services.UI
 import "utils/pomodoro.js" as Pomodoro
 import "utils/tabs.js" as Tabs
 import "utils/today.js" as Today
+import "utils/format.js" as Format
 
 // Bar entry: the next tab's icon and label, or the focus clock while a pomodoro is running.
 // Left click toggles the toolbar, middle click starts/pauses the timer.
@@ -25,6 +27,16 @@ Item {
   readonly property string nextTab: mainInstance ? Tabs.initialTab("", mainInstance.setting("initialTab"), mainInstance.data.ui?.lastTab) : Tabs.FALLBACK
   readonly property string nextTabIcon: Tabs.ICONS[nextTab]
   readonly property var nextTabProgress: !mainInstance ? null : nextTab === "today" ? mainInstance.todayProgress : nextTab === "calendar" ? mainInstance.calendarProgress : null
+  // The Calendar tab shows the next event instead of its name: "amanhã 15:00 Reunião".
+  readonly property string upcomingText: {
+    const ev = nextTab === "calendar" ? mainInstance?.upcomingEvent : null;
+    if (!ev)
+      return "";
+    const w = Format.describeWhen(ev.date, ev.time, null, mainInstance.clockNow);
+    const day = w.day === "today" ? "" : w.day === "tomorrow" ? pluginApi?.tr("when.tomorrow") ?? "" : w.day;
+    return [day, w.time, ev.summary].filter(s => s).join(" ");
+  }
+  readonly property string labelText: upcomingText !== "" ? upcomingText : Today.withProgress(pluginApi?.tr("tabs." + nextTab) ?? "", nextTabProgress)
   readonly property bool barIsVertical: (Settings.data.bar.position || "top") === "left" || Settings.data.bar.position === "right"
 
   implicitWidth: barIsVertical ? Style.capsuleHeight : contentRow.implicitWidth + Style.marginM * 2
@@ -50,7 +62,10 @@ Item {
 
       NText {
         visible: !root.timerVisible && !root.barIsVertical
-        text: Today.withProgress(root.pluginApi?.tr("tabs." + root.nextTab) ?? "", root.nextTabProgress)
+        id: label
+        text: root.labelText
+        elide: Text.ElideRight
+        Layout.maximumWidth: Math.round(220 * Style.uiScaleRatio)
         pointSize: Style.barFontSize
         font.weight: Style.fontWeightSemiBold
         color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
@@ -72,6 +87,10 @@ Item {
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+
+    // Full text when the label is cut with "...".
+    onEntered: if (label.visible && label.truncated) TooltipService.show(root, root.labelText, BarService.getTooltipDirection(root.screen?.name))
+    onExited: TooltipService.hide(root)
 
     onClicked: mouse => {
       if (mouse.button === Qt.MiddleButton && root.mainInstance) {

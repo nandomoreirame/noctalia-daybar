@@ -46,3 +46,15 @@ function eventsOn(events, iso) {
     .sort((a, b) => compareTime(a.time, b.time) || (a.ev.start - b.ev.start))
     .map((x) => Object.assign({}, x.ev, { time: x.time }));
 }
+
+// Earliest timed event that has not ended yet (an event in progress counts),
+// as { uid, summary, date, time }, or null. All-day events are skipped.
+function nextEvent(events, now) {
+  const nowSec = now.getTime() / 1000;
+  const next = (events || [])
+    .filter((ev) => !isAllDay(ev) && ev.end > nowSec)
+    .sort((a, b) => a.start - b.start)[0];
+  if (!next) return null;
+  const s = new Date(next.start * 1000);
+  return { uid: next.uid, summary: next.summary, date: Dates.isoDate(s), time: Dates.hhmm(s) };
+}

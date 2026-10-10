@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { overlapsDay, isAllDay, timeOn, eventsOn, compareTime } from "../utils/events.js";
+import { overlapsDay, isAllDay, timeOn, eventsOn, compareTime, nextEvent } from "../utils/events.js";
 
 const at = (y, mo, d, h = 0, mi = 0) => new Date(y, mo, d, h, mi).getTime() / 1000;
 const ev = (uid, start, end, summary = uid) => ({ uid, summary, start, end, calendar: "c" });
@@ -37,5 +37,25 @@ describe("events", () => {
   it("orders null times first", () => {
     expect(compareTime(null, "09:00")).toBe(-1);
     expect(compareTime("10:00", "09:00")).toBe(1);
+  });
+});
+
+describe("nextEvent", () => {
+  const now = new Date(2026, 9, 9, 15, 0);
+
+  it("picks the earliest timed event that has not ended, including one in progress", () => {
+    const events = [
+      ev("later", at(2026, 9, 10, 9), at(2026, 9, 10, 10), "Dentista"),
+      ev("past", at(2026, 9, 9, 8), at(2026, 9, 9, 9), "Café"),
+      ev("now", at(2026, 9, 9, 14, 30), at(2026, 9, 9, 15, 30), "Reunião"),
+      ev("allday", at(2026, 9, 9), at(2026, 9, 10), "Feriado")
+    ];
+    expect(nextEvent(events, now)).toEqual({ uid: "now", summary: "Reunião", date: "2026-10-09", time: "14:30" });
+  });
+
+  it("returns null when nothing is ahead", () => {
+    expect(nextEvent([ev("past", at(2026, 9, 9, 8), at(2026, 9, 9, 9))], now)).toBeNull();
+    expect(nextEvent([], now)).toBeNull();
+    expect(nextEvent(null, now)).toBeNull();
   });
 });
