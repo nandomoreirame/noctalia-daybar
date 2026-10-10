@@ -47,14 +47,12 @@ function eventsOn(events, iso) {
     .map((x) => Object.assign({}, x.ev, { time: x.time }));
 }
 
-// Earliest timed event that has not ended yet (an event in progress counts),
-// as { uid, summary, date, time }, or null. All-day events are skipped.
+// Today's earliest timed event that has not ended yet (an event in progress
+// counts), as { uid, summary, date, time }, or null. All-day events and events
+// that only continue from another day have no time on today and are skipped.
 function nextEvent(events, now) {
+  const iso = Dates.isoDate(now);
   const nowSec = now.getTime() / 1000;
-  const next = (events || [])
-    .filter((ev) => !isAllDay(ev) && ev.end > nowSec)
-    .sort((a, b) => a.start - b.start)[0];
-  if (!next) return null;
-  const s = new Date(next.start * 1000);
-  return { uid: next.uid, summary: next.summary, date: Dates.isoDate(s), time: Dates.hhmm(s) };
+  const next = eventsOn(events, iso).filter((ev) => ev.time !== null && ev.end > nowSec)[0];
+  return next ? { uid: next.uid, summary: next.summary, date: iso, time: next.time } : null;
 }

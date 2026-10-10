@@ -680,7 +680,7 @@ Item {
   readonly property var calendarProgress: loaded && data?.tasks ? Today.dayProgress(visibleEvents, data, todayIso) : null
   // Refreshed by the 30 s timer below, so the next event moves on once it ends.
   property date clockNow: new Date()
-  // Shown instead of the Calendar label in the bar: { uid, summary, date, time } or null.
+  // Today's next event, shown instead of the Calendar label in the bar: { uid, summary, date, time } or null.
   readonly property var upcomingEvent: Events.nextEvent(visibleEvents, clockNow)
 
   Timer {

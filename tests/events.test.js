@@ -43,7 +43,7 @@ describe("events", () => {
 describe("nextEvent", () => {
   const now = new Date(2026, 9, 9, 15, 0);
 
-  it("picks the earliest timed event that has not ended, including one in progress", () => {
+  it("picks the earliest timed event of today that has not ended, including one in progress", () => {
     const events = [
       ev("later", at(2026, 9, 10, 9), at(2026, 9, 10, 10), "Dentista"),
       ev("past", at(2026, 9, 9, 8), at(2026, 9, 9, 9), "Café"),
@@ -51,6 +51,10 @@ describe("nextEvent", () => {
       ev("allday", at(2026, 9, 9), at(2026, 9, 10), "Feriado")
     ];
     expect(nextEvent(events, now)).toEqual({ uid: "now", summary: "Reunião", date: "2026-10-09", time: "14:30" });
+  });
+
+  it("ignores events on other days", () => {
+    expect(nextEvent([ev("tomorrow", at(2026, 9, 10, 9), at(2026, 9, 10, 10), "Dentista")], now)).toBeNull();
   });
 
   it("returns null when nothing is ahead", () => {
