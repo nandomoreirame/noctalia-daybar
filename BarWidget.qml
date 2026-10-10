@@ -34,6 +34,7 @@ Item {
     const ev = mainInstance.upcomingEvent;
     return ev ? ev.time + " " + ev.summary : pluginApi?.tr("calendar.nothing") ?? "";
   }
+  readonly property bool labelIsEmpty: nextTab === "calendar" && !!mainInstance && !mainInstance.upcomingEvent
   readonly property string labelText: upcomingText !== "" ? upcomingText : Today.withProgress(pluginApi?.tr("tabs." + nextTab) ?? "", nextTabProgress)
   readonly property bool barIsVertical: (Settings.data.bar.position || "top") === "left" || Settings.data.bar.position === "right"
 
@@ -67,6 +68,9 @@ Item {
         pointSize: Style.barFontSize
         font.weight: Style.fontWeightSemiBold
         color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
+        // The empty-day message reads as a placeholder, not as an event.
+        font.italic: root.labelIsEmpty
+        opacity: root.labelIsEmpty ? 0.6 : 1
       }
 
       NText {

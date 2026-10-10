@@ -91,7 +91,8 @@ Card {
         visible: root.dayItems.length === 0
         text: root.selected === root.todayIso ? root.tr("calendar.nothing") : root.tr("calendar.nothing-day")
         pointSize: Style.fontSizeS
-        color: Qt.alpha(Color.mOnSurface, 0.56)
+        font.italic: true
+        color: Qt.alpha(Color.mOnSurface, 0.4)
       }
 
       Repeater {
