@@ -286,8 +286,17 @@ Item {
   }
 
   // New notes are created on first non-blank save, so an untouched one leaves nothing behind.
-  function openNote(id) { pluginApi?.withCurrentScreen(screen => noteWindow.openOn(screen, id)); }
-  function newNote() { pluginApi?.withCurrentScreen(screen => noteWindow.openOn(screen, "")); }
+  function openNote(id) { showNote(id); }
+  function newNote() { showNote(""); }
+
+  // The note window replaces the toolbar panel: close it so only the note stays.
+  function showNote(id) {
+    if (!pluginApi)
+      return;
+    if (pluginApi.panelOpenScreen)
+      pluginApi.closePanel(pluginApi.panelOpenScreen);
+    pluginApi.withCurrentScreen(screen => noteWindow.openOn(screen, id));
+  }
 
   // Called by the note window: creates the note on first save when it is new.
   function saveNoteText(id, text) {
