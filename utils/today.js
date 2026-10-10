@@ -89,3 +89,8 @@ function dayProgress(events, data, iso) {
 function withProgress(label, p) {
   return p && p.total > 0 ? label + " (" + p.done + "/" + p.total + ")" : label;
 }
+
+// "Label (n)", or just the label when there is nothing.
+function withCount(label, n) {
+  return n > 0 ? label + " (" + n + ")" : label;
+}

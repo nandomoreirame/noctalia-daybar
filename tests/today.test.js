@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createEmpty } from "../utils/store.js";
 import { addTask, toggleTask, toggleEventCheck } from "../utils/tasks.js";
-import { buildToday, progress, todayProgress, dayProgress, withProgress } from "../utils/today.js";
+import { buildToday, progress, todayProgress, dayProgress, withProgress, withCount } from "../utils/today.js";
 
 const NOW = new Date(2026, 9, 9, 15, 0);
 const at = (h, mi = 0, d = 9) => new Date(2026, 9, d, h, mi).getTime() / 1000;
@@ -90,5 +90,12 @@ describe("progress counts", () => {
   it("appends (done/total) to a label only when there is something", () => {
     expect(withProgress("Hoje", { done: 1, total: 3 })).toBe("Hoje (1/3)");
     expect(withProgress("Hoje", { done: 0, total: 0 })).toBe("Hoje");
+  });
+});
+
+describe("withCount", () => {
+  it("appends (n) to a label only when n > 0", () => {
+    expect(withCount("Notas", 4)).toBe("Notas (4)");
+    expect(withCount("Notas", 0)).toBe("Notas");
   });
 });

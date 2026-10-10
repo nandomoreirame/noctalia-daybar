@@ -5,6 +5,7 @@ import qs.Widgets
 import "components"
 import "components/ui"
 import "utils/tabs.js" as Tabs
+import "utils/today.js" as Today
 
 // Bar toolbar: Calendar, Today, Focus, Bookmarks and Notes tabs plus the Capture button.
 Item {
@@ -15,6 +16,23 @@ Item {
   readonly property bool allowAttach: true
   readonly property var mainInstance: pluginApi?.mainInstance ?? null
   readonly property var tabKeys: Tabs.TABS
+
+  // Tab label with its count: done/total for Calendar and Today, size for the lists.
+  function tabLabel(key) {
+    const label = tr("tabs." + key);
+    const m = mainInstance;
+    if (!m)
+      return label;
+    if (key === "calendar")
+      return Today.withProgress(label, m.calendarProgress);
+    if (key === "today")
+      return Today.withProgress(label, m.todayProgress);
+    if (key === "bookmarks")
+      return Today.withCount(label, (m.data.bookmarks || []).length);
+    if (key === "notes")
+      return Today.withCount(label, (m.data.notes || []).length);
+    return label;
+  }
 
   property real contentPreferredWidth: 680 * Style.uiScaleRatio
   property real contentPreferredHeight: 360 * Style.uiScaleRatio
@@ -73,7 +91,7 @@ Item {
 
         IconTabs {
           id: tabBar
-          model: root.tabKeys.map(k => ({ key: k, icon: Tabs.ICONS[k], label: root.tr("tabs." + k) }))
+          model: root.tabKeys.map(k => ({ key: k, icon: Tabs.ICONS[k], label: root.tabLabel(k) }))
           // Remembered once the initial tab is in place, so opening never overwrites it.
           onCurrentIndexChanged: if (root.initialTabApplied && root.mainInstance) root.mainInstance.setLastTab(root.tabKeys[currentIndex])
         }
