@@ -184,19 +184,14 @@ PanelWindow {
       RowLayout {
         spacing: Math.round(4 * Style.uiScaleRatio)
 
-        Repeater {
-          model: Registry.CYCLE
-
-          Chip {
-            required property string modelData
-            text: root.tr("capture.type." + modelData)
-            icon: root.typeIcons[modelData]
-            selected: root.result.type === modelData
-            onClicked: {
-              root.forcedType = modelData;
-              root.refresh();
-              field.forceActiveFocus();
-            }
+        IconTabs {
+          controlled: true
+          model: Registry.CYCLE.map(k => ({ key: k, icon: root.typeIcons[k], label: root.tr("capture.type." + k) }))
+          currentIndex: Registry.CYCLE.indexOf(root.result.type)
+          onActivated: index => {
+            root.forcedType = Registry.CYCLE[index];
+            root.refresh();
+            field.forceActiveFocus();
           }
         }
 

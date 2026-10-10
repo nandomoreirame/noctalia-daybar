@@ -5,11 +5,22 @@ import qs.Widgets
 
 // Icon tabs: inactive tabs show only the icon, the active one grows into a
 // pill with its label. model: [{ key, icon, label }]
+// With `controlled`, a pick only emits `activated` and the owner binds
+// currentIndex (-1 shows every tab icon-only).
 RowLayout {
   id: root
 
   property var model: []
   property int currentIndex: 0
+  property bool controlled: false
+
+  signal activated(int index)
+
+  function pick(i) {
+    activated(i);
+    if (!controlled)
+      currentIndex = i;
+  }
 
   spacing: Math.round(4 * Style.uiScaleRatio)
 
@@ -35,10 +46,10 @@ RowLayout {
       Accessible.role: Accessible.PageTab
       Accessible.name: modelData.label
       Accessible.selected: active
-      Keys.onSpacePressed: root.currentIndex = index
-      Keys.onReturnPressed: root.currentIndex = index
-      Keys.onLeftPressed: root.currentIndex = Math.max(0, root.currentIndex - 1)
-      Keys.onRightPressed: root.currentIndex = Math.min(root.model.length - 1, root.currentIndex + 1)
+      Keys.onSpacePressed: root.pick(index)
+      Keys.onReturnPressed: root.pick(index)
+      Keys.onLeftPressed: root.pick(Math.max(0, root.currentIndex - 1))
+      Keys.onRightPressed: root.pick(Math.min(root.model.length - 1, root.currentIndex + 1))
 
       Behavior on implicitWidth {
         NumberAnimation {
@@ -72,7 +83,7 @@ RowLayout {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.currentIndex = tab.index
+        onClicked: root.pick(tab.index)
       }
     }
   }
