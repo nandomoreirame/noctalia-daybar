@@ -8,7 +8,12 @@ import qs.Widgets
 import qs.Services.UI
 import "components/ui"
 import "utils/capture/registry.js" as Registry
+import "utils/capture/timer.js" as TimerCapture
+import "utils/capture/pomodoro.js" as PomodoroCapture
+import "utils/clock.js" as Clock
 import "utils/format.js" as Format
+import "utils/pomodoro.js" as Pomodoro
+import "utils/tabs.js" as Tabs
 
 // Centered quick-capture overlay. Enter saves and closes, Shift+Enter saves and
 // stays, Tab cycles the type, Esc or a click outside closes without saving.
@@ -25,7 +30,10 @@ PanelWindow {
   // Bumped on every open and close, so a slow khal write can tell whether the
   // overlay it was started from is still the one on screen.
   property int session: 0
-  readonly property var typeIcons: ({ task: "checkbox", event: "calendar-event", reminder: "bell", note: "note", link: "link", calculation: "calculator" })
+  readonly property var typeIcons: ({ task: "checkbox", event: "calendar-event", reminder: "bell", note: "note", link: "link", calculation: "calculator", timer: Clock.TIMER_ICON, pomodoro: Tabs.ICONS.focus })
+  // Types outside the Tab cycle (calculation, pomodoro) are shown as a header label.
+  readonly property bool offCycle: Registry.CYCLE.indexOf(result.type) < 0
+  readonly property bool isCommand: isCommandType(result.type)
 
   anchors.top: true
   anchors.left: true
@@ -80,7 +88,7 @@ PanelWindow {
 
   // step: 1 for Tab, -1 for Shift+Tab.
   function cycleType(step) {
-    if (result.type === "calculation")
+    if (offCycle)
       return;
     forcedType = step < 0 ? Registry.prevType(result.type) : Registry.nextType(result.type);
     refresh();
@@ -90,6 +98,16 @@ PanelWindow {
     if (!r.ok)
       return field.text.trim() === "" ? tr("capture.hint") : tr("capture.error." + r.error);
     const p = r.payload;
+    if (r.type === "timer") {
+      const timer = { set: mainInstance.timerTotal > 0, running: mainInstance.timerRunning };
+      const key = TimerCapture.previewKey(r.action, timer);
+      if (r.action !== "startTimer")
+        return tr(key);
+      const head = [Pomodoro.formatClock(p.seconds), p.label].filter(s => s).join("  ·  ");
+      return key ? head + "  ·  " + tr(key).replace("{clock}", Pomodoro.formatClock(mainInstance.timerRemaining)) : head;
+    }
+    if (r.type === "pomodoro")
+      return tr(PomodoroCapture.previewKey(p.command, { running: mainInstance.pomodoroRunning, mode: mainInstance.pomodoroMode }));
     if (r.type === "calculation")
       return "= " + p.display;
     if (r.type === "note")
@@ -99,6 +117,15 @@ PanelWindow {
     const w = Format.describeWhen(p.date, p.time || p.start, r.type === "task" ? null : p.endTime, new Date());
     const day = w.day === "today" || w.day === "tomorrow" ? tr("when." + w.day) : w.day;
     return [p.title, [day, w.time].filter(s => s).join(" ")].filter(s => s).join("  ·  ");
+  }
+
+  // Commands have no "saved" wording; their toast is titled with the type.
+  function savedTitle(r) {
+    return isCommandType(r.type) ? tr("capture.type." + r.type) : tr("capture.saved." + r.type);
+  }
+
+  function isCommandType(type) {
+    return type === "timer" || type === "pomodoro";
   }
 
   function submit(keepOpen) {
@@ -120,12 +147,14 @@ PanelWindow {
     busy = true;
     const startedIn = session;
     const typedText = field.text;
+    // Commands describe the state BEFORE they run, so capture the line now.
+    const shown = previewText(r);
     mainInstance.executeCapture(r, function (ok, error) {
       if (startedIn !== root.session) {
         // The overlay was closed or reopened meanwhile: report through a toast
         // and leave the current field alone.
         if (ok)
-          ToastService.showNotice(tr("capture.saved." + r.type), previewText(r), "check");
+          ToastService.showNotice(savedTitle(r), shown, "check");
         else
           ToastService.showWarning(tr("capture.failed-title"), tr("capture.error." + error) + "\n" + typedText);
         return;
@@ -136,7 +165,7 @@ PanelWindow {
         feedbackIsError = true;
         return;
       }
-      ToastService.showNotice(tr("capture.saved." + r.type), previewText(r), "check");
+      ToastService.showNotice(savedTitle(r), shown, "check");
       if (keepOpen) {
         field.text = "";
         forcedType = "";
@@ -200,17 +229,17 @@ PanelWindow {
         }
 
         RowLayout {
-          visible: root.result.type === "calculation"
+          visible: root.offCycle
           spacing: Math.round(5 * Style.uiScaleRatio)
 
           NIcon {
-            icon: root.typeIcons.calculation
+            icon: root.typeIcons[root.result.type] ?? ""
             pointSize: Style.fontSizeM
             color: Color.mPrimary
           }
 
           NText {
-            text: root.tr("capture.type.calculation")
+            text: root.tr("capture.type." + root.result.type)
             pointSize: Style.fontSizeS
             font.weight: Style.fontWeightSemiBold
             color: Color.mPrimary
@@ -227,7 +256,7 @@ PanelWindow {
           Layout.fillWidth: true
           font.pointSize: Style.fontSizeL * Style.uiScaleRatio
           // Only shown while empty, when the type is the Tab choice or the task default.
-          placeholderText: root.tr("capture.placeholders." + (root.result.type === "calculation" ? "task" : root.result.type))
+          placeholderText: root.tr("capture.placeholders." + (root.offCycle ? "task" : root.result.type))
           maximumLength: 500
           enabled: !root.busy
           error: root.feedback !== "" && root.feedbackIsError
@@ -259,7 +288,7 @@ PanelWindow {
         PillButton {
           primary: true
           implicitHeight: field.implicitHeight
-          text: root.result.type === "calculation" ? root.tr("capture.copy") : root.tr("capture.save")
+          text: root.result.type === "calculation" ? root.tr("capture.copy") : (root.isCommand ? root.tr("capture.run") : root.tr("capture.save"))
           enabled: !root.busy
           onClicked: root.submit(false)
         }
