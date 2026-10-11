@@ -37,7 +37,13 @@ const DYNAMIC = [
   ...["now", "minutes", "hours", "days"].map((u) => "time." + u),
   "bookmarks.saved", "bookmarks.replaced", "notes.untitled",
   "events.confirm-delete", "events.confirm-delete-recurring",
-  ...["not-found", "ambiguous", "read-only", "failed"].map((e) => "events.error." + e)
+  ...["not-found", "ambiguous", "read-only", "failed"].map((e) => "events.error." + e),
+  ...["needs-duration", "invalid-duration", "unknown-command", "no-timer"].map((c) => "capture.error." + c),
+  ...["timer", "pomodoro"].map((t) => "capture.type." + t),
+  "capture.placeholders.timer",
+  ...["pause", "resume", "stop", "replaces"].map((k) => "capture.timer." + k),
+  ...["pause", "stop", "start-work", "start-short", "start-long"].map((k) => "capture.pomodoro." + k),
+  "focus.mode.timer",
 ];
 
 describe("i18n", () => {

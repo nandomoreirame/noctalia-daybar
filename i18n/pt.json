@@ -10,7 +10,7 @@
   },
   "capture": {
     "hint": "Digite para capturar. Tab e Shift+Tab trocam o tipo.",
-    "keys": "Enter salva · Shift+Enter salva e continua · Tab/Shift+Tab tipo · Esc fecha",
+    "keys": "Enter salva · Shift+Enter salva e continua · Tab/Shift+Tab tipo · /t timer · /p pomodoro · Esc fecha",
     "copied": "Resultado copiado",
     "type": {
       "task": "Tarefa",
@@ -18,7 +18,9 @@
       "reminder": "Lembrete",
       "note": "Nota",
       "link": "Link",
-      "calculation": "Cálculo"
+      "calculation": "Cálculo",
+      "timer": "Timer",
+      "pomodoro": "Pomodoro"
     },
     "saved": {
       "task": "Tarefa salva",
@@ -37,7 +39,11 @@
       "division-by-zero": "Divisão por zero",
       "overflow": "Resultado grande demais",
       "calendar-not-configured": "Agenda não configurada (veja o README)",
-      "khal-failed": "O khal não conseguiu criar o evento"
+      "khal-failed": "O khal não conseguiu criar o evento",
+      "needs-duration": "Timer precisa de duração (ex.: 10m, 1h30, 1:30)",
+      "invalid-duration": "Duração entre 1 segundo e 24 horas",
+      "unknown-command": "Comando desconhecido. Use /p, /p foco, /p curta, /p longa ou /p parar",
+      "no-timer": "Nenhum timer definido. Use /t 10m"
     },
     "failed-title": "Captura não salva",
     "save": "Salvar",
@@ -47,7 +53,22 @@
       "event": "Reunião sexta 15h-16h (precisa de data e hora)",
       "reminder": "Pagar boleto amanhã 18h (precisa de horário)",
       "note": "Uma ideia ou anotação rápida",
-      "link": "Cole um link https://... para ler depois"
+      "link": "Cole um link https://... para ler depois",
+      "timer": "10m chá, 1h30 ou 1:30 (precisa de duração)"
+    },
+    "run": "Executar",
+    "timer": {
+      "pause": "Pausar o timer",
+      "resume": "Retomar o timer",
+      "stop": "Parar e reiniciar o timer",
+      "replaces": "substitui o timer atual ({clock})"
+    },
+    "pomodoro": {
+      "pause": "Pausar o pomodoro",
+      "stop": "Parar e reiniciar o pomodoro",
+      "start-work": "Iniciar foco",
+      "start-short": "Iniciar pausa curta",
+      "start-long": "Iniciar pausa longa"
     }
   },
   "when": {
@@ -80,7 +101,8 @@
     "mode": {
       "work": "Foco",
       "short": "Pausa curta",
-      "long": "Pausa longa"
+      "long": "Pausa longa",
+      "timer": "Timer"
     },
     "no-task": "Sem tarefa",
     "cycle": "Ciclo {n} de {total}",
@@ -188,5 +210,15 @@
     "minutes": "há {n} min",
     "hours": "há {n} h",
     "days": "há {n} d"
+  },
+  "timer": {
+    "placeholder": "Ex.: 5m, 1h30, 1:30 chá",
+    "preset": "{n} min",
+    "new": "Novo timer",
+    "entry-help": "Enter inicia. Pela captura rápida: /t 10m chá",
+    "toast-title": "Timer",
+    "toast-done": "Tempo esgotado",
+    "paused-pomodoro": "Foco pausado para o timer",
+    "paused-timer": "Timer pausado para o foco"
   }
 }

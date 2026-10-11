@@ -10,7 +10,7 @@
   },
   "capture": {
     "hint": "Type to capture. Tab and Shift+Tab change the type.",
-    "keys": "Enter save · Shift+Enter save and keep open · Tab/Shift+Tab type · Esc close",
+    "keys": "Enter saves · Shift+Enter saves and stays · Tab/Shift+Tab type · /t timer · /p pomodoro · Esc closes",
     "copied": "Result copied to clipboard",
     "type": {
       "task": "Task",
@@ -18,7 +18,9 @@
       "reminder": "Reminder",
       "note": "Note",
       "link": "Link",
-      "calculation": "Calculation"
+      "calculation": "Calculation",
+      "timer": "Timer",
+      "pomodoro": "Pomodoro"
     },
     "saved": {
       "task": "Task saved",
@@ -37,7 +39,11 @@
       "division-by-zero": "Division by zero",
       "overflow": "Result too large",
       "calendar-not-configured": "Calendar not configured (see README)",
-      "khal-failed": "khal could not create the event"
+      "khal-failed": "khal could not create the event",
+      "needs-duration": "A timer needs a duration (e.g. 10m, 1h30, 1:30)",
+      "invalid-duration": "Duration between 1 second and 24 hours",
+      "unknown-command": "Unknown command. Use /p, /p focus, /p short, /p long or /p stop",
+      "no-timer": "No timer set. Use /t 10m"
     },
     "failed-title": "Capture not saved",
     "save": "Save",
@@ -47,7 +53,22 @@
       "event": "Meeting friday 15h-16h (needs a date and time)",
       "reminder": "Pay the bill tomorrow 18h (needs a time)",
       "note": "An idea or a quick note",
-      "link": "Paste an https://... link to read later"
+      "link": "Paste an https://... link to read later",
+      "timer": "10m tea, 1h30 or 1:30 (needs a duration)"
+    },
+    "run": "Run",
+    "timer": {
+      "pause": "Pause the timer",
+      "resume": "Resume the timer",
+      "stop": "Stop and reset the timer",
+      "replaces": "replaces the current timer ({clock})"
+    },
+    "pomodoro": {
+      "pause": "Pause the pomodoro",
+      "stop": "Stop and reset the pomodoro",
+      "start-work": "Start focus",
+      "start-short": "Start short break",
+      "start-long": "Start long break"
     }
   },
   "when": {
@@ -80,7 +101,8 @@
     "mode": {
       "work": "Focus",
       "short": "Short break",
-      "long": "Long break"
+      "long": "Long break",
+      "timer": "Timer"
     },
     "no-task": "No task",
     "cycle": "Cycle {n} of {total}",
@@ -188,5 +210,15 @@
     "minutes": "{n} min ago",
     "hours": "{n} h ago",
     "days": "{n} d ago"
+  },
+  "timer": {
+    "placeholder": "E.g. 5m, 1h30, 1:30 tea",
+    "preset": "{n} min",
+    "new": "New timer",
+    "entry-help": "Enter starts. From quick capture: /t 10m tea",
+    "toast-title": "Timer",
+    "toast-done": "Time's up",
+    "paused-pomodoro": "Focus paused for the timer",
+    "paused-timer": "Timer paused for focus"
   }
 }
