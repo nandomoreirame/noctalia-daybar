@@ -68,3 +68,19 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 | 49 | ED-REQ-004 | OK on `daybar teste exclusao`; offline once | Row gone at once; gone in Google after sync; offline shows the sync warning and it does not come back |
 | 50 | ED-REQ-005 | Delete the event on the phone, then try in Daybar | "Evento não encontrado"; calendar reloads |
 | 51 | ED-REQ-006 | `ps -ef \| grep -E "grep -rlP\|rm -f --"` while deleting | argv processes only, no `sh -c` |
+
+## Focus timer
+
+| # | REQ | Step | Expected |
+|---|-----|------|----------|
+| 52 | FT-REQ-001 | Timer field: `chá`, `25h`, `1:30`, `1h 30m` | needs-duration, invalid-duration, 01:30, 1:30:00 |
+| 53 | FT-REQ-002 | Start focus, click Timer, click Foco | Focus still counting, no reset |
+| 54 | FT-REQ-003 | Click the 1 min preset | Starts at once |
+| 55 | FT-REQ-004 | Pause, reset, Novo timer | Paused; back to full and stopped; entry state with the field focused |
+| 56 | FT-REQ-005 | Focus view | Ring around the clock, shrinking each second; dots not clipped |
+| 57 | FT-REQ-006 | `/t 5s ovo` | Toast "Timer: ovo", alarm 5 s, back to 00:05 |
+| 58 | FT-REQ-007 | Focus running, `/t 1m`; then `/p` | "Foco pausado para o timer"; then "Timer pausado para o foco", focus resumes |
+| 59 | FT-REQ-008 | `/t 5m` with a timer set; `/t`; `/t parar` | Preview warns it replaces; pause/resume; reset |
+| 60 | FT-REQ-009 | `/p curta` with the short break paused; `/p agora` | Resumes without reset; unknown-command |
+| 61 | FT-REQ-010 | Tab from Link; empty Enter | Timer type; "Nada para salvar ainda" |
+| 62 | FT-REQ-011 | Timer running, middle click on the bar | Alarm icon and clock; pauses the timer |

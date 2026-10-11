@@ -32,11 +32,24 @@ Open it with a shortcut (see [niri binding](#shortcuts)) and type:
 | `/e reunião sexta 15h-16h` | Google Calendar event (1h when there is no end) |
 | `/l pagar boleto 18h` | reminder: 15-minute event with alarm + local toast |
 | `/n uma ideia` | note, listed in Notes |
+| `/t 10m chá` | timer: countdown with alarm (`/t` pauses or resumes, `/t parar` resets) |
+| `/p`, `/p foco`, `/p curta`, `/p longa`, `/p parar` | pomodoro: start/pause, switch phase and start, reset |
 | `https://...` | bookmark with page preview (prefilled from the clipboard) |
 | `=200*15%` | calculation; Enter copies the result |
 
 `Tab` cycles the type, `Enter` saves and closes, `Shift+Enter` saves and keeps the
 field open, `Esc` closes.
+
+## Focus
+
+The Focus tab runs pomodoro phases (Focus, Short break, Long break) and a Timer,
+each with its clock inside a progress ring. The Timer takes any duration: `90s`,
+`10m`, `1h30`, `1h 30m`, `1:30` (1 min 30 s) or a bare number of minutes, up to
+24 h, plus an optional label (`10m chá`). Presets start 1, 5, 10, 15 or 30 minutes
+at once. When it ends it plays the same alarm as the pomodoro and shows a toast
+with the label. Only one clock counts at a time: starting the timer pauses a
+running pomodoro and starting the pomodoro pauses the timer, both keeping their
+remaining time. The bar shows whichever clock is running.
 
 ## Bookmarks
 

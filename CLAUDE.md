@@ -14,7 +14,7 @@ The plan is the source of truth for file contents and order. When code and plan 
 
 ## What it is
 
-`daybar` is a Noctalia Shell plugin (noctalia-shell 4.7.x, Quickshell/QML, run as `qs -c noctalia-shell`) with a centered quick-capture overlay (task, event, reminder, note, link, calculation) and a bar toolbar with Calendar, Today, Focus (pomodoro) and Inbox tabs. Noctalia 5 is not a target: its plugins are Luau scripts with a `plugin.toml` manifest, a different system from the v4 QML plugins (tested on noctalia-shell 4.7.7).
+`daybar` is a Noctalia Shell plugin (noctalia-shell 4.7.x, Quickshell/QML, run as `qs -c noctalia-shell`) with a centered quick-capture overlay (task, event, reminder, note, link, calculation, timer, pomodoro commands) and a bar toolbar with Calendar, Today, Focus (pomodoro and timer) and Inbox tabs. Noctalia 5 is not a target: its plugins are Luau scripts with a `plugin.toml` manifest, a different system from the v4 QML plugins (tested on noctalia-shell 4.7.7).
 
 ## Commands
 
@@ -52,7 +52,7 @@ Manual end-to-end checklist: `docs/SMOKE.md` (one row per P1 REQ).
 
 **Services live in `Main.qml`** (data store, agenda writes, reminders, pomodoro, capture overlay, IPC target `plugin:daybar`) so timers and reminders keep running with the panel closed. UI files reach them via `pluginApi.mainInstance`.
 
-**Capture handler registry.** One file per type in `utils/capture/<type>.js` exposing `detect`, `preview`, `commit`, wired in `utils/capture/registry.js`. Adding a type means one handler file plus its test, no core changes. Inference order: prefix (`/e`, `/l`, `/n`), then `=`, then a lone URL as link, then task.
+**Capture handler registry.** One file per type in `utils/capture/<type>.js` exposing `detect`, `preview`, `commit`, wired in `utils/capture/registry.js`. Adding a type means one handler file plus its test, no core changes. Inference order: `=`, then `/p` (pomodoro command), then prefix (`/e`, `/l`, `/n`, `/t`), then the Tab-forced type, then a lone URL as link, then task.
 
 **Capture overlay** is its own `PanelWindow` on `WlrLayer.Overlay` with exclusive keyboard focus, because the plugin's single panel slot is the toolbar.
 
@@ -60,7 +60,7 @@ Manual end-to-end checklist: `docs/SMOKE.md` (one row per P1 REQ).
 
 **Persistence**: data in `~/.local/share/noctalia-daybar/data.json` (`version` field, `FileView` atomic writes, debounced). Corrupt file is renamed to `.bak` and the plugin starts empty. `pluginSettings` holds configuration only, never data.
 
-**Key utils**: `when.js` (own pt-BR date/time parser: weekdays mean the next occurrence, a past time without date means tomorrow), `calc.js` (shunting-yard over whitelisted tokens, postfix `%` is percent not modulo), `today.js` (events by time, then timed tasks, then untimed; overdue flagged; event check state keyed `uid+date`), `pomodoro.js` (state machine forked from the MIT pomodoro plugin), `khal.js` (argv builders).
+**Key utils**: `when.js` (own pt-BR date/time parser: weekdays mean the next occurrence, a past time without date means tomorrow), `calc.js` (shunting-yard over whitelisted tokens, postfix `%` is percent not modulo), `today.js` (events by time, then timed tasks, then untimed; overdue flagged; event check state keyed `uid+date`), `pomodoro.js` (state machine forked from the MIT pomodoro plugin), `khal.js` (argv builders), `duration.js` (timer duration parser), `clock.js` (bar clock source, ring progress, Focus chip action).
 
 ## Hard constraints
 
