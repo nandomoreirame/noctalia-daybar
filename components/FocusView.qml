@@ -6,8 +6,10 @@ import qs.Widgets
 import "ui"
 import "../utils/pomodoro.js" as Pomodoro
 import "../utils/dates.js" as Dates
+import "../utils/clock.js" as Clock
 
-// Pomodoro: mode chips, the clock, an optional link to one of today's tasks,
+// Focus: mode chips plus a Timer chip that switches to the countdown timer view.
+// Pomodoro view: the clock inside a progress ring, an optional link to one of today's tasks,
 // today's progress against the daily goal and quick settings (gear button).
 Card {
   id: root
@@ -15,7 +17,8 @@ Card {
   property var pluginApi: null
   property var mainInstance: null
   property bool showSettings: false
-  readonly property var modes: [["work", Pomodoro.WORK], ["short", Pomodoro.SHORT], ["long", Pomodoro.LONG]]
+  readonly property var modes: [["work", Pomodoro.WORK], ["short", Pomodoro.SHORT], ["long", Pomodoro.LONG], ["timer", Clock.TIMER_CHIP]]
+  readonly property bool timerView: mainInstance?.focusPanel === "timer"
   readonly property var taskOptions: {
     const none = [{ key: "", name: tr("focus.no-task") }];
     if (!mainInstance)
@@ -41,6 +44,14 @@ Card {
     return pluginApi ? pluginApi.tr(key) : key;
   }
 
+  // Coming back from the Timer view to the current mode keeps the pomodoro running.
+  function selectChip(chip) {
+    const action = Clock.chipAction(chip, mainInstance.focusPanel, mainInstance.pomodoroMode);
+    mainInstance.focusPanel = action === "show-timer" ? "timer" : "pomodoro";
+    if (action === "set-mode")
+      mainInstance.pomodoroSetMode(chip);
+  }
+
   function progressText() {
     const base = dailyGoal > 0 ? tr("focus.today-goal").replace("{total}", dailyGoal) : tr("focus.today-count");
     return base.replace("{n}", sessionsToday);
@@ -62,8 +73,8 @@ Card {
         Chip {
           required property var modelData
           text: root.tr("focus.mode." + modelData[0])
-          selected: root.mainInstance?.pomodoroMode === modelData[1]
-          onClicked: root.mainInstance.pomodoroSetMode(modelData[1])
+          selected: root.timerView ? modelData[1] === Clock.TIMER_CHIP : root.mainInstance?.pomodoroMode === modelData[1]
+          onClicked: root.selectChip(modelData[1])
         }
       }
 
@@ -72,100 +83,129 @@ Card {
       }
 
       PillButton {
+        visible: !root.timerView
         icon: "settings"
         tooltipText: root.tr("focus.settings")
         onClicked: root.showSettings = true
       }
     }
 
-    // Everything below the header is one centered stack: clock, cycle, controls,
-    // linked task and today's progress dots.
+    // Content area: the pomodoro pane or the timer view.
     Item {
-      Layout.fillHeight: true
-    }
-
-    NText {
       Layout.fillWidth: true
-      horizontalAlignment: Text.AlignHCenter
-      text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
-      family: Settings.data.ui.fontFixed
-      pointSize: Style.fontSizeXXXL * 2.6
-      font.weight: Style.fontWeightBold
-      color: root.running ? Color.mPrimary : Color.mOnSurface
-    }
-
-    NText {
-      Layout.fillWidth: true
-      Layout.topMargin: -Math.round(6 * Style.uiScaleRatio)
-      horizontalAlignment: Text.AlignHCenter
-      text: root.tr("focus.cycle").replace("{n}", (root.mainInstance?.pomodoroCompleted ?? 0) + 1).replace("{total}", root.mainInstance?.pomodoroConfig.sessionsBeforeLong ?? 4)
-      pointSize: Style.fontSizeS
-      color: Qt.alpha(Color.mOnSurface, 0.56)
-    }
-
-    RowLayout {
-      Layout.alignment: Qt.AlignHCenter
-      Layout.topMargin: Math.round(4 * Style.uiScaleRatio)
-      spacing: Math.round(8 * Style.uiScaleRatio)
-
-      PillButton {
-        icon: "refresh"
-        tooltipText: root.tr("focus.reset")
-        onClicked: root.mainInstance.pomodoroReset()
-      }
-
-      PillButton {
-        primary: true
-        implicitHeight: Math.round(34 * Style.uiScaleRatio)
-        icon: root.running ? "player-pause" : "player-play"
-        text: root.running ? root.tr("focus.pause") : root.tr("focus.start")
-        onClicked: root.running ? root.mainInstance.pomodoroPause() : root.mainInstance.pomodoroStart()
-      }
-
-      PillButton {
-        icon: "player-skip-forward"
-        tooltipText: root.tr("focus.skip")
-        onClicked: root.mainInstance.pomodoroSkip()
-      }
-    }
-
-    NComboBox {
-      // The empty built-in label would take any width beyond minimumWidth and push
-      // the box off center, so size the box through minimumWidth only.
-      Layout.alignment: Qt.AlignHCenter
-      minimumWidth: 320
-      model: root.taskOptions
-      currentKey: root.mainInstance?.linkedTaskId ?? ""
-      placeholder: root.tr("focus.no-task")
-      onSelected: key => root.mainInstance.linkedTaskId = key
-    }
-
-    Item {
       Layout.fillHeight: true
-    }
 
-    // Today's progress: one dot per session of the daily goal.
-    RowLayout {
-      Layout.alignment: Qt.AlignHCenter
-      spacing: Math.round(5 * Style.uiScaleRatio)
+      ColumnLayout {
+        id: pomodoroPane
+        anchors.fill: parent
+        spacing: Math.round(8 * Style.uiScaleRatio)
+        visible: !root.timerView
 
-      NText {
-        Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
-        text: root.progressText()
-        pointSize: Style.fontSizeS
-        color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
-      }
-
-      Repeater {
-        model: root.dailyGoal
-
-        Rectangle {
-          required property int index
-          width: Math.round(7 * Style.uiScaleRatio)
-          height: width
-          radius: width / 2
-          color: index < root.sessionsToday ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.12)
+        // Everything below the header is one centered stack: ring (clock and cycle), controls,
+        // linked task and today's progress dots.
+        Item {
+          Layout.fillHeight: true
         }
+
+        ProgressRing {
+          Layout.alignment: Qt.AlignHCenter
+          progress: Clock.progress(root.mainInstance?.pomodoroRemaining ?? 0, root.mainInstance ? Pomodoro.durationFor(root.mainInstance.pomodoroMode, root.mainInstance.pomodoroConfig) : 0)
+          arcColor: root.running ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.5)
+          accessibleName: root.tr("focus.mode." + root.modes[root.mainInstance?.pomodoroMode ?? 0][0]) + " " + Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
+
+          ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 0
+
+            NText {
+              Layout.alignment: Qt.AlignHCenter
+              text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
+              family: Settings.data.ui.fontFixed
+              pointSize: Style.fontSizeXXXL * 1.6
+              font.weight: Style.fontWeightBold
+              color: root.running ? Color.mPrimary : Color.mOnSurface
+            }
+
+            NText {
+              Layout.alignment: Qt.AlignHCenter
+              text: root.tr("focus.cycle").replace("{n}", (root.mainInstance?.pomodoroCompleted ?? 0) + 1).replace("{total}", root.mainInstance?.pomodoroConfig.sessionsBeforeLong ?? 4)
+              pointSize: Style.fontSizeS
+              color: Qt.alpha(Color.mOnSurface, 0.56)
+            }
+          }
+        }
+
+        RowLayout {
+          Layout.alignment: Qt.AlignHCenter
+          Layout.topMargin: Math.round(4 * Style.uiScaleRatio)
+          spacing: Math.round(8 * Style.uiScaleRatio)
+
+          PillButton {
+            icon: "refresh"
+            tooltipText: root.tr("focus.reset")
+            onClicked: root.mainInstance.pomodoroReset()
+          }
+
+          PillButton {
+            primary: true
+            implicitHeight: Math.round(34 * Style.uiScaleRatio)
+            icon: root.running ? "player-pause" : "player-play"
+            text: root.running ? root.tr("focus.pause") : root.tr("focus.start")
+            onClicked: root.running ? root.mainInstance.pomodoroPause() : root.mainInstance.pomodoroStart()
+          }
+
+          PillButton {
+            icon: "player-skip-forward"
+            tooltipText: root.tr("focus.skip")
+            onClicked: root.mainInstance.pomodoroSkip()
+          }
+        }
+
+        NComboBox {
+          // The empty built-in label would take any width beyond minimumWidth and push
+          // the box off center, so size the box through minimumWidth only.
+          Layout.alignment: Qt.AlignHCenter
+          minimumWidth: 320
+          model: root.taskOptions
+          currentKey: root.mainInstance?.linkedTaskId ?? ""
+          placeholder: root.tr("focus.no-task")
+          onSelected: key => root.mainInstance.linkedTaskId = key
+        }
+
+        Item {
+          Layout.fillHeight: true
+        }
+
+        // Today's progress: one dot per session of the daily goal.
+        RowLayout {
+          Layout.alignment: Qt.AlignHCenter
+          spacing: Math.round(5 * Style.uiScaleRatio)
+
+          NText {
+            Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
+            text: root.progressText()
+            pointSize: Style.fontSizeS
+            color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
+          }
+
+          Repeater {
+            model: root.dailyGoal
+
+            Rectangle {
+              required property int index
+              width: Math.round(7 * Style.uiScaleRatio)
+              height: width
+              radius: width / 2
+              color: index < root.sessionsToday ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.12)
+            }
+          }
+        }
+      }
+
+      // Timer view (TimerPane, added in the next task).
+      Item {
+        anchors.fill: parent
+        visible: root.timerView
       }
     }
   }
