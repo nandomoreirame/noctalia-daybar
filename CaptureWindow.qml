@@ -99,11 +99,11 @@ PanelWindow {
       return field.text.trim() === "" ? tr("capture.hint") : tr("capture.error." + r.error);
     const p = r.payload;
     if (r.type === "timer") {
-      const timer = { set: mainInstance.timerTotal > 0, running: mainInstance.timerRunning };
+      const timer = { set: mainInstance.timerTotal > 0, running: mainInstance.timerRunning, ringing: mainInstance.timerSoundPlaying };
       const key = TimerCapture.previewKey(r.action, timer);
       if (r.action !== "startTimer")
         return tr(key);
-      const head = [Pomodoro.formatClock(p.seconds), p.label].filter(s => s).join("  ·  ");
+      const head = timerHead(p);
       return key ? head + "  ·  " + tr(key).replace("{clock}", Pomodoro.formatClock(mainInstance.timerRemaining)) : head;
     }
     if (r.type === "pomodoro")
@@ -117,6 +117,10 @@ PanelWindow {
     const w = Format.describeWhen(p.date, p.time || p.start, r.type === "task" ? null : p.endTime, new Date());
     const day = w.day === "today" || w.day === "tomorrow" ? tr("when." + w.day) : w.day;
     return [p.title, [day, w.time].filter(s => s).join(" ")].filter(s => s).join("  ·  ");
+  }
+
+  function timerHead(p) {
+    return [Pomodoro.formatClock(p.seconds), p.label].filter(s => s).join("  ·  ");
   }
 
   // Commands have no "saved" wording; their toast is titled with the type.
@@ -147,8 +151,9 @@ PanelWindow {
     busy = true;
     const startedIn = session;
     const typedText = field.text;
-    // Commands describe the state BEFORE they run, so capture the line now.
-    const shown = previewText(r);
+    // Commands describe the state BEFORE they run, so capture the line now. A new
+    // timer's toast drops the "replaces" note, which is stale once it ran.
+    const shown = r.action === "startTimer" ? timerHead(r.payload) : previewText(r);
     mainInstance.executeCapture(r, function (ok, error) {
       if (startedIn !== root.session) {
         // The overlay was closed or reopened meanwhile: report through a toast

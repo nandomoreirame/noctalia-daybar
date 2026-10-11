@@ -17,10 +17,14 @@ function build(text) {
   return { ok: true, type: TYPE, action: "startTimer", payload: { seconds: d.seconds, label: d.label } };
 }
 
-// i18n key of the preview line, given the timer state { set, running }. For
+// i18n key of the preview line, given the timer state { set, running, ringing }. For
 // startTimer the overlay shows the clock and label and appends this key when non-empty.
 function previewKey(action, timer) {
   if (action === "timerStop") return "capture.timer.stop";
-  if (action === "timerToggle") return !timer.set ? "capture.error.no-timer" : (timer.running ? "capture.timer.pause" : "capture.timer.resume");
+  if (action === "timerToggle") {
+    if (!timer.set) return "capture.error.no-timer";
+    if (timer.ringing) return "capture.timer.dismiss";
+    return timer.running ? "capture.timer.pause" : "capture.timer.resume";
+  }
   return timer.set ? "capture.timer.replaces" : "";
 }

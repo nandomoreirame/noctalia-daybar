@@ -61,7 +61,8 @@
       "pause": "Pausar o timer",
       "resume": "Retomar o timer",
       "stop": "Parar e reiniciar o timer",
-      "replaces": "substitui o timer atual ({clock})"
+      "replaces": "substitui o timer atual ({clock})",
+      "dismiss": "Silenciar o alarme"
     },
     "pomodoro": {
       "pause": "Pausar o pomodoro",

@@ -100,8 +100,9 @@ Item {
     onClicked: mouse => {
       if (mouse.button === Qt.MiddleButton && root.mainInstance) {
         const m = root.mainInstance;
+        // A ringing timer is only silenced; restarting it would begin a new countdown.
         if (Clock.middleClickTarget(root.clockSource) === "timer")
-          m.timerRunning ? m.timerPause() : m.timerStart();
+          m.timerSoundPlaying ? m.stopAlarm("timer") : (m.timerRunning ? m.timerPause() : m.timerStart());
         else
           m.pomodoroRunning ? m.pomodoroPause() : m.pomodoroStart();
       } else if (root.pluginApi) {

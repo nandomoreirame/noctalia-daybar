@@ -32,6 +32,8 @@ describe("timer capture", () => {
     expect(Timer.previewKey("timerToggle", paused)).toBe("capture.timer.resume");
     expect(Timer.previewKey("timerToggle", running)).toBe("capture.timer.pause");
     expect(Timer.previewKey("timerStop", running)).toBe("capture.timer.stop");
+    // While its alarm rings, "/t" only silences it instead of restarting the countdown.
+    expect(Timer.previewKey("timerToggle", { set: true, running: false, ringing: true })).toBe("capture.timer.dismiss");
   });
 });
 

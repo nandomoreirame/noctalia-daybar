@@ -41,7 +41,7 @@ const DYNAMIC = [
   ...["needs-duration", "invalid-duration", "unknown-command", "no-timer"].map((c) => "capture.error." + c),
   ...["timer", "pomodoro"].map((t) => "capture.type." + t),
   "capture.placeholders.timer",
-  ...["pause", "resume", "stop", "replaces"].map((k) => "capture.timer." + k),
+  ...["pause", "resume", "stop", "replaces", "dismiss"].map((k) => "capture.timer." + k),
   ...["pause", "stop", "start-work", "start-short", "start-long"].map((k) => "capture.pomodoro." + k),
   "focus.mode.timer",
 ];

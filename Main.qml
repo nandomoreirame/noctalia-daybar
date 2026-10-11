@@ -646,6 +646,8 @@ Item {
       focusPanel = "timer";
       if (result.action === "timerStop")
         timerReset();
+      else if (timerSoundPlaying)
+        stopAlarm("timer");
       else if (timerRunning)
         timerPause();
       else
@@ -789,20 +791,20 @@ Item {
 
   function pomodoroPause() {
     pomodoroRunning = false;
-    stopAlarm();
+    stopAlarm("pomodoro");
   }
 
   function pomodoroReset() {
     pomodoroRunning = false;
     pomodoroStarted = false;
     pomodoroRemaining = Pomodoro.durationFor(pomodoroMode, pomodoroConfig);
-    stopAlarm();
+    stopAlarm("pomodoro");
   }
 
   function pomodoroSkip() {
     pomodoroRunning = false;
     pomodoroStarted = false;
-    stopAlarm();
+    stopAlarm("pomodoro");
     const next = Pomodoro.nextPhase({ mode: pomodoroMode, completed: pomodoroCompleted }, pomodoroConfig);
     pomodoroMode = next.mode;
     pomodoroCompleted = next.completed;
@@ -812,7 +814,7 @@ Item {
   function pomodoroSetMode(mode) {
     pomodoroRunning = false;
     pomodoroStarted = false;
-    stopAlarm();
+    stopAlarm("pomodoro");
     pomodoroMode = mode;
     pomodoroRemaining = Pomodoro.durationFor(mode, pomodoroConfig);
   }
@@ -841,8 +843,10 @@ Item {
     alarmLimitTimer.restart();
   }
 
-  function stopAlarm() {
-    if (alarmSource === "")
+  // Without a source, stops whichever alarm rings (starting a clock silences both);
+  // with one, only that clock's alarm, so pausing one clock leaves the other ringing.
+  function stopAlarm(source) {
+    if (alarmSource === "" || (source && alarmSource !== source))
       return;
     SoundService.stopSound(alarmSoundFile);
     alarmSource = "";
@@ -922,14 +926,14 @@ Item {
 
   function timerPause() {
     timerRunning = false;
-    stopAlarm();
+    stopAlarm("timer");
   }
 
   // Back to the full duration, stopped.
   function timerReset() {
     timerRunning = false;
     timerRemaining = timerTotal;
-    stopAlarm();
+    stopAlarm("timer");
   }
 
   // "New timer": back to the entry state.
@@ -938,7 +942,7 @@ Item {
     timerTotal = 0;
     timerRemaining = 0;
     timerLabel = "";
-    stopAlarm();
+    stopAlarm("timer");
   }
 
   // Rings, then waits at its full duration, ready to run again.
