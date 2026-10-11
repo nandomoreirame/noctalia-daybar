@@ -114,6 +114,12 @@ Item {
     ProgressRing {
       id: ring
       Layout.alignment: Qt.AlignHCenter
+      // Shrinks with the space left in the panel (80 to 160 px), always round.
+      Layout.fillHeight: true
+      Layout.minimumHeight: Math.round(80 * Style.uiScaleRatio)
+      Layout.preferredHeight: Math.round(160 * Style.uiScaleRatio)
+      Layout.maximumHeight: Math.round(160 * Style.uiScaleRatio)
+      Layout.preferredWidth: height
       progress: Clock.progress(root.remaining, root.mainInstance?.timerTotal ?? 0)
       arcColor: root.running ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.5)
       accessibleName: root.tr("focus.mode.timer") + " " + Pomodoro.formatClock(root.remaining)
@@ -124,6 +130,12 @@ Item {
 
         NText {
           Layout.alignment: Qt.AlignHCenter
+          // Fits h:mm:ss inside the ring by shrinking from the large size.
+          Layout.preferredWidth: ring.width * 0.8
+          horizontalAlignment: Text.AlignHCenter
+          fontSizeMode: Text.HorizontalFit
+          minimumPointSize: Style.fontSizeM
+          elide: Text.ElideNone
           text: Pomodoro.formatClock(root.remaining)
           family: Settings.data.ui.fontFixed
           pointSize: Style.fontSizeXXXL * 1.6

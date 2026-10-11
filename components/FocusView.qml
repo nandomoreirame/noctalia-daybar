@@ -108,7 +108,14 @@ Card {
         }
 
         ProgressRing {
+          id: pomodoroRing
           Layout.alignment: Qt.AlignHCenter
+          // Shrinks with the space left in the panel (80 to 160 px), always round.
+          Layout.fillHeight: true
+          Layout.minimumHeight: Math.round(80 * Style.uiScaleRatio)
+          Layout.preferredHeight: Math.round(160 * Style.uiScaleRatio)
+          Layout.maximumHeight: Math.round(160 * Style.uiScaleRatio)
+          Layout.preferredWidth: height
           progress: Clock.progress(root.mainInstance?.pomodoroRemaining ?? 0, root.mainInstance ? Pomodoro.durationFor(root.mainInstance.pomodoroMode, root.mainInstance.pomodoroConfig) : 0)
           arcColor: root.running ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.5)
           accessibleName: root.tr("focus.mode." + root.modes[root.mainInstance?.pomodoroMode ?? 0][0]) + " " + Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
@@ -119,6 +126,12 @@ Card {
 
             NText {
               Layout.alignment: Qt.AlignHCenter
+              // Fits h:mm:ss inside the ring by shrinking from the large size.
+              Layout.preferredWidth: pomodoroRing.width * 0.8
+              horizontalAlignment: Text.AlignHCenter
+              fontSizeMode: Text.HorizontalFit
+              minimumPointSize: Style.fontSizeM
+              elide: Text.ElideNone
               text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
               family: Settings.data.ui.fontFixed
               pointSize: Style.fontSizeXXXL * 1.6
