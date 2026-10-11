@@ -4,12 +4,13 @@ import Quickshell
 import qs.Commons
 import qs.Widgets
 import qs.Services.UI
+import "utils/clock.js" as Clock
 import "utils/pomodoro.js" as Pomodoro
 import "utils/tabs.js" as Tabs
 import "utils/today.js" as Today
 
-// Bar entry: the next tab's icon and label, or the focus clock while a pomodoro is running.
-// Left click toggles the toolbar, middle click starts/pauses the timer.
+// Bar entry: the next tab's icon and label, or the running clock (pomodoro or timer).
+// Left click toggles the toolbar, middle click starts/pauses the clock shown (else the pomodoro).
 Item {
   id: root
 
@@ -21,7 +22,9 @@ Item {
   property int sectionWidgetsCount: 0
 
   readonly property var mainInstance: pluginApi?.mainInstance ?? null
-  readonly property bool timerVisible: !!mainInstance && (mainInstance.pomodoroRunning || mainInstance.pomodoroSoundPlaying)
+  // "timer", "pomodoro" or "" (see Main.barClock).
+  readonly property string clockSource: mainInstance ? mainInstance.barClock : ""
+  readonly property bool timerVisible: clockSource !== ""
   // Tab the panel will open on, so the bar tells where a click lands.
   readonly property string nextTab: mainInstance ? Tabs.initialTab("", mainInstance.setting("initialTab"), mainInstance.data.ui?.lastTab) : Tabs.FALLBACK
   readonly property string nextTabIcon: Tabs.ICONS[nextTab]
@@ -54,7 +57,7 @@ Item {
       spacing: Style.marginS
 
       NIcon {
-        icon: root.timerVisible ? Tabs.ICONS.focus : root.nextTabIcon
+        icon: root.clockSource === "timer" ? Clock.TIMER_ICON : (root.timerVisible ? Tabs.ICONS.focus : root.nextTabIcon)
         applyUiScale: false
         color: root.timerVisible ? Color.mPrimary : (mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface)
       }
@@ -75,7 +78,7 @@ Item {
 
       NText {
         visible: root.timerVisible && !root.barIsVertical
-        text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
+        text: Pomodoro.formatClock(root.clockSource === "timer" ? (root.mainInstance?.timerRemaining ?? 0) : (root.mainInstance?.pomodoroRemaining ?? 0))
         family: Settings.data.ui.fontFixed
         pointSize: Style.barFontSize
         color: Color.mPrimary
@@ -96,7 +99,11 @@ Item {
 
     onClicked: mouse => {
       if (mouse.button === Qt.MiddleButton && root.mainInstance) {
-        root.mainInstance.pomodoroRunning ? root.mainInstance.pomodoroPause() : root.mainInstance.pomodoroStart();
+        const m = root.mainInstance;
+        if (Clock.middleClickTarget(root.clockSource) === "timer")
+          m.timerRunning ? m.timerPause() : m.timerStart();
+        else
+          m.pomodoroRunning ? m.pomodoroPause() : m.pomodoroStart();
       } else if (root.pluginApi) {
         root.pluginApi.togglePanel(root.screen, root);
       }
