@@ -23,6 +23,8 @@ import "utils/tabs.js" as Tabs
 import "utils/eventdelete.js" as EventDelete
 import "utils/today.js" as Today
 import "utils/events.js" as Events
+import "utils/clock.js" as Clock
+import "utils/capture/pomodoro.js" as PomodoroCommand
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
 // the capture overlay. UI files only read state from here and call these functions.
@@ -635,6 +637,23 @@ Item {
           remember();
         done(ok, error);
       });
+    } else if (result.action === "startTimer") {
+      timerStartNew(p.seconds, p.label);
+      done(true, "");
+    } else if (result.action === "timerToggle" || result.action === "timerStop") {
+      if (timerTotal <= 0)
+        return done(false, "no-timer");
+      focusPanel = "timer";
+      if (result.action === "timerStop")
+        timerReset();
+      else if (timerRunning)
+        timerPause();
+      else
+        timerStart();
+      done(true, "");
+    } else if (result.action === "pomodoro") {
+      runPomodoroCommand(p.command);
+      done(true, "");
     }
   }
 
@@ -726,7 +745,10 @@ Item {
   property int pomodoroMode: Pomodoro.WORK
   property int pomodoroCompleted: 0
   property int pomodoroRemaining: 0
-  property bool pomodoroSoundPlaying: false
+  // Which countdown's alarm is ringing: "", "pomodoro" or "timer". One sound, one 5 s limit.
+  property string alarmSource: ""
+  readonly property bool pomodoroSoundPlaying: alarmSource === "pomodoro"
+  readonly property bool timerSoundPlaying: alarmSource === "timer"
   property string linkedTaskId: ""
 
   readonly property bool focusShouldBeOn: pomodoroRunning && pomodoroMode === Pomodoro.WORK
@@ -750,11 +772,15 @@ Item {
   Timer {
     id: alarmLimitTimer
     interval: 5000
-    onTriggered: root.pomodoroStopAlarm()
+    onTriggered: root.stopAlarm()
   }
 
   function pomodoroStart() {
-    pomodoroStopAlarm();
+    stopAlarm();
+    if (timerRunning) {
+      timerRunning = false;
+      ToastService.showNotice(pluginApi?.tr("timer.toast-title"), pluginApi?.tr("timer.paused-timer"), "player-pause");
+    }
     if (pomodoroRemaining <= 0)
       pomodoroRemaining = Pomodoro.durationFor(pomodoroMode, pomodoroConfig);
     pomodoroStarted = true;
@@ -763,20 +789,20 @@ Item {
 
   function pomodoroPause() {
     pomodoroRunning = false;
-    pomodoroStopAlarm();
+    stopAlarm();
   }
 
   function pomodoroReset() {
     pomodoroRunning = false;
     pomodoroStarted = false;
     pomodoroRemaining = Pomodoro.durationFor(pomodoroMode, pomodoroConfig);
-    pomodoroStopAlarm();
+    stopAlarm();
   }
 
   function pomodoroSkip() {
     pomodoroRunning = false;
     pomodoroStarted = false;
-    pomodoroStopAlarm();
+    stopAlarm();
     const next = Pomodoro.nextPhase({ mode: pomodoroMode, completed: pomodoroCompleted }, pomodoroConfig);
     pomodoroMode = next.mode;
     pomodoroCompleted = next.completed;
@@ -786,7 +812,7 @@ Item {
   function pomodoroSetMode(mode) {
     pomodoroRunning = false;
     pomodoroStarted = false;
-    pomodoroStopAlarm();
+    stopAlarm();
     pomodoroMode = mode;
     pomodoroRemaining = Pomodoro.durationFor(mode, pomodoroConfig);
   }
@@ -802,15 +828,25 @@ Item {
     if (pomodoroMode !== Pomodoro.WORK)
       pomodoroSetMode(Pomodoro.WORK);
     pomodoroStart();
+    focusPanel = "pomodoro";
     requestedTab = "focus";
   }
 
-  function pomodoroStopAlarm() {
-    if (pomodoroSoundPlaying) {
-      SoundService.stopSound(alarmSoundFile);
-      pomodoroSoundPlaying = false;
-      alarmLimitTimer.stop();
-    }
+  function playAlarm(source) {
+    if (setting("playSound") === false)
+      return;
+    if (alarmSource === "")
+      SoundService.playSound(alarmSoundFile, { repeat: true, volume: 0.3 });
+    alarmSource = source;
+    alarmLimitTimer.restart();
+  }
+
+  function stopAlarm() {
+    if (alarmSource === "")
+      return;
+    SoundService.stopSound(alarmSoundFile);
+    alarmSource = "";
+    alarmLimitTimer.stop();
   }
 
   function pomodoroFinished() {
@@ -825,17 +861,105 @@ Item {
       commit(next);
       goalReached = FocusLog.goalJustReached(FocusLog.sessionsOn(next, Dates.isoDate(new Date())), pomodoroConfig.dailyGoal);
     }
-    if (setting("playSound") !== false) {
-      SoundService.playSound(alarmSoundFile, { repeat: true, volume: 0.3 });
-      pomodoroSoundPlaying = true;
-      alarmLimitTimer.start();
-    }
+    playAlarm("pomodoro");
     ToastService.showNotice(pluginApi?.tr("focus.toast-title"), pluginApi?.tr(goalReached ? "focus.toast-goal-reached" : (outcome.workCompleted ? "focus.toast-work-done" : "focus.toast-break-done")), "clock");
     pomodoroMode = outcome.next.mode;
     pomodoroCompleted = outcome.next.completed;
     pomodoroRemaining = outcome.remaining;
     if (outcome.autoStart)
       Qt.callLater(() => { root.pomodoroRunning = true; });
+  }
+
+  // ---------------------------------------------------------------- timer
+  // One free-form countdown. Only one clock counts at a time: starting the timer
+  // pauses the pomodoro and vice versa, both keeping their remaining time.
+
+  // Seconds; 0 means no timer is set.
+  property int timerTotal: 0
+  property int timerRemaining: 0
+  property bool timerRunning: false
+  property string timerLabel: ""
+  // Which view the Focus tab shows: "pomodoro" or "timer".
+  property string focusPanel: "pomodoro"
+  readonly property string barClock: Clock.barSource({ pomodoroRunning: pomodoroRunning, timerRunning: timerRunning, alarmSource: alarmSource })
+
+  Timer {
+    interval: 1000
+    repeat: true
+    running: root.timerRunning
+    onTriggered: {
+      root.timerRemaining -= 1;
+      if (root.timerRemaining <= 0)
+        root.timerFinished();
+    }
+  }
+
+  function timerSet(seconds, label) {
+    timerRunning = false;
+    timerTotal = seconds;
+    timerRemaining = seconds;
+    timerLabel = label || "";
+    focusPanel = "timer";
+  }
+
+  function timerStart() {
+    if (timerTotal <= 0)
+      return;
+    stopAlarm();
+    if (pomodoroRunning) {
+      pomodoroRunning = false;
+      ToastService.showNotice(pluginApi?.tr("timer.toast-title"), pluginApi?.tr("timer.paused-pomodoro"), "player-pause");
+    }
+    if (timerRemaining <= 0)
+      timerRemaining = timerTotal;
+    timerRunning = true;
+  }
+
+  function timerStartNew(seconds, label) {
+    timerSet(seconds, label);
+    timerStart();
+  }
+
+  function timerPause() {
+    timerRunning = false;
+    stopAlarm();
+  }
+
+  // Back to the full duration, stopped.
+  function timerReset() {
+    timerRunning = false;
+    timerRemaining = timerTotal;
+    stopAlarm();
+  }
+
+  // "New timer": back to the entry state.
+  function timerClear() {
+    timerRunning = false;
+    timerTotal = 0;
+    timerRemaining = 0;
+    timerLabel = "";
+    stopAlarm();
+  }
+
+  // Rings, then waits at its full duration, ready to run again.
+  function timerFinished() {
+    timerRunning = false;
+    timerRemaining = timerTotal;
+    playAlarm("timer");
+    ToastService.showNotice(pluginApi?.tr("timer.toast-title"), timerLabel || pluginApi?.tr("timer.toast-done"), Clock.TIMER_ICON);
+  }
+
+  function runPomodoroCommand(command) {
+    const step = PomodoroCommand.plan(command, { running: pomodoroRunning, mode: pomodoroMode });
+    focusPanel = "pomodoro";
+    if (step.switchTo >= 0)
+      pomodoroSetMode(step.switchTo);
+    if (step.op === "start")
+      pomodoroStart();
+    else if (step.op === "pause")
+      pomodoroPause();
+    else
+      pomodoroReset();
   }
 
   Component.onCompleted: pomodoroRemaining = Pomodoro.idleRemaining(pomodoroStarted, pomodoroRemaining, pomodoroMode, pomodoroConfig)
