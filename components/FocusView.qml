@@ -202,10 +202,11 @@ Card {
         }
       }
 
-      // Timer view (TimerPane, added in the next task).
-      Item {
+      TimerPane {
         anchors.fill: parent
         visible: root.timerView
+        pluginApi: root.pluginApi
+        mainInstance: root.mainInstance
       }
     }
   }
