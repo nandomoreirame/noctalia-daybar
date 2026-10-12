@@ -977,6 +977,8 @@ Item {
   readonly property bool shownRunning: shownClock === "timer" ? timerRunning : pomodoroRunning
   // A ringing timer is silenced by play, so the face shows it as "silence".
   readonly property bool shownRinging: shownClock === "timer" && timerSoundPlaying
+  // The timer's label ("/t 10m chá"); the pomodoro has none.
+  readonly property string shownLabel: shownClock === "timer" ? timerLabel : ""
   readonly property bool clockWindowOpen: data?.ui?.clockWindow === true
   readonly property bool clockOverlayOpen: data?.ui?.clockOverlay === true
 

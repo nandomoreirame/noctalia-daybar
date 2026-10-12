@@ -1,5 +1,5 @@
 import QtQuick 6.11
-import QtQuick.Layouts 6.11
+import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
 import "ui"
@@ -49,6 +49,7 @@ Item {
     accessibleName: Pomodoro.formatClock(root.remaining)
 
     NText {
+      id: numbers
       anchors.centerIn: parent
       // On a small ring the controls take the numbers' place while hovered.
       opacity: root.hovered && root.compact ? 0 : 1
@@ -63,6 +64,19 @@ Item {
       pointSize: Style.fontSizeXXXL * 6
       font.weight: Style.fontWeightBold
       color: root.running ? Color.mPrimary : Color.mOnSurface
+    }
+
+    // Timer label under the numbers, anchored to them so the numbers stay centered.
+    NText {
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: numbers.bottom
+      width: Math.round(ring.width * 0.7)
+      visible: text !== "" && !root.compact
+      horizontalAlignment: Text.AlignHCenter
+      elide: Text.ElideRight
+      text: root.mainInstance?.shownLabel ?? ""
+      pointSize: Math.max(Style.fontSizeS, Math.round(ring.width * 0.03))
+      color: Qt.alpha(Color.mOnSurface, 0.56)
     }
 
     // Floats below the numbers on a large ring (they stay centered); over them, numbers
