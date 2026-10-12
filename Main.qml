@@ -980,6 +980,15 @@ Item {
   readonly property bool clockWindowOpen: data?.ui?.clockWindow === true
   readonly property bool clockOverlayOpen: data?.ui?.clockOverlay === true
 
+  // Focus chip click, shared by the Focus tab and the clock window. Coming back to
+  // the current pomodoro mode from the Timer view does not reset it.
+  function selectFocusChip(chip) {
+    const action = Clock.chipAction(chip, focusPanel, pomodoroMode);
+    focusPanel = action === "show-timer" ? "timer" : "pomodoro";
+    if (action === "set-mode")
+      pomodoroSetMode(chip);
+  }
+
   // Same rules as the bar's middle click: a ringing timer is only silenced.
   function shownToggle() {
     if (shownClock === "timer") {

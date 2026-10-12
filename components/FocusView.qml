@@ -46,10 +46,7 @@ Card {
 
   // Coming back from the Timer view to the current mode keeps the pomodoro running.
   function selectChip(chip) {
-    const action = Clock.chipAction(chip, mainInstance.focusPanel, mainInstance.pomodoroMode);
-    mainInstance.focusPanel = action === "show-timer" ? "timer" : "pomodoro";
-    if (action === "set-mode")
-      mainInstance.pomodoroSetMode(chip);
+    mainInstance.selectFocusChip(chip);
   }
 
   function progressText() {
