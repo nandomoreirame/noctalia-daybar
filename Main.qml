@@ -975,6 +975,8 @@ Item {
   readonly property int shownRemaining: shownClock === "timer" ? timerRemaining : pomodoroRemaining
   readonly property int shownTotal: shownClock === "timer" ? timerTotal : Pomodoro.durationFor(pomodoroMode, pomodoroConfig)
   readonly property bool shownRunning: shownClock === "timer" ? timerRunning : pomodoroRunning
+  // A ringing timer is silenced by play, so the face shows it as "silence".
+  readonly property bool shownRinging: shownClock === "timer" && timerSoundPlaying
   readonly property bool clockWindowOpen: data?.ui?.clockWindow === true
   readonly property bool clockOverlayOpen: data?.ui?.clockOverlay === true
 
@@ -1018,7 +1020,11 @@ Item {
     if (!open)
       clockOverlay.visible = false;
     else if (!clockOverlay.visible && pluginApi)
-      pluginApi.withCurrentScreen(screen => clockOverlay.openOn(screen));
+      // The screen may resolve later; skip it if the pin was undone meanwhile.
+      pluginApi.withCurrentScreen(screen => {
+        if (root.clockOverlayOpen)
+          clockOverlay.openOn(screen);
+      });
   }
 
   function restoreClockForms() {

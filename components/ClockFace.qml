@@ -18,6 +18,7 @@ Item {
   signal closeRequested
 
   readonly property bool running: mainInstance?.shownRunning ?? false
+  readonly property bool ringing: mainInstance?.shownRinging ?? false
   readonly property int remaining: mainInstance?.shownRemaining ?? 0
   readonly property bool hovered: hover.hovered
   // Buttons scale with the ring, so the small overlay keeps them inside it.
@@ -80,8 +81,8 @@ Item {
 
       PillButton {
         implicitHeight: root.buttonSize
-        icon: root.running ? "player-pause" : "player-play"
-        tooltipText: root.running ? root.tr("focus.pause") : root.tr("focus.start")
+        icon: root.ringing ? "bell-off" : (root.running ? "player-pause" : "player-play")
+        tooltipText: root.ringing ? root.tr("capture.timer.dismiss") : (root.running ? root.tr("focus.pause") : root.tr("focus.start"))
         onClicked: root.mainInstance.shownToggle()
       }
 
