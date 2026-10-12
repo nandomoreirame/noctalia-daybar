@@ -2,24 +2,31 @@
 .import "dates.js" as Dates
 .import "events.js" as Events
 .import "tasks.js" as Tasks
+.import "eventdelete.js" as EventDelete
 
 // Builds the Today checklist:
 //   1. today's calendar events (untimed first, then by time)
 //   2. today's tasks and overdue undone tasks, timed by time, then untimed
-// Item: { kind, id, uid, calendar, title, time, done, overdue, pomodoros }
+// Item: { kind, id, uid, calendar, title, time, done, overdue, pomodoros, checkable }
+// Events from read-only calendars (holidays, birthdays, subscriptions) are not
+// checkable: no checkbox, never done, left out of the progress counts.
 
-function eventItems(events, data, iso) {
-  return Events.eventsOn(events, iso).map((ev) => ({
-    kind: "event",
-    id: Tasks.eventKey(ev.uid, iso),
-    uid: ev.uid,
-    calendar: ev.calendar || "",
-    title: ev.summary,
-    time: ev.time,
-    done: !!data.eventChecks[Tasks.eventKey(ev.uid, iso)],
-    overdue: false,
-    pomodoros: 0
-  }));
+function eventItems(events, data, iso, collections) {
+  return Events.eventsOn(events, iso).map((ev) => {
+    const checkable = !EventDelete.isReadOnlyCalendar(collections, ev.calendar);
+    return {
+      kind: "event",
+      id: Tasks.eventKey(ev.uid, iso),
+      uid: ev.uid,
+      calendar: ev.calendar || "",
+      title: ev.summary,
+      time: ev.time,
+      done: checkable && !!data.eventChecks[Tasks.eventKey(ev.uid, iso)],
+      overdue: false,
+      pomodoros: 0,
+      checkable: checkable
+    };
+  });
 }
 
 function compareTasks(a, b) {
@@ -39,7 +46,8 @@ function taskItem(t, iso) {
     time: t.time,
     done: t.done,
     overdue: (t.date || iso) < iso,
-    pomodoros: t.pomodoros
+    pomodoros: t.pomodoros,
+    checkable: true
   };
 }
 
@@ -56,33 +64,34 @@ function taskItems(data, iso) {
 
 // Calendar day list for any day: that day's events, then the tasks dated on it
 // (an undated task belongs to today). No overdue carry-over: that is Today's job.
-function dayItems(events, data, iso, todayIso) {
+function dayItems(events, data, iso, todayIso, collections) {
   const tasks = data.tasks
     .filter((t) => (t.date || todayIso) === iso)
     .slice()
     .sort(compareTasks)
     .map((t) => Object.assign(taskItem(t, iso), { overdue: false }));
-  return eventItems(events, data, iso).concat(tasks);
+  return eventItems(events, data, iso, collections).concat(tasks);
 }
 
-function buildToday(events, data, now) {
+function buildToday(events, data, now, collections) {
   const iso = Dates.isoDate(now);
-  return eventItems(events, data, iso).concat(taskItems(data, iso));
+  return eventItems(events, data, iso, collections).concat(taskItems(data, iso));
 }
 
-// { done, total } of a checklist.
+// { done, total } of a checklist; items with checkable === false do not count.
 function progress(items) {
-  return { done: items.filter((i) => i.done).length, total: items.length };
+  const list = items.filter((i) => i.checkable !== false);
+  return { done: list.filter((i) => i.done).length, total: list.length };
 }
 
 // Same list as the Today tab (events, today's and overdue tasks).
-function todayProgress(events, data, iso) {
-  return progress(eventItems(events, data, iso).concat(taskItems(data, iso)));
+function todayProgress(events, data, iso, collections) {
+  return progress(eventItems(events, data, iso, collections).concat(taskItems(data, iso)));
 }
 
 // Same list as the Calendar day list for that day.
-function dayProgress(events, data, iso) {
-  return progress(dayItems(events, data, iso, iso));
+function dayProgress(events, data, iso, collections) {
+  return progress(dayItems(events, data, iso, iso, collections));
 }
 
 // "Label (done/total)", or just the label when the list is empty.

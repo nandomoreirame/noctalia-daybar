@@ -698,8 +698,8 @@ Item {
 
   property string todayIso: Dates.isoDate(new Date())
   // done/total shown next to the Today and Calendar labels in the bar.
-  readonly property var todayProgress: loaded && data?.tasks ? Today.todayProgress(visibleEvents, data, todayIso) : null
-  readonly property var calendarProgress: loaded && data?.tasks ? Today.dayProgress(visibleEvents, data, todayIso) : null
+  readonly property var todayProgress: loaded && data?.tasks ? Today.todayProgress(visibleEvents, data, todayIso, collections) : null
+  readonly property var calendarProgress: loaded && data?.tasks ? Today.dayProgress(visibleEvents, data, todayIso, collections) : null
   // Refreshed by the 30 s timer below, so the next event moves on once it ends.
   property date clockNow: new Date()
   // Today's next event, shown instead of the Calendar label in the bar: { uid, summary, date, time } or null.

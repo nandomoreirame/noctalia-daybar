@@ -27,7 +27,7 @@ Card {
   readonly property int maxRows: 5
   property int asking: 0
   property var frozenDay: []
-  readonly property var liveDay: root.mainInstance ? Today.dayItems(events, root.mainInstance.data, selected, todayIso) : []
+  readonly property var liveDay: root.mainInstance ? Today.dayItems(events, root.mainInstance.data, selected, todayIso, root.mainInstance.collections) : []
   readonly property var dayItems: asking > 0 ? frozenDay : liveDay
   onLiveDayChanged: if (asking === 0) frozenDay = liveDay
   onAskingChanged: if (asking === 0) frozenDay = liveDay

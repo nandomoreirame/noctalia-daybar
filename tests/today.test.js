@@ -47,6 +47,37 @@ describe("buildToday", () => {
   });
 });
 
+describe("read-only calendars", () => {
+  const cols = [
+    { dir: "/r/h", id: "pt.brazilian#holiday@group.v.calendar.google.com", name: "Feriados" },
+    { dir: "/r/me", id: "me@gmail.com", name: "Eventos" }
+  ];
+  let data = createEmpty();
+  data = addTask(data, { title: "banco", date: "2026-10-09" }, "t-1", T0);
+  data = toggleEventCheck(data, "e-hol", "2026-10-09");
+  const events = [
+    { uid: "e-hol", summary: "Feriado", start: at(0), end: at(0, 0, 10), calendar: "Feriados" },
+    { uid: "e-mine", summary: "reunião", start: at(14), end: at(15), calendar: "Eventos" }
+  ];
+
+  it("marks events from read-only calendars as not checkable and never done", () => {
+    const items = buildToday(events, data, NOW, cols);
+    const hol = items.find((i) => i.uid === "e-hol");
+    expect(hol).toMatchObject({ checkable: false, done: false });
+    expect(items.find((i) => i.uid === "e-mine").checkable).toBe(true);
+    expect(items.find((i) => i.id === "t-1").checkable).toBe(true);
+  });
+
+  it("keeps every event checkable while collections are unknown", () => {
+    expect(buildToday(events, data, NOW).every((i) => i.checkable)).toBe(true);
+  });
+
+  it("leaves read-only events out of the progress counts", () => {
+    expect(todayProgress(events, data, "2026-10-09", cols)).toEqual({ done: 0, total: 2 });
+    expect(dayProgress(events, data, "2026-10-09", cols)).toEqual({ done: 0, total: 2 });
+  });
+});
+
 describe("dayItems (Calendar day list)", () => {
   it("lists the day's events then its tasks; undated tasks belong to today only", async () => {
     const { dayItems } = await import("../utils/today.js");

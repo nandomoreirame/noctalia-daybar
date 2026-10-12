@@ -103,6 +103,13 @@ function isWritableCalendar(collections, calendarName) {
   return collections.some((c) => c.name === calendarName && !isReadOnlyCollection(c.id));
 }
 
+// True only when the name is known and every collection carrying it is read-only;
+// unknown calendars (collections not loaded, no khal config) stay writable.
+function isReadOnlyCalendar(collections, calendarName) {
+  const matching = (collections || []).filter((c) => c.name === calendarName);
+  return matching.length > 0 && matching.every((c) => isReadOnlyCollection(c.id));
+}
+
 function escapeRegex(text) {
   return String(text).replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
 }

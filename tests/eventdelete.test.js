@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calendarRoots, calendarSections, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, escapeRegex, findArgs, parsePaths, pickFile, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents, eventKey } from "../utils/eventdelete.js";
+import { calendarRoots, calendarSections, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, isReadOnlyCalendar, escapeRegex, findArgs, parsePaths, pickFile, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents, eventKey } from "../utils/eventdelete.js";
 
 // Fixture home is /opt/u: absolute user-home paths are rejected by the commit hook.
 const HOME = "/opt/u";
@@ -87,6 +87,15 @@ describe("collections", () => {
     expect(isWritableCalendar(cols, "Feriados")).toBe(false);
     expect(isWritableCalendar(cols, "Unknown")).toBe(false);
     expect(isWritableCalendar([], "Eventos")).toBe(false);
+  });
+
+  it("flags a calendar read-only only when every collection with its name is read-only", () => {
+    const cols = parseCollections("/r/a@virtual/displayname:Feriados\n/r/me@gmail.com/displayname:Eventos\n");
+    expect(isReadOnlyCalendar(cols, "Feriados")).toBe(true);
+    expect(isReadOnlyCalendar(cols, "Eventos")).toBe(false);
+    expect(isReadOnlyCalendar(cols, "Unknown")).toBe(false);
+    expect(isReadOnlyCalendar([], "Feriados")).toBe(false);
+    expect(isReadOnlyCalendar(undefined, "Feriados")).toBe(false);
   });
 });
 

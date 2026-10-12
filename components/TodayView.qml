@@ -19,11 +19,11 @@ Card {
   // destroy the delegate under the Popup.
   property int asking: 0
   property var frozenItems: []
-  readonly property var liveItems: mainInstance ? Today.buildToday(mainInstance.visibleEvents, mainInstance.data, now) : []
+  readonly property var liveItems: mainInstance ? Today.buildToday(mainInstance.visibleEvents, mainInstance.data, now, mainInstance.collections) : []
   readonly property var items: asking > 0 ? frozenItems : liveItems
   onLiveItemsChanged: if (asking === 0) frozenItems = liveItems
   onAskingChanged: if (asking === 0) frozenItems = liveItems
-  readonly property int doneCount: items.filter(i => i.done).length
+  readonly property var progress: Today.progress(items)
   // Id of the task whose title is being edited in place, or "".
   property string editingId: ""
 
@@ -70,8 +70,8 @@ Card {
       }
 
       NText {
-        visible: root.items.length > 0
-        text: root.tr("today.progress").replace("{n}", root.doneCount).replace("{total}", root.items.length)
+        visible: root.progress.total > 0
+        text: root.tr("today.progress").replace("{n}", root.progress.done).replace("{total}", root.progress.total)
         pointSize: Style.fontSizeS
         color: Qt.alpha(Color.mOnSurface, 0.56)
       }
@@ -105,7 +105,12 @@ Card {
             id: row
             required property var modelData
 
+            // Read-only calendar events (holidays) keep the slot for alignment but get no checkbox.
             CheckDot {
+              opacity: row.modelData.checkable ? 1 : 0
+              enabled: row.modelData.checkable
+              activeFocusOnTab: row.modelData.checkable
+              Accessible.ignored: !row.modelData.checkable
               checked: row.modelData.done
               label: row.modelData.title
               onToggled: {
