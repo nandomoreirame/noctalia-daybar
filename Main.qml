@@ -753,6 +753,11 @@ Item {
   readonly property bool pomodoroSoundPlaying: alarmSource === "pomodoro"
   readonly property bool timerSoundPlaying: alarmSource === "timer"
   property string linkedTaskId: ""
+  // Title of the task linked to the pomodoro, "" when none (or it was deleted).
+  readonly property string linkedTaskTitle: {
+    const task = (data?.tasks ?? []).find(t => t.id === linkedTaskId);
+    return task ? task.title : "";
+  }
 
   readonly property bool focusShouldBeOn: pomodoroRunning && pomodoroMode === Pomodoro.WORK
   onFocusShouldBeOnChanged: {
@@ -864,6 +869,8 @@ Item {
       if (linkedTaskId)
         next = Tasks.addPomodoro(next, linkedTaskId);
       commit(next);
+      // Each focus session links its task anew: the finished one lets it go.
+      linkedTaskId = "";
       goalReached = FocusLog.goalJustReached(FocusLog.sessionsOn(next, Dates.isoDate(new Date())), pomodoroConfig.dailyGoal);
     }
     playAlarm("pomodoro");
@@ -977,8 +984,8 @@ Item {
   readonly property bool shownRunning: shownClock === "timer" ? timerRunning : pomodoroRunning
   // A ringing timer is silenced by play, so the face shows it as "silence".
   readonly property bool shownRinging: shownClock === "timer" && timerSoundPlaying
-  // The timer's label ("/t 10m chá"); the pomodoro has none.
-  readonly property string shownLabel: shownClock === "timer" ? timerLabel : ""
+  // Text under the numbers: the timer's label ("/t 10m chá"), or the pomodoro's linked task.
+  readonly property string shownLabel: shownClock === "timer" ? timerLabel : linkedTaskTitle
   readonly property bool clockWindowOpen: data?.ui?.clockWindow === true
   readonly property bool clockOverlayOpen: data?.ui?.clockOverlay === true
 

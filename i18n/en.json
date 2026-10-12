@@ -123,7 +123,8 @@
     "clock-window-open": "Open in a window",
     "clock-window-close": "Close the window",
     "clock-overlay-open": "Pin to corner",
-    "clock-overlay-close": "Unpin from corner"
+    "clock-overlay-close": "Unpin from corner",
+    "link-task": "Link a task"
   },
   "reminder": {
     "title": "Reminder"

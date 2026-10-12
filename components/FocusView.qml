@@ -17,6 +17,9 @@ Card {
   property var pluginApi: null
   property var mainInstance: null
   property bool showSettings: false
+  // The task picker opens and closes with the + button; closing keeps the linked task,
+  // which then shows as text under the controls.
+  property bool showTaskPicker: false
   readonly property var modes: [["work", Pomodoro.WORK], ["short", Pomodoro.SHORT], ["long", Pomodoro.LONG], ["timer", Clock.TIMER_CHIP]]
   readonly property bool timerView: mainInstance?.focusPanel === "timer"
   readonly property var taskOptions: {
@@ -122,7 +125,7 @@ Card {
         spacing: Math.round(8 * Style.uiScaleRatio)
         visible: !root.timerView
 
-        // Everything below the header is one centered stack: ring (clock and cycle), controls
+        // Everything below the header is one centered stack: ring (clock), controls
         // and the linked task.
         Item {
           Layout.fillHeight: true
@@ -147,7 +150,7 @@ Card {
 
             NText {
               Layout.alignment: Qt.AlignHCenter
-              // Narrower than the ring so the cycle line below stays clear of the stroke.
+              // Narrower than the ring, so the numbers keep a margin from the stroke.
               Layout.preferredWidth: pomodoroRing.width * 0.62
               horizontalAlignment: Text.AlignHCenter
               fontSizeMode: Text.HorizontalFit
@@ -159,13 +162,6 @@ Card {
               font.weight: Style.fontWeightBold
               color: root.running ? Color.mPrimary : Color.mOnSurface
             }
-
-            NText {
-              Layout.alignment: Qt.AlignHCenter
-              text: root.tr("focus.cycle").replace("{n}", (root.mainInstance?.pomodoroCompleted ?? 0) + 1).replace("{total}", root.mainInstance?.pomodoroConfig.sessionsBeforeLong ?? 4)
-              pointSize: Style.fontSizeS
-              color: Qt.alpha(Color.mOnSurface, 0.56)
-            }
           }
         }
 
@@ -173,6 +169,13 @@ Card {
           Layout.alignment: Qt.AlignHCenter
           Layout.topMargin: Math.round(4 * Style.uiScaleRatio)
           spacing: Math.round(8 * Style.uiScaleRatio)
+
+          PillButton {
+            icon: "plus"
+            primary: root.showTaskPicker
+            tooltipText: root.tr("focus.link-task")
+            onClicked: root.showTaskPicker = !root.showTaskPicker
+          }
 
           PillButton {
             icon: "refresh"
@@ -199,11 +202,22 @@ Card {
           // The empty built-in label would take any width beyond minimumWidth and push
           // the box off center, so size the box through minimumWidth only.
           Layout.alignment: Qt.AlignHCenter
+          visible: root.showTaskPicker
           minimumWidth: 320
           model: root.taskOptions
           currentKey: root.mainInstance?.linkedTaskId ?? ""
           placeholder: root.tr("focus.no-task")
           onSelected: key => root.mainInstance.linkedTaskId = key
+        }
+
+        NText {
+          Layout.alignment: Qt.AlignHCenter
+          Layout.maximumWidth: Math.round(320 * Style.uiScaleRatio)
+          visible: !root.showTaskPicker && text !== ""
+          elide: Text.ElideRight
+          text: root.mainInstance?.linkedTaskTitle ?? ""
+          pointSize: Style.fontSizeS
+          color: Qt.alpha(Color.mOnSurface, 0.56)
         }
 
         Item {

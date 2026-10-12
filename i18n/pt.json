@@ -123,7 +123,8 @@
     "clock-window-open": "Abrir em janela",
     "clock-window-close": "Fechar a janela",
     "clock-overlay-open": "Fixar no canto",
-    "clock-overlay-close": "Desafixar do canto"
+    "clock-overlay-close": "Desafixar do canto",
+    "link-task": "Relacionar uma tarefa"
   },
   "reminder": {
     "title": "Lembrete"
