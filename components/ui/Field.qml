@@ -1,5 +1,5 @@
 import QtQuick 6.11
-import QtQuick.Controls
+import QtQuick.Controls 6.11
 import qs.Commons
 
 // Single-line input on a tinted pill; the border shows only while focused.

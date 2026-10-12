@@ -1,6 +1,6 @@
 import QtQuick 6.11
-import QtQuick.Layouts
-import QtQuick.Window
+import QtQuick.Layouts 6.11
+import QtQuick.Window 6.11
 import qs.Commons
 
 // List line with a soft hover wash. Children go into the inner RowLayout.

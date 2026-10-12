@@ -1,5 +1,5 @@
 import QtQuick 6.11
-import QtQuick.Shapes
+import QtQuick.Shapes 6.11
 import qs.Commons
 
 // Circular countdown ring: a faint full track and an arc for `progress` (0..1),

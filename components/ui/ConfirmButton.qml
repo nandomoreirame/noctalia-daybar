@@ -1,7 +1,7 @@
 import QtQuick 6.11
-import QtQuick.Controls
-import QtQuick.Layouts
-import QtQuick.Window
+import QtQuick.Controls 6.11
+import QtQuick.Layouts 6.11
+import QtQuick.Window 6.11
 import qs.Commons
 import qs.Widgets
 
