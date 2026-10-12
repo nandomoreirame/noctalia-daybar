@@ -210,31 +210,42 @@ Card {
         Repeater {
           model: root.cells
 
-          Rectangle {
+          Item {
+            id: cell
             required property var modelData
+            readonly property bool isSelected: modelData.date === root.selected
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: height / 2
-            color: modelData.date === root.selected ? Color.mOnSurface : (modelData.today ? Qt.alpha(Color.mOnSurface, 0.1) : (cellMouse.containsMouse ? Qt.alpha(Color.mOnSurface, 0.05) : "transparent"))
 
-            NText {
+            // Circle sized to the cell's short side, leaving room for the dot below.
+            Rectangle {
+              id: dayCircle
+              width: Math.max(0, Math.min(cell.width, cell.height - 8))
+              height: width
+              radius: width / 2
               anchors.centerIn: parent
-              text: modelData.day
-              pointSize: Style.fontSizeS
-              font.weight: modelData.today || modelData.date === root.selected ? Style.fontWeightSemiBold : Style.fontWeightRegular
-              color: modelData.date === root.selected ? Color.mSurface : Color.mOnSurface
-              opacity: modelData.inMonth ? 1 : 0.35
+              anchors.verticalCenterOffset: -3
+              color: cell.isSelected ? Color.mOnSurface : (cell.modelData.today ? Qt.alpha(Color.mOnSurface, 0.1) : (cellMouse.containsMouse ? Qt.alpha(Color.mOnSurface, 0.05) : "transparent"))
+
+              NText {
+                anchors.centerIn: parent
+                text: cell.modelData.day
+                pointSize: Style.fontSizeS
+                font.weight: cell.modelData.today || cell.isSelected ? Style.fontWeightSemiBold : Style.fontWeightRegular
+                color: cell.isSelected ? Color.mSurface : Color.mOnSurface
+                opacity: cell.modelData.inMonth ? 1 : 0.35
+              }
             }
 
             Rectangle {
-              visible: modelData.hasEvents || modelData.hasTasks
+              visible: cell.modelData.hasEvents || cell.modelData.hasTasks
               width: 4
               height: 4
               radius: 2
               anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: 2
-              color: modelData.date === root.selected ? Color.mSurface : Color.mPrimary
+              anchors.top: dayCircle.bottom
+              anchors.topMargin: 2
+              color: Color.mPrimary
             }
 
             MouseArea {
