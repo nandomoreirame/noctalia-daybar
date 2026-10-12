@@ -1,4 +1,4 @@
-import QtQuick
+import QtQuick 6.11
 import qs.Commons
 
 // Tinted surface for a tab's content: a faint ink wash with a hairline border.
