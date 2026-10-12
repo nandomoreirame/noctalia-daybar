@@ -30,7 +30,9 @@
       "focusModeCommand": "",
       "defaultCalendar": "",
       "initialTab": "last",
-      "fetchPreviews": true
+      "fetchPreviews": true,
+      "clockCorner": "top-right",
+      "clockSize": "medium"
     }
   }
 }

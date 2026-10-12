@@ -44,6 +44,8 @@ const DYNAMIC = [
   ...["pause", "resume", "stop", "replaces", "dismiss"].map((k) => "capture.timer." + k),
   ...["pause", "stop", "start-work", "start-short", "start-long"].map((k) => "capture.pomodoro." + k),
   "focus.mode.timer",
+  ...["top-left", "top-right", "bottom-left", "bottom-right"].map((c) => "settings.clock-corners." + c),
+  ...["small", "medium", "large"].map((s) => "settings.clock-sizes." + s),
 ];
 
 describe("i18n", () => {

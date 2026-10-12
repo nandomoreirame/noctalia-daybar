@@ -119,7 +119,11 @@
     "settings": "Focus settings",
     "settings-close": "Close settings",
     "settings-help": "Changes apply right away to a cycle that has not started. A goal of 0 turns the daily goal off.",
-    "toast-goal-reached": "Daily pomodoro goal reached."
+    "toast-goal-reached": "Daily pomodoro goal reached.",
+    "clock-window-open": "Open in a window",
+    "clock-window-close": "Close the window",
+    "clock-overlay-open": "Pin to corner",
+    "clock-overlay-close": "Unpin from corner"
   },
   "reminder": {
     "title": "Reminder"
@@ -151,7 +155,20 @@
     "daily-goal-help": "Focus sessions per day. 0 turns the goal off.",
     "initial-tab-last": "Last used tab",
     "fetch-previews": "Fetch link previews",
-    "fetch-previews-help": "When a bookmark is saved, download the page's title, description and image."
+    "fetch-previews-help": "When a bookmark is saved, download the page's title, description and image.",
+    "clock-corner": "Pinned clock corner",
+    "clock-size": "Pinned clock size",
+    "clock-corners": {
+      "top-left": "Top left",
+      "top-right": "Top right",
+      "bottom-left": "Bottom left",
+      "bottom-right": "Bottom right"
+    },
+    "clock-sizes": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large"
+    }
   },
   "bookmarks": {
     "title": "Bookmarks",

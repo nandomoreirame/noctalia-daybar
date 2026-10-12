@@ -119,7 +119,11 @@
     "settings": "Ajustes do foco",
     "settings-close": "Fechar ajustes",
     "settings-help": "As mudanças valem na hora para um ciclo que ainda não começou. Meta 0 desliga a meta diária.",
-    "toast-goal-reached": "Meta diária de pomodoros atingida."
+    "toast-goal-reached": "Meta diária de pomodoros atingida.",
+    "clock-window-open": "Abrir em janela",
+    "clock-window-close": "Fechar a janela",
+    "clock-overlay-open": "Fixar no canto",
+    "clock-overlay-close": "Desafixar do canto"
   },
   "reminder": {
     "title": "Lembrete"
@@ -151,7 +155,20 @@
     "daily-goal-help": "Sessões de foco por dia. 0 desliga a meta.",
     "initial-tab-last": "Última aba usada",
     "fetch-previews": "Buscar prévia dos links",
-    "fetch-previews-help": "Ao salvar um favorito, baixa título, descrição e imagem da página."
+    "fetch-previews-help": "Ao salvar um favorito, baixa título, descrição e imagem da página.",
+    "clock-corner": "Canto do relógio fixado",
+    "clock-size": "Tamanho do relógio fixado",
+    "clock-corners": {
+      "top-left": "Superior esquerdo",
+      "top-right": "Superior direito",
+      "bottom-left": "Inferior esquerdo",
+      "bottom-right": "Inferior direito"
+    },
+    "clock-sizes": {
+      "small": "Pequeno",
+      "medium": "Médio",
+      "large": "Grande"
+    }
   },
   "bookmarks": {
     "title": "Favoritos",
