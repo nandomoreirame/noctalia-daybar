@@ -114,11 +114,11 @@ Item {
     ProgressRing {
       id: ring
       Layout.alignment: Qt.AlignHCenter
-      // Shrinks with the space left in the panel (80 to 160 px), always round.
+      // Takes the height left in the panel (80 to 240 px), always round.
       Layout.fillHeight: true
       Layout.minimumHeight: Math.round(80 * Style.uiScaleRatio)
-      Layout.preferredHeight: Math.round(160 * Style.uiScaleRatio)
-      Layout.maximumHeight: Math.round(160 * Style.uiScaleRatio)
+      Layout.preferredHeight: Math.round(240 * Style.uiScaleRatio)
+      Layout.maximumHeight: Math.round(240 * Style.uiScaleRatio)
       Layout.preferredWidth: height
       progress: Clock.progress(root.remaining, root.mainInstance?.timerTotal ?? 0)
       arcColor: root.running ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.5)
@@ -138,7 +138,7 @@ Item {
           elide: Text.ElideNone
           text: Pomodoro.formatClock(root.remaining)
           family: Settings.data.ui.fontFixed
-          pointSize: Style.fontSizeXXXL * 1.6
+          pointSize: Style.fontSizeXXXL * 2.6
           font.weight: Style.fontWeightBold
           color: root.running ? Color.mPrimary : Color.mOnSurface
         }

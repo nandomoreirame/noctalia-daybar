@@ -82,6 +82,15 @@ Card {
         Layout.fillWidth: true
       }
 
+      // Today's sessions against the daily goal.
+      NText {
+        visible: !root.timerView
+        Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
+        text: root.progressText()
+        pointSize: Style.fontSizeS
+        color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
+      }
+
       PillButton {
         visible: !root.timerView
         icon: "settings"
@@ -101,8 +110,8 @@ Card {
         spacing: Math.round(8 * Style.uiScaleRatio)
         visible: !root.timerView
 
-        // Everything below the header is one centered stack: ring (clock and cycle), controls,
-        // linked task and today's progress dots.
+        // Everything below the header is one centered stack: ring (clock and cycle), controls
+        // and the linked task.
         Item {
           Layout.fillHeight: true
         }
@@ -110,11 +119,11 @@ Card {
         ProgressRing {
           id: pomodoroRing
           Layout.alignment: Qt.AlignHCenter
-          // Shrinks with the space left in the panel (80 to 160 px), always round.
+          // Takes the height left in the panel (80 to 240 px), always round.
           Layout.fillHeight: true
           Layout.minimumHeight: Math.round(80 * Style.uiScaleRatio)
-          Layout.preferredHeight: Math.round(160 * Style.uiScaleRatio)
-          Layout.maximumHeight: Math.round(160 * Style.uiScaleRatio)
+          Layout.preferredHeight: Math.round(240 * Style.uiScaleRatio)
+          Layout.maximumHeight: Math.round(240 * Style.uiScaleRatio)
           Layout.preferredWidth: height
           progress: Clock.progress(root.mainInstance?.pomodoroRemaining ?? 0, root.mainInstance ? Pomodoro.durationFor(root.mainInstance.pomodoroMode, root.mainInstance.pomodoroConfig) : 0)
           arcColor: root.running ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.5)
@@ -126,15 +135,15 @@ Card {
 
             NText {
               Layout.alignment: Qt.AlignHCenter
-              // Fits h:mm:ss inside the ring by shrinking from the large size.
-              Layout.preferredWidth: pomodoroRing.width * 0.8
+              // Narrower than the ring so the cycle line below stays clear of the stroke.
+              Layout.preferredWidth: pomodoroRing.width * 0.62
               horizontalAlignment: Text.AlignHCenter
               fontSizeMode: Text.HorizontalFit
               minimumPointSize: Style.fontSizeM
               elide: Text.ElideNone
               text: Pomodoro.formatClock(root.mainInstance?.pomodoroRemaining ?? 0)
               family: Settings.data.ui.fontFixed
-              pointSize: Style.fontSizeXXXL * 1.6
+              pointSize: Style.fontSizeXXXL * 2.6
               font.weight: Style.fontWeightBold
               color: root.running ? Color.mPrimary : Color.mOnSurface
             }
@@ -187,31 +196,6 @@ Card {
 
         Item {
           Layout.fillHeight: true
-        }
-
-        // Today's progress: one dot per session of the daily goal.
-        RowLayout {
-          Layout.alignment: Qt.AlignHCenter
-          spacing: Math.round(5 * Style.uiScaleRatio)
-
-          NText {
-            Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
-            text: root.progressText()
-            pointSize: Style.fontSizeS
-            color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
-          }
-
-          Repeater {
-            model: root.dailyGoal
-
-            Rectangle {
-              required property int index
-              width: Math.round(7 * Style.uiScaleRatio)
-              height: width
-              radius: width / 2
-              color: index < root.sessionsToday ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.12)
-            }
-          }
         }
       }
 

@@ -35,7 +35,7 @@ Item {
   }
 
   property real contentPreferredWidth: 680 * Style.uiScaleRatio
-  property real contentPreferredHeight: 360 * Style.uiScaleRatio
+  property real contentPreferredHeight: 450 * Style.uiScaleRatio
   property bool initialTabApplied: false
 
   anchors.fill: parent
