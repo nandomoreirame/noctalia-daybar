@@ -252,7 +252,8 @@ niri (`~/.config/niri/config.kdl`):
 
 ~~~kdl
 binds {
-    Mod+Shift+Space hotkey-overlay-title="Daybar: capture" { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "plugin:daybar" "capture"; }
+    Mod+Space       hotkey-overlay-title="Daybar: capture" { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "plugin:daybar" "capture"; }
+    Mod+Shift+Space hotkey-overlay-title="Daybar: toolbar" { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "plugin:daybar" "toggle"; }
 }
 ~~~
 
