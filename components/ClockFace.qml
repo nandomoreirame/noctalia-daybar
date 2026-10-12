@@ -14,6 +14,11 @@ Item {
   property var pluginApi: null
   property var mainInstance: null
   property bool showClose: false
+  // Mode chips (Foco, Pausa curta, Pausa longa, Timer) under the controls; the window
+  // turns them on, and they show only when the ring is wide enough.
+  property bool showModes: false
+  readonly property var modes: [["work", Pomodoro.WORK], ["short", Pomodoro.SHORT], ["long", Pomodoro.LONG], ["timer", Clock.TIMER_CHIP]]
+  readonly property bool modesFit: ring.width >= Math.round(360 * Style.uiScaleRatio)
   property string closeText: ""
   signal closeRequested
 
@@ -21,8 +26,9 @@ Item {
   readonly property bool ringing: mainInstance?.shownRinging ?? false
   readonly property int remaining: mainInstance?.shownRemaining ?? 0
   readonly property bool hovered: hover.hovered
-  // Buttons scale with the ring, so the small overlay keeps them inside it.
-  readonly property int buttonSize: Math.max(18, Math.round(ring.width * 0.17))
+  readonly property string toggleText: ringing ? tr("capture.timer.dismiss") : (running ? tr("focus.pause") : tr("focus.start"))
+  // The small pinned clock has no room for the labelled pill.
+  readonly property bool compact: ring.width < Math.round(200 * Style.uiScaleRatio)
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -37,16 +43,16 @@ Item {
     anchors.centerIn: parent
     width: Math.min(root.width, root.height)
     height: width
-    thickness: Math.max(3, Math.round(width * 0.04))
+    thickness: Math.max(3, Math.round(width * 0.02))
     progress: Clock.progress(root.remaining, root.mainInstance?.shownTotal ?? 0)
     arcColor: root.running ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.5)
     accessibleName: Pomodoro.formatClock(root.remaining)
 
     NText {
       anchors.centerIn: parent
-      // Moves up while the controls show, so they never cover the numbers.
-      anchors.verticalCenterOffset: root.hovered ? -Math.round(ring.height * 0.1) : 0
-      width: Math.round(ring.width * 0.66)
+      // On a small ring the controls take the numbers' place while hovered.
+      opacity: root.hovered && root.compact ? 0 : 1
+      width: Math.round(ring.width * 0.8)
       horizontalAlignment: Text.AlignHCenter
       fontSizeMode: Text.HorizontalFit
       minimumPointSize: Style.fontSizeXS
@@ -54,22 +60,19 @@ Item {
       text: Pomodoro.formatClock(root.remaining)
       family: Settings.data.ui.fontFixed
       // Upper bound only: HorizontalFit shrinks it to the ring width.
-      pointSize: Style.fontSizeXXXL * 4
+      pointSize: Style.fontSizeXXXL * 6
       font.weight: Style.fontWeightBold
       color: root.running ? Color.mPrimary : Color.mOnSurface
-
-      Behavior on anchors.verticalCenterOffset {
-        NumberAnimation {
-          duration: 150
-        }
-      }
     }
 
-    RowLayout {
+    // Floats below the numbers on a large ring (they stay centered); over them, numbers
+    // hidden, on a small one.
+    ColumnLayout {
       anchors.horizontalCenter: parent.horizontalCenter
-      anchors.bottom: parent.bottom
-      anchors.bottomMargin: Math.round(ring.height * 0.17)
-      spacing: Math.round(4 * Style.uiScaleRatio)
+      anchors.verticalCenter: root.compact ? parent.verticalCenter : undefined
+      anchors.bottom: root.compact ? undefined : parent.bottom
+      anchors.bottomMargin: Math.round(ring.height * (root.showModes && root.modesFit ? 0.12 : 0.2))
+      spacing: Math.round(22 * Style.uiScaleRatio)
       opacity: root.hovered ? 1 : 0
       visible: opacity > 0
 
@@ -79,26 +82,49 @@ Item {
         }
       }
 
-      PillButton {
-        implicitHeight: root.buttonSize
-        icon: root.ringing ? "bell-off" : (root.running ? "player-pause" : "player-play")
-        tooltipText: root.ringing ? root.tr("capture.timer.dismiss") : (root.running ? root.tr("focus.pause") : root.tr("focus.start"))
-        onClicked: root.mainInstance.shownToggle()
+      RowLayout {
+        Layout.alignment: Qt.AlignHCenter
+        spacing: Math.round((root.compact ? 4 : 8) * Style.uiScaleRatio)
+
+        PillButton {
+          icon: "refresh"
+          tooltipText: root.tr("focus.reset")
+          onClicked: root.mainInstance.shownReset()
+        }
+
+        // Same pill as the Focus tab; icon only when the ring is too small for the label.
+        PillButton {
+          primary: true
+          implicitHeight: Math.round((root.compact ? 28 : 34) * Style.uiScaleRatio)
+          icon: root.ringing ? "bell-off" : (root.running ? "player-pause" : "player-play")
+          text: root.compact ? "" : root.toggleText
+          tooltipText: root.toggleText
+          onClicked: root.mainInstance.shownToggle()
+        }
+
+        PillButton {
+          visible: root.showClose
+          icon: "x"
+          tooltipText: root.closeText
+          onClicked: root.closeRequested()
+        }
       }
 
-      PillButton {
-        implicitHeight: root.buttonSize
-        icon: "refresh"
-        tooltipText: root.tr("focus.reset")
-        onClicked: root.mainInstance.shownReset()
-      }
+      RowLayout {
+        Layout.alignment: Qt.AlignHCenter
+        visible: root.showModes && root.modesFit
+        spacing: Math.round(4 * Style.uiScaleRatio)
 
-      PillButton {
-        visible: root.showClose
-        implicitHeight: root.buttonSize
-        icon: "x"
-        tooltipText: root.closeText
-        onClicked: root.closeRequested()
+        Repeater {
+          model: root.modes
+
+          Chip {
+            required property var modelData
+            text: root.tr("focus.mode." + modelData[0])
+            selected: root.mainInstance?.shownClock === "timer" ? modelData[1] === Clock.TIMER_CHIP : root.mainInstance?.pomodoroMode === modelData[1]
+            onClicked: root.mainInstance.selectFocusChip(modelData[1])
+          }
+        }
       }
     }
   }

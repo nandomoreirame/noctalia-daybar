@@ -33,6 +33,7 @@ FloatingWindow {
     sourceComponent: ClockFace {
       pluginApi: root.pluginApi
       mainInstance: root.mainInstance
+      showModes: true
     }
   }
 }
