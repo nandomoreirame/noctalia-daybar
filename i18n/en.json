@@ -238,6 +238,7 @@
     "toast-title": "Timer",
     "toast-done": "Time's up",
     "paused-pomodoro": "Focus paused for the timer",
-    "paused-timer": "Timer paused for focus"
+    "paused-timer": "Timer paused for focus",
+    "cancel": "Back to the last timer"
   }
 }

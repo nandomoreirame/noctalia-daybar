@@ -4,7 +4,7 @@ import { VERSION, createEmpty, parse, serialize, makeId, setUiFlag } from "../ut
 describe("store", () => {
   it("creates an empty v2 store", () => {
     expect(VERSION).toBe(2);
-    expect(createEmpty()).toEqual({ version: 2, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "", clockWindow: false, clockOverlay: false } });
+    expect(createEmpty()).toEqual({ version: 2, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, recentTimers: [], ui: { lastTab: "", clockWindow: false, clockOverlay: false } });
   });
 
   it("treats empty or missing text as a fresh store", () => {
@@ -63,6 +63,12 @@ describe("store", () => {
     expect(ui({ lastTab: "focus", clockWindow: true })).toEqual({ lastTab: "focus", clockWindow: true, clockOverlay: false });
     expect(ui({ lastTab: "nope", clockWindow: "yes", clockOverlay: 1 })).toEqual({ lastTab: "", clockWindow: false, clockOverlay: false });
     expect(ui("x")).toEqual({ lastTab: "", clockWindow: false, clockOverlay: false });
+  });
+
+  it("keeps valid recent timers", () => {
+    const { data } = parse(JSON.stringify({ recentTimers: [{ seconds: 300, label: "chá" }, { seconds: -1 }] }));
+    expect(data.recentTimers).toEqual([{ seconds: 300, label: "chá" }]);
+    expect(parse(JSON.stringify({})).data.recentTimers).toEqual([]);
   });
 
   it("round-trips through serialize", () => {

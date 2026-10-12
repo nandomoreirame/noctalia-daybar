@@ -6,9 +6,11 @@ import "ui"
 import "../utils/pomodoro.js" as Pomodoro
 import "../utils/duration.js" as Duration
 import "../utils/clock.js" as Clock
+import "../utils/timers.js" as Timers
 
-// Timer view of the Focus tab: a duration entry (field + presets) while no timer
-// is set, then the ring with play/pause, reset and "new timer".
+// Timer view of the Focus tab: the ring with play/pause, reset and "new timer", plus the
+// last timers started as one-click chips. The duration entry (field + presets) shows
+// only after "new timer", or while no timer was ever started.
 Item {
   id: root
 
@@ -19,6 +21,7 @@ Item {
   readonly property bool running: mainInstance?.timerRunning ?? false
   readonly property int remaining: mainInstance?.timerRemaining ?? 0
   readonly property var presets: [1, 5, 10, 15, 30]
+  readonly property var recent: mainInstance?.recentTimers ?? []
 
   function tr(key) {
     return pluginApi ? pluginApi.tr(key) : key;
@@ -83,13 +86,29 @@ Item {
       }
     }
 
-    PillButton {
+    RowLayout {
       Layout.alignment: Qt.AlignHCenter
-      primary: true
-      implicitHeight: Math.round(34 * Style.uiScaleRatio)
-      icon: "player-play"
-      text: root.tr("focus.start")
-      onClicked: root.startFromField()
+      spacing: Math.round(8 * Style.uiScaleRatio)
+
+      // Back to the last timer, without starting anything.
+      PillButton {
+        visible: root.recent.length > 0
+        icon: "x"
+        tooltipText: root.tr("timer.cancel")
+        onClicked: {
+          root.error = "";
+          entry.text = "";
+          root.mainInstance.restoreLastTimer();
+        }
+      }
+
+      PillButton {
+        primary: true
+        implicitHeight: Math.round(34 * Style.uiScaleRatio)
+        icon: "player-play"
+        text: root.tr("focus.start")
+        onClicked: root.startFromField()
+      }
     }
 
     NText {
@@ -151,6 +170,41 @@ Item {
           text: root.mainInstance?.timerLabel ?? ""
           pointSize: Style.fontSizeS
           color: Qt.alpha(Color.mOnSurface, 0.56)
+        }
+      }
+    }
+
+    // The last timers started, above the controls; dimmed until the pointer is over
+    // them. A click makes one the current timer (stopped, full).
+    RowLayout {
+      Layout.alignment: Qt.AlignHCenter
+      Layout.topMargin: Math.round(4 * Style.uiScaleRatio)
+      Layout.bottomMargin: Math.round(8 * Style.uiScaleRatio)
+      visible: root.recent.length > 0
+      spacing: Math.round(4 * Style.uiScaleRatio)
+      opacity: recentHover.hovered ? 1 : 0.5
+
+      Behavior on opacity {
+        NumberAnimation {
+          duration: 150
+        }
+      }
+
+      HoverHandler {
+        id: recentHover
+      }
+
+      Repeater {
+        model: root.recent
+
+        Chip {
+          required property var modelData
+          text: Timers.chipText(modelData)
+          selected: Timers.sameTimer(modelData, { seconds: root.mainInstance?.timerTotal ?? 0, label: root.mainInstance?.timerLabel ?? "" })
+          onClicked: {
+            if (!selected)
+              root.mainInstance.timerSet(modelData.seconds, modelData.label);
+          }
         }
       }
     }

@@ -25,6 +25,7 @@ import "utils/today.js" as Today
 import "utils/events.js" as Events
 import "utils/clock.js" as Clock
 import "utils/capture/pomodoro.js" as PomodoroCommand
+import "utils/timers.js" as Timers
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
 // the capture overlay. UI files only read state from here and call these functions.
@@ -74,6 +75,7 @@ Item {
     root.data = r.data;
     root.loaded = true;
     Qt.callLater(root.restoreClockForms);
+    Qt.callLater(root.restoreLastTimer);
     if (r.corrupt) {
       Quickshell.execDetached(["mv", "-f", root.dataPath, root.dataPath + ".bak"]);
       ToastService.showWarning(pluginApi?.tr("store.corrupt-title"), pluginApi?.tr("store.corrupt-body"));
@@ -925,6 +927,20 @@ Item {
     if (timerRemaining <= 0)
       timerRemaining = timerTotal;
     timerRunning = true;
+    const next = Timers.recordRecent(data, { seconds: timerTotal, label: timerLabel });
+    if (next !== data)
+      commit(next);
+  }
+
+  readonly property var recentTimers: data?.recentTimers ?? []
+
+  // After a restart the Timer view shows the last timer started, ready to run.
+  function restoreLastTimer() {
+    if (timerTotal > 0 || recentTimers.length === 0)
+      return;
+    timerTotal = recentTimers[0].seconds;
+    timerRemaining = timerTotal;
+    timerLabel = recentTimers[0].label;
   }
 
   function timerStartNew(seconds, label) {

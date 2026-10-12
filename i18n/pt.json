@@ -238,6 +238,7 @@
     "toast-title": "Timer",
     "toast-done": "Tempo esgotado",
     "paused-pomodoro": "Foco pausado para o timer",
-    "paused-timer": "Timer pausado para o foco"
+    "paused-timer": "Timer pausado para o foco",
+    "cancel": "Voltar ao último timer"
   }
 }

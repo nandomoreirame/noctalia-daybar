@@ -1,5 +1,6 @@
 .pragma library
 .import "tabs.js" as Tabs
+.import "timers.js" as Timers
 
 // data.json schema, parsing and migration. Pure: file I/O lives in Main.qml.
 // Tasks carry `source`/`externalId` so a future Google Tasks sync can map them.
@@ -8,7 +9,7 @@
 var VERSION = 2;
 
 function createEmpty() {
-  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "", clockWindow: false, clockOverlay: false } };
+  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, recentTimers: [], ui: { lastTab: "", clockWindow: false, clockOverlay: false } };
 }
 
 function list(value) {
@@ -82,6 +83,7 @@ function migrate(raw) {
     bookmarks: raw.version >= 2 ? list(raw.bookmarks).filter(hasId).map(normalizeBookmark) : [],
     notes: raw.version >= 2 ? list(raw.notes).filter(hasId) : [],
     focusLog: normalizeFocusLog(raw.focusLog),
+    recentTimers: Timers.normalizeRecent(raw.recentTimers),
     ui: normalizeUi(raw.ui)
   };
 }
