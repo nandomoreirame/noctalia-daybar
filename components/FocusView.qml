@@ -1,6 +1,6 @@
 import QtQuick 6.11
-import QtQuick.Controls
-import QtQuick.Layouts
+import QtQuick.Controls 6.11
+import QtQuick.Layouts 6.11
 import qs.Commons
 import qs.Widgets
 import "ui"
@@ -89,6 +89,21 @@ Card {
         text: root.progressText()
         pointSize: Style.fontSizeS
         color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
+      }
+
+      // Detached clock: floating window and corner overlay (both views).
+      PillButton {
+        icon: "picture-in-picture"
+        primary: root.mainInstance?.clockWindowOpen ?? false
+        tooltipText: root.tr(primary ? "focus.clock-window-close" : "focus.clock-window-open")
+        onClicked: root.mainInstance?.setClockWindow(!root.mainInstance.clockWindowOpen)
+      }
+
+      PillButton {
+        icon: root.mainInstance?.clockOverlayOpen ? "pinned" : "pin"
+        primary: root.mainInstance?.clockOverlayOpen ?? false
+        tooltipText: root.tr(primary ? "focus.clock-overlay-close" : "focus.clock-overlay-open")
+        onClicked: root.mainInstance?.setClockOverlay(!root.mainInstance.clockOverlayOpen)
       }
 
       PillButton {
