@@ -1,5 +1,5 @@
 import QtQuick 6.11
-import QtQuick.Layouts
+import QtQuick.Layouts 6.11
 import qs.Commons
 import qs.Widgets
 import "ui"
