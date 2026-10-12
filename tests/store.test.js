@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { VERSION, createEmpty, parse, serialize, makeId } from "../utils/store.js";
+import { VERSION, createEmpty, parse, serialize, makeId, setUiFlag } from "../utils/store.js";
 
 describe("store", () => {
   it("creates an empty v2 store", () => {
     expect(VERSION).toBe(2);
-    expect(createEmpty()).toEqual({ version: 2, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "" } });
+    expect(createEmpty()).toEqual({ version: 2, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "", clockWindow: false, clockOverlay: false } });
   });
 
   it("treats empty or missing text as a fresh store", () => {
@@ -58,10 +58,11 @@ describe("store", () => {
     expect(data.focusLog).toEqual({ "2026-10-09": 3 });
   });
 
-  it("keeps a known last tab and drops anything else", () => {
-    expect(parse(JSON.stringify({ ui: { lastTab: "focus" } })).data.ui).toEqual({ lastTab: "focus" });
-    expect(parse(JSON.stringify({ ui: { lastTab: "nope" } })).data.ui).toEqual({ lastTab: "" });
-    expect(parse(JSON.stringify({ ui: "x" })).data.ui).toEqual({ lastTab: "" });
+  it("normalizes ui: known last tab, boolean clock flags", () => {
+    const ui = (raw) => parse(JSON.stringify({ ui: raw })).data.ui;
+    expect(ui({ lastTab: "focus", clockWindow: true })).toEqual({ lastTab: "focus", clockWindow: true, clockOverlay: false });
+    expect(ui({ lastTab: "nope", clockWindow: "yes", clockOverlay: 1 })).toEqual({ lastTab: "", clockWindow: false, clockOverlay: false });
+    expect(ui("x")).toEqual({ lastTab: "", clockWindow: false, clockOverlay: false });
   });
 
   it("round-trips through serialize", () => {
@@ -82,3 +83,20 @@ describe("store", () => {
   });
 });
 
+describe("setUiFlag", () => {
+  it("sets a known flag and keeps the rest of ui", () => {
+    const data = createEmpty();
+    data.ui.lastTab = "focus";
+    const next = setUiFlag(data, "clockOverlay", true);
+    expect(next.ui).toEqual({ lastTab: "focus", clockWindow: false, clockOverlay: true });
+    expect(data.ui.clockOverlay).toBe(false);
+  });
+
+  it("returns the same object when nothing changes or the key is unknown", () => {
+    const data = createEmpty();
+    expect(setUiFlag(data, "clockWindow", false)).toBe(data);
+    expect(setUiFlag(data, "lastTab", true)).toBe(data);
+    const older = { ...data, ui: { lastTab: "" } };
+    expect(setUiFlag(older, "clockWindow", false)).toBe(older);
+  });
+});

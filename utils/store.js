@@ -8,7 +8,7 @@
 var VERSION = 2;
 
 function createEmpty() {
-  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "" } };
+  return { version: VERSION, tasks: [], eventChecks: {}, reminders: [], bookmarks: [], notes: [], focusLog: {}, ui: { lastTab: "", clockWindow: false, clockOverlay: false } };
 }
 
 function list(value) {
@@ -41,9 +41,26 @@ function normalizeFocusLog(log) {
   return out;
 }
 
+// Detached clock forms that reopen after a restart.
+var UI_FLAGS = ["clockWindow", "clockOverlay"];
+
 function normalizeUi(ui) {
-  const lastTab = ui && typeof ui === "object" && Tabs.isTab(ui.lastTab) ? ui.lastTab : "";
-  return { lastTab: lastTab };
+  const src = ui && typeof ui === "object" ? ui : {};
+  const out = { lastTab: Tabs.isTab(src.lastTab) ? src.lastTab : "" };
+  for (const key of UI_FLAGS) out[key] = src[key] === true;
+  return out;
+}
+
+// Same object back when nothing changes, so toggling to the current state does not
+// schedule a write. A missing flag counts as false.
+function setUiFlag(data, key, value) {
+  if (UI_FLAGS.indexOf(key) < 0) return data;
+  const ui = data.ui || {};
+  const v = !!value;
+  if (!!ui[key] === v) return data;
+  const patch = {};
+  patch[key] = v;
+  return Object.assign({}, data, { ui: Object.assign({}, ui, patch) });
 }
 
 // A fetch cannot survive a restart; a bookmark still "pending" on load failed.
