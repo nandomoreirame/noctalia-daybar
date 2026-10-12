@@ -63,8 +63,9 @@ Card {
     spacing: Math.round(8 * Style.uiScaleRatio)
     visible: !root.showSettings
 
+    // Mode chips, centered.
     RowLayout {
-      Layout.fillWidth: true
+      Layout.alignment: Qt.AlignHCenter
       spacing: Math.round(4 * Style.uiScaleRatio)
 
       Repeater {
@@ -76,41 +77,6 @@ Card {
           selected: root.timerView ? modelData[1] === Clock.TIMER_CHIP : root.mainInstance?.pomodoroMode === modelData[1]
           onClicked: root.selectChip(modelData[1])
         }
-      }
-
-      Item {
-        Layout.fillWidth: true
-      }
-
-      // Today's sessions against the daily goal.
-      NText {
-        visible: !root.timerView
-        Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
-        text: root.progressText()
-        pointSize: Style.fontSizeS
-        color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
-      }
-
-      // Detached clock: floating window and corner overlay (both views).
-      PillButton {
-        icon: "picture-in-picture"
-        primary: root.mainInstance?.clockWindowOpen ?? false
-        tooltipText: root.tr(primary ? "focus.clock-window-close" : "focus.clock-window-open")
-        onClicked: root.mainInstance?.setClockWindow(!root.mainInstance.clockWindowOpen)
-      }
-
-      PillButton {
-        icon: root.mainInstance?.clockOverlayOpen ? "pinned" : "pin"
-        primary: root.mainInstance?.clockOverlayOpen ?? false
-        tooltipText: root.tr(primary ? "focus.clock-overlay-close" : "focus.clock-overlay-open")
-        onClicked: root.mainInstance?.setClockOverlay(!root.mainInstance.clockOverlayOpen)
-      }
-
-      PillButton {
-        visible: !root.timerView
-        icon: "settings"
-        tooltipText: root.tr("focus.settings")
-        onClicked: root.showSettings = true
       }
     }
 
@@ -230,6 +196,47 @@ Card {
         visible: root.timerView
         pluginApi: root.pluginApi
         mainInstance: root.mainInstance
+      }
+    }
+
+    // Footer: detached clock and settings on the left, today's progress on the right.
+    RowLayout {
+      Layout.fillWidth: true
+      spacing: Math.round(4 * Style.uiScaleRatio)
+
+      // Detached clock: floating window and corner overlay (both views).
+      PillButton {
+        icon: "picture-in-picture"
+        primary: root.mainInstance?.clockWindowOpen ?? false
+        tooltipText: root.tr(primary ? "focus.clock-window-close" : "focus.clock-window-open")
+        onClicked: root.mainInstance?.setClockWindow(!root.mainInstance.clockWindowOpen)
+      }
+
+      PillButton {
+        icon: root.mainInstance?.clockOverlayOpen ? "pinned" : "pin"
+        primary: root.mainInstance?.clockOverlayOpen ?? false
+        tooltipText: root.tr(primary ? "focus.clock-overlay-close" : "focus.clock-overlay-open")
+        onClicked: root.mainInstance?.setClockOverlay(!root.mainInstance.clockOverlayOpen)
+      }
+
+      PillButton {
+        visible: !root.timerView
+        icon: "settings"
+        tooltipText: root.tr("focus.settings")
+        onClicked: root.showSettings = true
+      }
+
+      Item {
+        Layout.fillWidth: true
+      }
+
+      // Today's sessions against the daily goal.
+      NText {
+        visible: !root.timerView
+        Layout.rightMargin: Math.round(4 * Style.uiScaleRatio)
+        text: root.progressText()
+        pointSize: Style.fontSizeS
+        color: root.dailyGoal > 0 && root.sessionsToday >= root.dailyGoal ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.56)
       }
     }
   }
