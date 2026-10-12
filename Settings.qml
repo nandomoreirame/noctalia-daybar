@@ -1,7 +1,8 @@
 import QtQuick 6.11
-import QtQuick.Layouts
+import QtQuick.Layouts 6.11
 import qs.Commons
 import qs.Widgets
+import "utils/clock.js" as Clock
 
 // Plugin settings. Noctalia calls saveSettings() when the dialog is confirmed.
 ColumnLayout {
@@ -22,6 +23,8 @@ ColumnLayout {
   property string defaultCalendar: ""
   property string initialTab: "last"
   property bool fetchPreviews: true
+  property string clockCorner: "top-right"
+  property string clockSize: "medium"
 
   spacing: Style.marginM
 
@@ -48,6 +51,8 @@ ColumnLayout {
     defaultCalendar = value("defaultCalendar");
     initialTab = value("initialTab");
     fetchPreviews = value("fetchPreviews");
+    clockCorner = value("clockCorner");
+    clockSize = value("clockSize");
   }
 
   function saveSettings() {
@@ -66,6 +71,8 @@ ColumnLayout {
     s.defaultCalendar = defaultCalendar;
     s.initialTab = initialTab;
     s.fetchPreviews = fetchPreviews;
+    s.clockCorner = clockCorner;
+    s.clockSize = clockSize;
     pluginApi.saveSettings();
   }
 
@@ -136,6 +143,20 @@ ColumnLayout {
     label: root.tr("settings.play-sound")
     checked: root.playSound
     onToggled: checked => root.playSound = checked
+  }
+
+  NComboBox {
+    label: root.tr("settings.clock-corner")
+    model: Clock.CORNERS.map(k => ({ key: k, name: root.tr("settings.clock-corners." + k) }))
+    currentKey: root.clockCorner
+    onSelected: key => root.clockCorner = key
+  }
+
+  NComboBox {
+    label: root.tr("settings.clock-size")
+    model: Object.keys(Clock.RING_SIZES).map(k => ({ key: k, name: root.tr("settings.clock-sizes." + k) }))
+    currentKey: root.clockSize
+    onSelected: key => root.clockSize = key
   }
 
   NTextInput {
