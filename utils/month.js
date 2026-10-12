@@ -2,11 +2,11 @@
 .import "dates.js" as Dates
 .import "events.js" as Events
 
-// Monday-first 6x7 month grid: [{ date, day, inMonth, today, hasEvents, hasTasks }].
+// Sunday-first 6x7 month grid: [{ date, day, inMonth, today, hasEvents, hasTasks }].
 // hasTasks: a pending task is dated that day (undated tasks belong to today).
 function monthGrid(year, month, now, events, tasks) {
   const first = new Date(year, month, 1);
-  const offset = (first.getDay() + 6) % 7;
+  const offset = first.getDay();
   const start = Dates.addDays(first, -offset);
   const todayIso = Dates.isoDate(now);
   const pending = {};

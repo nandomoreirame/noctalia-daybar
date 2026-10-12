@@ -23,7 +23,7 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 | 15 | REQ-011 | `/n uma ideia` | Note in Inbox |
 | 16 | REQ-013/014 | Open toolbar > Hoje | Events first by time, then tasks; check/uncheck persists after shell reload |
 | 17 | REQ-014 | Type in the Hoje field `ligar 16h`, Enter; delete it | Task added, then removed |
-| 18 | REQ-015 | Calendário tab | Clock, Monday-first grid, dots on days with events, prev/next month work |
+| 18 | REQ-015 | Calendário tab | Clock, Sunday-first grid, dots on days with events, prev/next month work |
 | 19 | REQ-016 | `PATH` without khal (or uninstall), reload | "Agenda não configurada"; Hoje still lists tasks |
 | 20 | REQ-017, REQ-019 | Foco: Iniciar | Bar shows the clock; toolbar closed, timer keeps counting |
 | 21 | REQ-018 | Link a task, set focus to 1 min, let it finish | Toast, alarm, task shows "● 1" in Hoje |

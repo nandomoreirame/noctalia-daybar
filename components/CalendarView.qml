@@ -7,7 +7,7 @@ import "ui"
 import "../utils/month.js" as Month
 import "../utils/today.js" as Today
 
-// Clock + selected day's events on the left, Monday-first month grid on the right.
+// Clock + selected day's events on the left, Sunday-first month grid on the right.
 Card {
   id: root
 
