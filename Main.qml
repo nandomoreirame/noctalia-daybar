@@ -73,6 +73,7 @@ Item {
     const r = Store.parse(text);
     root.data = r.data;
     root.loaded = true;
+    Qt.callLater(root.restoreClockForms);
     if (r.corrupt) {
       Quickshell.execDetached(["mv", "-f", root.dataPath, root.dataPath + ".bak"]);
       ToastService.showWarning(pluginApi?.tr("store.corrupt-title"), pluginApi?.tr("store.corrupt-body"));
@@ -964,6 +965,81 @@ Item {
       pomodoroPause();
     else
       pomodoroReset();
+  }
+
+  // ---------------------------------------------------------------- detached clock
+  // Window and corner overlay show one clock: the bar's while one runs or rings,
+  // else the Focus view's. Their open state lives in data.ui and reopens on load.
+
+  readonly property string shownClock: Clock.shownClock({ pomodoroRunning: pomodoroRunning, timerRunning: timerRunning, alarmSource: alarmSource, focusPanel: focusPanel })
+  readonly property int shownRemaining: shownClock === "timer" ? timerRemaining : pomodoroRemaining
+  readonly property int shownTotal: shownClock === "timer" ? timerTotal : Pomodoro.durationFor(pomodoroMode, pomodoroConfig)
+  readonly property bool shownRunning: shownClock === "timer" ? timerRunning : pomodoroRunning
+  readonly property bool clockWindowOpen: data?.ui?.clockWindow === true
+  readonly property bool clockOverlayOpen: data?.ui?.clockOverlay === true
+
+  // Same rules as the bar's middle click: a ringing timer is only silenced.
+  function shownToggle() {
+    if (shownClock === "timer") {
+      if (timerSoundPlaying)
+        stopAlarm("timer");
+      else if (timerRunning)
+        timerPause();
+      else
+        timerStart();
+    } else if (pomodoroRunning) {
+      pomodoroPause();
+    } else {
+      pomodoroStart();
+    }
+  }
+
+  function shownReset() {
+    if (shownClock === "timer")
+      timerReset();
+    else
+      pomodoroReset();
+  }
+
+  function setUiFlag(key, value) {
+    const next = Store.setUiFlag(data, key, value);
+    if (next !== data)
+      commit(next);
+  }
+
+  function setClockWindow(open) {
+    setUiFlag("clockWindow", open);
+    if (clockWindow.visible !== open)
+      clockWindow.visible = open;
+  }
+
+  function setClockOverlay(open) {
+    setUiFlag("clockOverlay", open);
+    if (!open)
+      clockOverlay.visible = false;
+    else if (!clockOverlay.visible && pluginApi)
+      pluginApi.withCurrentScreen(screen => clockOverlay.openOn(screen));
+  }
+
+  function restoreClockForms() {
+    if (clockWindowOpen)
+      clockWindow.visible = true;
+    if (clockOverlayOpen && pluginApi && !clockOverlay.visible)
+      pluginApi.withCurrentScreen(screen => clockOverlay.openOn(screen));
+  }
+
+  onPluginApiChanged: if (pluginApi && loaded) restoreClockForms()
+
+  ClockWindow {
+    id: clockWindow
+    pluginApi: root.pluginApi
+    mainInstance: root
+  }
+
+  ClockOverlay {
+    id: clockOverlay
+    pluginApi: root.pluginApi
+    mainInstance: root
   }
 
   Component.onCompleted: pomodoroRemaining = Pomodoro.idleRemaining(pomodoroStarted, pomodoroRemaining, pomodoroMode, pomodoroConfig)
