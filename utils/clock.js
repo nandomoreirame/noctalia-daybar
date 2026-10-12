@@ -33,3 +33,28 @@ function chipAction(chip, view, mode) {
   if (view === "timer" && chip === mode) return "show-pomodoro";
   return "set-mode";
 }
+
+// Detached clock (window and corner overlay): the bar's clock while one runs or rings,
+// else the clock of the view selected in the Focus tab. Never "".
+function shownClock(state) {
+  const source = barSource(state);
+  if (source) return source;
+  return state.focusPanel === "timer" ? "timer" : "pomodoro";
+}
+
+var CORNERS = ["top-left", "top-right", "bottom-left", "bottom-right"];
+var DEFAULT_CORNER = "top-right";
+
+// Overlay corner setting -> PanelWindow anchors; unknown values use the default.
+function cornerAnchors(corner) {
+  const c = CORNERS.indexOf(corner) >= 0 ? corner : DEFAULT_CORNER;
+  return { top: c.indexOf("top") === 0, bottom: c.indexOf("bottom") === 0, left: c.endsWith("left"), right: c.endsWith("right") };
+}
+
+// Overlay size setting -> ring diameter in px (before UI scale).
+var RING_SIZES = { small: 90, medium: 130, large: 180 };
+var DEFAULT_SIZE = "medium";
+
+function ringSize(size) {
+  return Object.prototype.hasOwnProperty.call(RING_SIZES, size) ? RING_SIZES[size] : RING_SIZES[DEFAULT_SIZE];
+}
