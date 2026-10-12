@@ -4,6 +4,46 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-12
+
+### Added
+
+- **Timer**: a fourth Focus chip next to Foco, Pausa curta and Pausa longa. It takes
+  free-form durations (`90s`, `10m`, `1h30`, `1h 30m`, `1:30`, up to 24 h) with an
+  optional label, rings the same alarm as the pomodoro and shows a toast with the
+  label. Only one clock counts at a time: starting one pauses the other.
+- **Recent timers**: the last four timers started show as one-click chips above the
+  controls, and the last one is loaded after a shell restart. The duration field
+  opens from the + button.
+- **Quick capture commands**: `/t 10m chá` starts a timer (`/t` pauses or resumes,
+  `/t parar` resets) and `/p`, `/p foco`, `/p curta`, `/p longa`, `/p parar` drive the
+  pomodoro. Timer joins the Tab cycle.
+- **Progress ring** around the pomodoro and timer clocks.
+- **Detached clock**: one click opens the active clock as a Niri window titled
+  *Daybar timer* (resizable, with mode chips and controls on hover) or pins it to a
+  screen corner above windows on every workspace. Corner and size are settings, and
+  both reopen after a restart. The README has a niri window-rule to float the window.
+- **Bar timer**: the bar shows the timer clock with an alarm icon while it runs or
+  rings; middle click pauses or resumes the clock shown.
+- **Linked task**: the task picker opens from a + button, the linked task shows as
+  text in the panel and the detached clock, and it is released when its focus
+  session ends.
+
+### Changed
+
+- The Focus panel is 25% taller with a larger clock; mode chips are centered and a
+  footer holds the window, pin and settings buttons with today's progress.
+- The daily progress dots and the cycle line are gone from the Focus tab.
+- The month grid starts on Sunday, and the selected day is a circle with its dot
+  below.
+- Read-only calendar events no longer show the checklist in Today.
+- The README binds capture to Mod+Space and the toolbar to Mod+Shift+Space.
+
+### Fixed
+
+- A ringing timer is silenced by play instead of restarting its countdown, and
+  pausing one clock no longer stops the other clock's alarm.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added
