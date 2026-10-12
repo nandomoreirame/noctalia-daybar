@@ -51,6 +51,35 @@ with the label. Only one clock counts at a time: starting the timer pauses a
 running pomodoro and starting the pomodoro pauses the timer, both keeping their
 remaining time. The bar shows whichever clock is running.
 
+### Detached clock
+
+Two buttons in the Focus header take the clock out of the panel, each with one
+click (click again to close):
+
+- **Open in a window** opens a normal Niri window titled *Daybar timer*, which you
+  can move, resize or send to another monitor. The ring and numbers scale with it.
+- **Pin to corner** pins a small clock to a screen corner, above windows (full-screen
+  apps cover it), on every workspace, without taking keyboard focus. Settings >
+  *Pinned clock corner* and *Pinned clock size* (small, medium, large) move and
+  resize it.
+
+Both show the running or ringing clock, else the one selected in the Focus tab:
+just the ring and the numbers. Hover to get play/pause and reset (and close, on the
+pinned clock). Both reopen after a shell restart.
+
+The window opens tiled unless niri is told otherwise. To float it in the top-right
+corner (`~/.config/niri/config.kdl`):
+
+~~~kdl
+window-rule {
+    match app-id="^dev\.noctalia\.noctalia-qs$" title="^Daybar timer$"
+    open-floating true
+    default-column-width { fixed 280; }
+    default-window-height { fixed 280; }
+    default-floating-position x=24 y=24 relative-to="top-right"
+}
+~~~
+
 ## Bookmarks
 
 The Bookmarks tab lists saved links with a thumbnail, title, description and

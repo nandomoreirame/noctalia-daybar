@@ -50,9 +50,11 @@ Manual end-to-end checklist: `docs/SMOKE.md` (one row per P1 REQ).
 - Top-level declarations MUST start at column 0, or they are silently not exported. Nested code is indented.
 - No ES `import`/`export` syntax in `utils/`; the files on disk must stay valid QML libraries.
 
-**Services live in `Main.qml`** (data store, agenda writes, reminders, pomodoro, capture overlay, IPC target `plugin:daybar`) so timers and reminders keep running with the panel closed. UI files reach them via `pluginApi.mainInstance`.
+**Services live in `Main.qml`** (data store, agenda writes, reminders, pomodoro and timer, capture overlay, detached clock, IPC target `plugin:daybar`) so timers and reminders keep running with the panel closed. UI files reach them via `pluginApi.mainInstance`.
 
 **Capture handler registry.** One file per type in `utils/capture/<type>.js` exposing `detect`, `preview`, `commit`, wired in `utils/capture/registry.js`. Adding a type means one handler file plus its test, no core changes. Inference order: `=`, then `/p` (pomodoro command), then prefix (`/e`, `/l`, `/n`, `/t`), then the Tab-forced type, then a lone URL as link, then task.
+
+**Detached clock**: `ClockWindow.qml` (`FloatingWindow`, title "Daybar timer") and `ClockOverlay.qml` (Top-layer `PanelWindow`, corner from settings) share `components/ClockFace.qml`, each inside a `Loader` active only while visible (creating them with Main caused a binding loop on `pomodoroConfig`). Open state is `data.ui.clockWindow`/`clockOverlay`, restored on load.
 
 **Capture overlay** is its own `PanelWindow` on `WlrLayer.Overlay` with exclusive keyboard focus, because the plugin's single panel slot is the toolbar.
 

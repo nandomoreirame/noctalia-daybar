@@ -84,3 +84,17 @@ Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
 | 60 | FT-REQ-009 | `/p curta` with the short break paused; `/p agora` | Resumes without reset; unknown-command |
 | 61 | FT-REQ-010 | Tab from Link; empty Enter | Timer type; "Nada para salvar ainda" |
 | 62 | FT-REQ-011 | Timer running, middle click on the bar | Alarm icon and clock; pauses the timer |
+
+## Detached clock
+
+| # | REQ | Step | Expected |
+|---|-----|------|----------|
+| 63 | DC-REQ-001 | Focus header in the pomodoro and Timer views; Tab to the buttons | Window and pin buttons; Space toggles; tooltip says open/close |
+| 64 | DC-REQ-002 | Click the window button; resize; Mod+Q | "Daybar timer" window; ring scales; closing turns the button off |
+| 65 | DC-REQ-003 | Click the pin button; switch workspace; type in a window | Corner clock on every workspace, clear of the bar; typing still goes to the window |
+| 66 | DC-REQ-004 | Start a focus, then `/t 1m` | Both forms switch from the focus clock to the timer |
+| 67 | DC-REQ-005 | Hover each form; play, reset; let a `/t 5s` ring and press play | Controls fade in; act on the shown clock; ringing timer is only silenced |
+| 68 | DC-REQ-006 | Settings: each corner and size | Pinned clock moves and resizes at once |
+| 69 | DC-REQ-007 | Both open, restart the shell | Both come back |
+| 70 | DC-REQ-008 | Add the README window-rule, reopen the window | Opens floating in the top-right, 280x280 |
+
