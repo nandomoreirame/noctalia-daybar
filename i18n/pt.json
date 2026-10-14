@@ -222,7 +222,15 @@
       "ambiguous": "Não foi possível excluir: evento ambíguo",
       "read-only": "Esta agenda é só de leitura",
       "failed": "Não foi possível excluir o arquivo do evento"
-    }
+    },
+    "details-loading": "Carregando detalhes...",
+    "details-none": "Sem participantes, local ou link",
+    "join-meet": "Entrar no Meet",
+    "people": "Participantes",
+    "location": "Local",
+    "declined": "recusou",
+    "tentative": "talvez",
+    "expand": "Mostrar detalhes do evento"
   },
   "time": {
     "now": "agora",

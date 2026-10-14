@@ -26,6 +26,7 @@ import "utils/events.js" as Events
 import "utils/clock.js" as Clock
 import "utils/capture/pomodoro.js" as PomodoroCommand
 import "utils/timers.js" as Timers
+import "utils/eventinfo.js" as EventInfo
 
 // Long-lived services: data store, IPC, agenda writes, reminders, pomodoro and
 // the capture overlay. UI files only read state from here and call these functions.
@@ -382,11 +383,49 @@ Item {
   Connections {
     target: CalendarService
     function onEventsChanged() {
+      // A reload may bring new attendees or links: open details read their file again.
+      root.eventInfoGen += 1;
       if (root.clearHiddenOnReload) {
         root.hiddenEventUids = [];
         root.clearHiddenOnReload = false;
       }
     }
+  }
+
+  // Event details read from the .ics on demand (who, Meet link, location), keyed by
+  // uid|calendar: { loading, ok, info, gen }. A CalendarService reload bumps
+  // eventInfoGen; an entry from an older generation is read again, and its old info
+  // stays on screen meanwhile.
+  property var eventInfoCache: ({})
+  property int eventInfoGen: 0
+
+  function eventInfoKey(uid, calendarName) {
+    return uid + "|" + calendarName;
+  }
+
+  function setEventInfo(key, value) {
+    const next = Object.assign({}, eventInfoCache);
+    next[key] = value;
+    eventInfoCache = next;
+  }
+
+  function loadEventInfo(uid, calendarName) {
+    const key = eventInfoKey(uid, calendarName);
+    const old = eventInfoCache[key];
+    const gen = eventInfoGen;
+    if (old && (old.gen === gen || old.loading))
+      return;
+    if (calendarRootsList.length === 0)
+      return setEventInfo(key, { loading: false, ok: false, info: null, gen: gen });
+    setEventInfo(key, { loading: true, ok: old ? old.ok : false, info: old ? old.info : null, gen: gen });
+    runOnce(EventDelete.findArgs(uid, calendarRootsList), function (out) {
+      const pick = EventDelete.pickReadable(EventDelete.parsePaths(out), root.collections, calendarName);
+      if (!pick.ok)
+        return root.setEventInfo(key, { loading: false, ok: false, info: null, gen: gen });
+      runOnce(EventDelete.readArgs(pick.path), function (ics) {
+        root.setEventInfo(key, { loading: false, ok: true, info: EventInfo.parseEventInfo(ics, pick.self), gen: gen });
+      });
+    });
   }
 
   function canDeleteEvent(calendarName) {

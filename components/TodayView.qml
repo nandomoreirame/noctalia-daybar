@@ -5,6 +5,7 @@ import qs.Commons
 import qs.Widgets
 import qs.Services.Location
 import "ui"
+import "../utils/events.js" as Events
 import "../utils/today.js" as Today
 import "../utils/capture/task.js" as TaskCapture
 
@@ -26,6 +27,8 @@ Card {
   readonly property var progress: Today.progress(items)
   // Id of the task whose title is being edited in place, or "".
   property string editingId: ""
+  // Id of the event row showing its details, or "" (one at a time).
+  property string expandedId: ""
 
   function startEdit(item) {
     if (item.kind === "task")
@@ -104,6 +107,19 @@ Card {
           ListRow {
             id: row
             required property var modelData
+            // Events open their details (place, people, Meet) below the line.
+            clickable: modelData.kind === "event"
+            expanded: clickable && root.expandedId === modelData.id
+            accessibleName: modelData.title
+            onClicked: root.expandedId = expanded ? "" : modelData.id
+            detail: Component {
+              EventDetails {
+                pluginApi: root.pluginApi
+                mainInstance: root.mainInstance
+                uid: row.modelData.uid
+                calendar: row.modelData.calendar
+              }
+            }
 
             // Read-only calendar events (holidays) keep the slot for alignment but get no checkbox.
             CheckDot {
@@ -130,7 +146,7 @@ Card {
 
             NText {
               visible: row.modelData.time !== null
-              text: row.modelData.time || ""
+              text: Events.timeRange(row.modelData) || ""
               family: Settings.data.ui.fontFixed
               pointSize: Style.fontSizeS
               color: Qt.alpha(Color.mOnSurface, 0.56)

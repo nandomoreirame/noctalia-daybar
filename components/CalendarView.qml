@@ -4,6 +4,7 @@ import qs.Commons
 import qs.Widgets
 import qs.Services.Location
 import "ui"
+import "../utils/events.js" as Events
 import "../utils/month.js" as Month
 import "../utils/today.js" as Today
 
@@ -19,6 +20,8 @@ Card {
   property int year: today.getFullYear()
   property int month: today.getMonth()
   property string selected: Qt.formatDate(today, "yyyy-MM-dd")
+  // Id of the event row showing its details, or "" (one at a time).
+  property string expandedId: ""
   readonly property var events: root.mainInstance ? root.mainInstance.visibleEvents : CalendarService.events
   readonly property string todayIso: Qt.formatDate(today, "yyyy-MM-dd")
   readonly property var cells: Month.monthGrid(year, month, today, events, root.mainInstance ? root.mainInstance.data.tasks : [])
@@ -101,9 +104,22 @@ Card {
         ListRow {
           id: dayRow
           required property var modelData
+          // Events open their details (place, people, Meet) below the line.
+          clickable: modelData.kind === "event"
+          expanded: clickable && root.expandedId === modelData.id
+          accessibleName: modelData.title
+          onClicked: root.expandedId = expanded ? "" : modelData.id
+          detail: Component {
+            EventDetails {
+              pluginApi: root.pluginApi
+              mainInstance: root.mainInstance
+              uid: dayRow.modelData.uid
+              calendar: dayRow.modelData.calendar
+            }
+          }
 
           NText {
-            text: dayRow.modelData.time || root.tr("calendar.all-day")
+            text: Events.timeRange(dayRow.modelData) || root.tr("calendar.all-day")
             family: Settings.data.ui.fontFixed
             pointSize: Style.fontSizeS
             color: dayRow.modelData.time ? Qt.alpha(Color.mOnSurface, 0.56) : Color.mPrimary

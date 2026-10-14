@@ -222,7 +222,15 @@
       "ambiguous": "Could not delete: ambiguous event",
       "read-only": "This calendar is read-only",
       "failed": "Could not delete the event file"
-    }
+    },
+    "details-loading": "Loading details...",
+    "details-none": "No attendees, place or link",
+    "join-meet": "Join Meet",
+    "people": "Attendees",
+    "location": "Place",
+    "declined": "declined",
+    "tentative": "maybe",
+    "expand": "Show event details"
   },
   "time": {
     "now": "now",
