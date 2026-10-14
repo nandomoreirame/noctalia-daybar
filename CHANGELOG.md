@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-10-13
+
+### Added
+
+- **Event time ranges**: calendar events in the Calendar and Today tabs show start
+  and end (`16:00–17:00`) when both fall on that day.
+- **Event details**: clicking an event (or Enter/Space on it) expands it to show the
+  place, the organizer and attendees (without the calendar owner and rooms, declined
+  ones struck through) and a button to join the Meet call. The details are read from
+  the event's `.ics` file only when expanded, and read again after a calendar sync.
+
 ## [0.3.0] - 2026-10-12
 
 ### Added
