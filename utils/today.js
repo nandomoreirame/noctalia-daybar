@@ -7,7 +7,7 @@
 // Builds the Today checklist:
 //   1. today's calendar events (untimed first, then by time)
 //   2. today's tasks and overdue undone tasks, timed by time, then untimed
-// Item: { kind, id, uid, calendar, title, time, done, overdue, pomodoros, checkable }
+// Item: { kind, id, uid, calendar, title, time, endTime, done, overdue, pomodoros, checkable }
 // Events from read-only calendars (holidays, birthdays, subscriptions) are not
 // checkable: no checkbox, never done, left out of the progress counts.
 
@@ -21,6 +21,7 @@ function eventItems(events, data, iso, collections) {
       calendar: ev.calendar || "",
       title: ev.summary,
       time: ev.time,
+      endTime: ev.endTime,
       done: checkable && !!data.eventChecks[Tasks.eventKey(ev.uid, iso)],
       overdue: false,
       pomodoros: 0,

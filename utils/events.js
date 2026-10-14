@@ -31,6 +31,19 @@ function timeOn(ev, iso) {
   return Dates.isoDate(s) === iso ? Dates.hhmm(s) : null;
 }
 
+// "HH:MM" when the event ends on that day (before midnight), else null.
+function endTimeOn(ev, iso) {
+  if (isAllDay(ev)) return null;
+  const e = new Date(ev.end * 1000);
+  return Dates.isoDate(e) === iso ? Dates.hhmm(e) : null;
+}
+
+// "16:00–17:00" when the item has both times, "16:00" with only a start, else null.
+function timeRange(item) {
+  if (!item.time) return null;
+  return item.endTime && item.endTime !== item.time ? item.time + "–" + item.endTime : item.time;
+}
+
 function compareTime(a, b) {
   if (a === b) return 0;
   if (a === null) return -1;
@@ -44,7 +57,7 @@ function eventsOn(events, iso) {
     .filter((ev) => overlapsDay(ev, iso))
     .map((ev) => ({ ev: ev, time: timeOn(ev, iso) }))
     .sort((a, b) => compareTime(a.time, b.time) || (a.ev.start - b.ev.start))
-    .map((x) => Object.assign({}, x.ev, { time: x.time }));
+    .map((x) => Object.assign({}, x.ev, { time: x.time, endTime: endTimeOn(x.ev, iso) }));
 }
 
 // Today's earliest timed event that has not ended yet (an event in progress

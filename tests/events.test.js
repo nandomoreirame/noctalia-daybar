@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { overlapsDay, isAllDay, timeOn, eventsOn, compareTime, nextEvent } from "../utils/events.js";
+import { overlapsDay, isAllDay, timeOn, endTimeOn, timeRange, eventsOn, compareTime, nextEvent } from "../utils/events.js";
 
 const at = (y, mo, d, h = 0, mi = 0) => new Date(y, mo, d, h, mi).getTime() / 1000;
 const ev = (uid, start, end, summary = uid) => ({ uid, summary, start, end, calendar: "c" });
@@ -27,6 +27,27 @@ describe("events", () => {
     expect(timeOn(meeting, "2026-10-09")).toBe("15:00");
     expect(timeOn(trip, "2026-10-09")).toBeNull();
     expect(timeOn(allDay, "2026-10-09")).toBeNull();
+  });
+
+  it("gives an end time only when the event ends on that day", () => {
+    expect(endTimeOn(meeting, "2026-10-09")).toBe("16:00");
+    expect(endTimeOn(trip, "2026-10-09")).toBeNull();
+    expect(endTimeOn(trip, "2026-10-11")).toBe("10:00");
+    expect(endTimeOn(allDay, "2026-10-09")).toBeNull();
+    expect(endTimeOn(ev("late", at(2026, 9, 9, 23), at(2026, 9, 10, 0)), "2026-10-09")).toBeNull();
+  });
+
+  it("joins start and end into a range, or keeps whatever exists", () => {
+    expect(timeRange({ time: "16:00", endTime: "17:00" })).toBe("16:00–17:00");
+    expect(timeRange({ time: "16:00", endTime: null })).toBe("16:00");
+    expect(timeRange({ time: "16:00" })).toBe("16:00");
+    expect(timeRange({ time: "16:00", endTime: "16:00" })).toBe("16:00");
+    expect(timeRange({ time: null, endTime: "10:00" })).toBeNull();
+  });
+
+  it("carries the end time on the day's list", () => {
+    const list = eventsOn([meeting, trip], "2026-10-09");
+    expect(list.map((e) => [e.uid, e.time, e.endTime])).toEqual([["t", null, null], ["m", "15:00", "16:00"]]);
   });
 
   it("lists a day's events, untimed first then by time", () => {

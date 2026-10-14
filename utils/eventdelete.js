@@ -140,6 +140,17 @@ function pickFile(paths, collections, calendarName) {
   return { ok: true, path: hits[0] };
 }
 
+// Like pickFile, for reading only: read-only calendars are fine. `self` is the
+// collection id, which for Google calendars is the owner's address.
+function pickReadable(paths, collections, calendarName) {
+  if (paths.length === 0) return { ok: false, error: "not-found" };
+  const matching = collections.filter((c) => c.name === calendarName);
+  const hits = paths.filter((p) => matching.some((c) => c.dir === dirOf(p)));
+  if (hits.length !== 1) return { ok: false, error: "ambiguous" };
+  const col = matching.find((c) => c.dir === dirOf(hits[0]));
+  return { ok: true, path: hits[0], self: col.id };
+}
+
 // Property names start a line inside a VEVENT; RRULE in VTIMEZONE must not count.
 function isRecurring(icsText) {
   const text = String(icsText || "");

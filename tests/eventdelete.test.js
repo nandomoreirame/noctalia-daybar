@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calendarRoots, calendarSections, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, isReadOnlyCalendar, escapeRegex, findArgs, parsePaths, pickFile, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents, eventKey } from "../utils/eventdelete.js";
+import { calendarRoots, calendarSections, collectionsArgs, parseCollections, isReadOnlyCollection, isWritableCalendar, isReadOnlyCalendar, escapeRegex, findArgs, parsePaths, pickFile, pickReadable, isRecurring, isDeletablePath, deleteArgs, readArgs, removeEventChecks, hideEvents, eventKey } from "../utils/eventdelete.js";
 
 // Fixture home is /opt/u: absolute user-home paths are rejected by the commit hook.
 const HOME = "/opt/u";
@@ -116,6 +116,20 @@ describe("UID lookup", () => {
 
   it("parses grep -l output into .ics paths", () => {
     expect(parsePaths("/r/a/1.ics\n\n/r/b/2.ics\nnoise\n")).toEqual(["/r/a/1.ics", "/r/b/2.ics"]);
+  });
+});
+
+describe("pickReadable", () => {
+  const cols = [{ dir: "/r/me", id: "me@x.com", name: "Eventos" }, { dir: "/r/hol", id: "h@virtual", name: "Feriados" }];
+
+  it("reads read-only calendars too and names the calendar's own address", () => {
+    expect(pickReadable(["/r/me/1.ics"], cols, "Eventos")).toEqual({ ok: true, path: "/r/me/1.ics", self: "me@x.com" });
+    expect(pickReadable(["/r/hol/2.ics"], cols, "Feriados")).toEqual({ ok: true, path: "/r/hol/2.ics", self: "h@virtual" });
+  });
+
+  it("keeps the not-found and ambiguous rules of pickFile", () => {
+    expect(pickReadable([], cols, "Eventos")).toEqual({ ok: false, error: "not-found" });
+    expect(pickReadable(["/r/other/1.ics"], cols, "Eventos")).toEqual({ ok: false, error: "ambiguous" });
   });
 });
 
