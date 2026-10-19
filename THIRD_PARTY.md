@@ -2,7 +2,7 @@
 
 ## pomodoro (Noctalia plugin)
 
-The focus timer (`utils/pomodoro.js`, the pomodoro section of `Main.qml`) and
+The focus timer (`lib/pomodoro.luau`, the pomodoro section of `service.luau`) and
 `alarm.mp3` are derived from the `pomodoro` plugin by notprayasmitra, published in
 <https://github.com/noctalia-dev/noctalia-plugins> under the MIT License:
 

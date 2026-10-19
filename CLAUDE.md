@@ -4,70 +4,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Pre-implementation. The repo holds only the RPI artifacts; code is built task by task from the plan:
+Noctalia **v5** plugin (Luau, `plugin.toml`, `plugin_api = 32`), version 0.4.0, ported from the v4 QML plugin by the `daybar-v5` RPI feature:
 
-- Spec: `docs/specs/daybar-mvp/SPEC.md` (REQ-001..026, architecture decisions, edge cases, grilling log)
-- Plan: `docs/plans/2026-10-09-daybar-mvp.md` (24 TDD tasks with full file contents, dependency graph, parallel batches)
-- State: `docs/specs/daybar-mvp/STATE.md`
+- Spec: `docs/specs/daybar-v5/SPEC.md` (REQ-001..034, known gaps)
+- Plan: `docs/plans/2026-10-16-daybar-v5.md` (30 tasks)
+- State: `docs/specs/daybar-v5/STATE.md`
 
-The plan is the source of truth for file contents and order. When code and plan disagree, check the spec before changing either.
-
-## What it is
-
-`daybar` is a Noctalia Shell plugin (noctalia-shell 4.7.x, Quickshell/QML, run as `qs -c noctalia-shell`) with a centered quick-capture overlay (task, event, reminder, note, link, calculation, timer, pomodoro commands) and a bar toolbar with Calendar, Today, Focus (pomodoro and timer) and Inbox tabs. Noctalia 5 is not a target: its plugins are Luau scripts with a `plugin.toml` manifest, a different system from the v4 QML plugins (tested on noctalia-shell 4.7.7).
+The v4 code (QML, `utils/*.js`, vitest) is frozen at 0.3.1 on branch `legacy-v4`. Read it with `git show legacy-v4:<path>` when checking parity. The older `docs/specs/*` and `docs/plans/*` describe v4 behavior, which is the parity baseline.
 
 ## Commands
 
 ```bash
-npm install
-npm test                          # full vitest suite
-npm test -- tests/when.test.js    # single file
+./run-tests                                  # full Luau suite + tests/*.test.sh guards
+./run-tests tests/when.test.luau             # one file
+noctalia plugins lint .                      # manifest and entry checks
 ```
 
-Read the `Tests  N passed` line; never trust the exit code of a piped command.
+Read the `N passed, M failed` and `guards: ok` lines; never trust the exit code of a piped command. `run-tests` exports `TZ=America/Sao_Paulo`.
 
-Runtime checks (QML has no automated harness):
+Runtime (installed as a symlink in `~/.local/share/noctalia/plugins/daybar`):
 
 ```bash
-ln -s ~/dev/projects/noctalia-daybar ~/.config/noctalia/plugins/daybar   # once
-qs -c noctalia-shell kill; qs -c noctalia-shell -d                       # reload shell
-qs log -c noctalia-shell | grep -i daybar | tail -50                     # read errors
-qs -c noctalia-shell ipc call plugin:daybar capture                      # also: toggle, open <calendar|today|focus|inbox>
+noctalia msg plugins enable nandomoreirame/daybar
+noctalia msg plugin nandomoreirame/daybar:core all capture   # also: toggle, open <tab>
+noctalia msg panel-toggle nandomoreirame/daybar:toolbar
 ```
 
-Manual end-to-end checklist: `docs/SMOKE.md` (one row per P1 REQ).
+Editing a file hot-reloads the owning entry. Manual end-to-end checklist: `docs/SMOKE.md`.
 
 ## Architecture
 
-**Two layers, strictly separated.**
+**Layers.**
 
-- `utils/**/*.js`: all logic, as QML JavaScript libraries. Pure functions, unit-tested with vitest (TDD).
-- QML (`Main.qml`, `Panel.qml`, `BarWidget.qml`, `Settings.qml`, `CaptureWindow.qml`, `components/*View.qml`): thin UI and process wiring only. Anything testable belongs in `utils/`.
+- `lib/**/*.luau`: pure logic, one table per module, no host globals (`noctalia`, `ui`, `panel`, ...). Unit-tested with the Luau harness.
+- `views/*.luau`: UI tree builders. They get `ui`, `tr`, the published `view` and a `send` function through a context table, because modules loaded with `require` do not see the host globals in tests.
+- Entries at the root: `service.luau` (`[[service]] core`), `widget.luau` (bar), `toolbar.luau`, `capture.luau`, `note.luau`, `clockpin.luau` (panels), `clockdesk.luau` (desktop widget `clockface`). Entries are thin.
 
-**The test transform** (`vitest.config.js`, plugin `qml-library-to-esm`) makes QML libraries importable from Node at test time only: strips `.pragma library`, rewrites `.import "x.js" as X` to `import * as X from "./x.js"`, and appends `export { ... }` for every top-level `function`/`const`/`let`/`var` found by a column-0 regex. Consequences:
+**The service owns all I/O (AD-201).** Files, processes (`khal`, `vdirsyncer`, `grep`, `xdg-open`, the focus mode command), HTTP, sound, timers, reminders and notifications. It publishes one plain `view` value on `noctalia.state` after every change (`lib/view.luau`).
 
-- Every `utils/` file starts with `.pragma library`; cross-file deps use `.import` paths relative to the importing file.
-- Top-level declarations MUST start at column 0, or they are silently not exported. Nested code is indented.
-- No ES `import`/`export` syntax in `utils/`; the files on disk must stay valid QML libraries.
+**Commands go through an outbox (AD-202).** An entry pushes `{ seq, name, args }` to `cmd.<entry>` (`views/client.luau`); the service runs each seq once (`lib/outbox.luau`, `Outbox.take`) and answers on `ack.<entry>` = `{ seq, ok, error, result }`. A handler returns `ok, error, result`, or `PENDING` and calls `reply` later. On start the service seeds `lastSeen` from the last published ack so a restart does not rerun commands.
 
-**Services live in `Main.qml`** (data store, agenda writes, reminders, pomodoro and timer, capture overlay, detached clock, IPC target `plugin:daybar`) so timers and reminders keep running with the panel closed. UI files reach them via `pluginApi.mainInstance`.
+**Capture.** `lib/capture/<type>.luau` handlers wired in `lib/capture/registry.luau`. The capture panel resolves the text for the preview; `commit { text, type }` makes the service resolve it again and run the action (`CAPTURE_ACTIONS` in `service.luau`). A calculation is copied by the panel itself.
 
-**Capture handler registry.** One file per type in `utils/capture/<type>.js` exposing `detect`, `preview`, `commit`, wired in `utils/capture/registry.js`. Adding a type means one handler file plus its test, no core changes. Inference order: `=`, then `/p` (pomodoro command), then prefix (`/e`, `/l`, `/n`, `/t`), then the Tab-forced type, then a lone URL as link, then task.
+**Agenda.** `khal printcalendars` decides availability; `khal list --json` over today-14..today+31, reloaded every 5 minutes, parsed by `lib/khalread.luau`. Writes go through a serial `WriteQueue`: `khal new`, then `vdirsyncer sync`, then a reload. Delete: read `~/.config/khal/config`, scan collections, `grep -rlF UID:<uid>` for the `.ics`, confirm, `noctalia.removeFile` only when `EventDelete.isDeletablePath`.
 
-**Detached clock**: `ClockWindow.qml` (`FloatingWindow`, title "Daybar timer") and `ClockOverlay.qml` (Top-layer `PanelWindow`, corner from settings) share `components/ClockFace.qml`, each inside a `Loader` active only while visible (creating them with Main caused a binding loop on `pomodoroConfig`). Open state is `data.ui.clockWindow`/`clockOverlay`, restored on load.
+**Clocks.** Running clocks keep a deadline (`endsAtMs`); entries compute the digits from it (`lib/clock.luau`, `views/clockfmt.luau`). Only one of pomodoro and timer runs at a time.
 
-**Capture overlay** is its own `PanelWindow` on `WlrLayer.Overlay` with exclusive keyboard focus, because the plugin's single panel slot is the toolbar.
-
-**Calendar** is read through Noctalia's `CalendarService` (khal provider, -14/+31 day window, 5-minute refresh, gated by `Settings.data.location.showCalendarEvents`). Writes go through `khal new` then `vdirsyncer sync`, then a `CalendarService` reload. Tasks are local only (Google CalDAV has no VTODO); `source`/`externalId` fields are reserved for a future Google Tasks sync.
-
-**Persistence**: data in `~/.local/share/noctalia-daybar/data.json` (`version` field, `FileView` atomic writes, debounced). Corrupt file is renamed to `.bak` and the plugin starts empty. `pluginSettings` holds configuration only, never data.
-
-**Key utils**: `when.js` (own pt-BR date/time parser: weekdays mean the next occurrence, a past time without date means tomorrow), `calc.js` (shunting-yard over whitelisted tokens, postfix `%` is percent not modulo), `today.js` (events by time, then timed tasks, then untimed; overdue flagged; event check state keyed `uid+date`), `pomodoro.js` (state machine forked from the MIT pomodoro plugin), `khal.js` (argv builders), `duration.js` (timer duration parser), `clock.js` (bar clock source, ring progress, Focus chip action).
+**Persistence.** `pluginDataDir()/data.json`, schema v2 (same as v4), debounced 500 ms, atomic (`.tmp` + `renameFile`). Corrupt file → `.bak`. First start imports the v4 file once.
 
 ## Hard constraints
 
-- No `eval`, no `Function`. Noctalia's `AdvancedMath.js` is off-limits for this reason.
-- External commands are argv arrays (`Process.command`, `Quickshell.execDetached`), never shell strings. User text goes in as separate args (khal argument-injection edge case).
-- Do not reference any previous or source project in code, comments, docs or commits. The only allowed attribution is the forked pomodoro plugin's MIT notice in `THIRD_PARTY.md` (keep it and `alarm.mp3`). Task 24 runs a grep guard for this.
-- UI strings go through i18n (`i18n/pt.json`, `i18n/en.json`, via `pluginApi.tr(key)`); an i18n coverage test enforces both files stay in sync.
-- Runtime dependencies: `khal`, `vdirsyncer`, `wl-clipboard`, `xdg-utils`. Without khal, the Calendar tab shows "Calendar not configured" and everything else must still work.
+- No `load`, `loadstring`, `getfenv`, `setfenv` in plugin code; external commands are argv tables, never strings. `tests/guards.test.sh` enforces both, plus no root QML, `package.json` or `utils/`.
+- **Luau `os.time{...}` is UTC.** Use the local-time helpers in `lib/dates.luau` (`parseIsoDate`, `addDays`, `toDate`, `addMinutes`); never call `os.time` with a table in lib code.
+- Lua patterns have no `|` and no quantifiers on groups: port JS regexes with branches or small scanners.
+- User text reaches commands only as separate argv items; URLs opened with `xdg-open` must pass `Markdown.isOpenableLink`; preview fetches and image downloads must pass `Url.isPublicHttpUrl`.
+- Do not reference any previous or source project in code, comments, docs or commits. The only allowed attribution is the forked pomodoro plugin's MIT notice in `THIRD_PARTY.md` (keep it and `alarm.mp3`).
+- UI strings go through `noctalia.tr` with both `translations/en.json` and `translations/pt-BR.json`; `tests/i18n.test.luau` keeps them in sync.
+- Never write an absolute `/home/<user>` path in code, tests or docs (a global pre-commit hook rejects it).

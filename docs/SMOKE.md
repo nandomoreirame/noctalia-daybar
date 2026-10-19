@@ -1,100 +1,46 @@
-# Smoke test (manual)
+# Smoke test (manual, Noctalia v5)
 
-Run after `npm test` is green, with the plugin symlinked and enabled. Watch the shell
-log in another terminal: `qs log -c noctalia-shell -f | grep -i daybar`.
-Any `daybar` error or `ReferenceError`/`TypeError` fails the run.
+Run after `./run-tests` and `noctalia plugins lint .` are green, with the plugin
+symlinked into `~/.local/share/noctalia/plugins/daybar` and enabled. Watch the
+Noctalia log in another terminal and filter for `daybar`; any error from a Daybar
+entry fails the run.
 
-| # | REQ | Step | Expected |
-|---|-----|------|----------|
-| 1 | REQ-021 | Reload the shell; `cat ~/.local/share/noctalia-daybar/data.json` after the first capture | File exists with `"version": 1` |
-| 2 | REQ-001 | `qs -c noctalia-shell ipc call plugin:daybar capture` | Centered overlay, cursor in the field |
-| 3 | REQ-001 | Run the same command again while open | Overlay closes without saving; no second window |
-| 4 | REQ-002 | Copy `https://example.com`, open capture | Field prefilled and selected, type chip "Link" |
-| 5 | REQ-002 | Save it, copy the same URL, open capture | Field empty |
-| 6 | REQ-003, REQ-008 | Type `comprar pão amanhã 9h` | Preview "comprar pão · amanhã 09:00", chip "Tarefa" |
-| 7 | REQ-007 | Enter | Overlay closes, toast "Tarefa salva" |
-| 8 | REQ-007 | Type `a`, Shift+Enter, `b`, Shift+Enter, Esc | Two tasks saved, overlay closed by Esc |
-| 9 | REQ-004, REQ-005 | `=200*15%`, Enter; then `=2/0` | Preview "= 30", Enter copies `30` (check `wl-paste`), overlay stays; `=2/0` shows "Divisão por zero" |
-| 10 | REQ-006 | `pagar boleto 18h`, press Tab three times | Chip cycles Tarefa > Evento > Lembrete > Nota |
-| 11 | REQ-009/012 | `/e teste daybar amanhã 10h` | Overlay closes; event appears in Google Calendar after `vdirsyncer sync` and in the Calendar tab |
-| 12 | REQ-009 | `/e sem data` | Error "Evento precisa de data e hora", text kept |
-| 13 | REQ-010 | `/l teste lembrete <now+2min>` | Event with alarm in Google; local toast at that minute |
-| 14 | REQ-012 | Disconnect network, create an event | Warning toast "Falha ao sincronizar a agenda"; event in `khal list` |
-| 15 | REQ-011 | `/n uma ideia` | Note in Inbox |
-| 16 | REQ-013/014 | Open toolbar > Hoje | Events first by time, then tasks; check/uncheck persists after shell reload |
-| 17 | REQ-014 | Type in the Hoje field `ligar 16h`, Enter; delete it | Task added, then removed |
-| 18 | REQ-015 | Calendário tab | Clock, Sunday-first grid, dots on days with events, prev/next month work |
-| 19 | REQ-016 | `PATH` without khal (or uninstall), reload | "Agenda não configurada"; Hoje still lists tasks |
-| 20 | REQ-017, REQ-019 | Foco: Iniciar | Bar shows the clock; toolbar closed, timer keeps counting |
-| 21 | REQ-018 | Link a task, set focus to 1 min, let it finish | Toast, alarm, task shows "● 1" in Hoje |
-| 22 | REQ-017 | Focus mode command set to a script that logs its argument | `on` at start, `off` at pause |
-| 23 | REQ-020 | Caixa: open link, archive link, copy and delete note | xdg-open opens browser; lists update |
-| 24 | REQ-022 | `qs -c noctalia-shell ipc call plugin:daybar open focus` | Toolbar opens on Foco |
-| 25 | REQ-023 | Settings: change durations, default calendar, initial tab | Values persist and apply |
-| 26 | REQ-021 | Write `{oops` into data.json, reload | Toast about unreadable data; `data.json.bak` exists |
-
-
-## Bookmarks and Notes
+The rows marked **host** check what the unit tests cannot prove (the mock stands in
+for the host there).
 
 | # | REQ | Step | Expected |
 |---|-----|------|----------|
-| 27 | BN-REQ-001 | Open the toolbar | Five tabs; Bookmarks and Notes after Focus |
-| 28 | BN-REQ-002 | Start with a v1 `data.json` holding links/notes | `version: 2`, no links/notes |
-| 29 | BN-REQ-003 | Capture `https://github.com` | Row appears at once with `github.com` |
-| 30 | BN-REQ-004 | Capture `https://github.com/?utm_source=x` | Same row moves to top, refetched |
-| 31 | BN-REQ-005 | Wait a few seconds | Title and description from the page |
-| 32 | BN-REQ-006 | `ls ~/.cache/noctalia-daybar/thumbs/` | File named after the bookmark id |
-| 33 | BN-REQ-007 | Capture `https://nonexistent.invalid` | Domain title, no toast, refresh on hover |
-| 34 | BN-REQ-008 | Look at a row; click it | Thumbnail, title, 2-line description, domain · date; browser opens |
-| 35 | BN-REQ-009 | Hover: copy, refresh, rename | Clipboard has URL; spinner; Enter saves title |
-| 36 | BN-REQ-010 | Search `acao` with a title "Ação" | Row stays; others hidden |
-| 37 | BN-REQ-011 | Open Notes | Title, snippet, "há N min", newest edit first |
-| 38 | BN-REQ-012 | Click a note | Large centered window, rendered Markdown |
-| 39 | BN-REQ-013 | Ctrl+E twice; double-click text | Editor (monospace) then preview; double-click edits |
-| 40 | BN-REQ-014 | Type, wait 1 s, `cat data.json` | Text saved; Ctrl+S saves at once; Esc closes |
-| 41 | BN-REQ-015 | New note, close without typing | No new note in data.json |
-| 42 | BN-REQ-016 | Note with `![x](https://example.com/a.png)` and `[js](javascript:alert(1))` | Image shown as a link; js link does nothing |
-| 43 | BN-REQ-017 | Capture `/n uma ideia` | Note "uma ideia" in Notes |
-| 44 | BN-REQ-018 | Delete a note and a bookmark | Bubble with OK/Cancel; Esc cancels; OK deletes and removes the thumbnail |
-| 45 | BN-REQ-019 | Turn "Fetch link previews" off, capture a link | Domain title only; no curl process |
-
-## Event delete
-
-| # | REQ | Step | Expected |
-|---|-----|------|----------|
-| 46 | ED-REQ-001 | Hover a normal event, then a holiday | Trash on the event; none on the holiday |
-| 47 | ED-REQ-002 | Click the trash | "Localizando evento..." with OK disabled, then the question |
-| 48 | ED-REQ-003 | Same on `daybar teste recorrente` | "Este evento se repete. Excluir todas as ocorrências?" |
-| 49 | ED-REQ-004 | OK on `daybar teste exclusao`; offline once | Row gone at once; gone in Google after sync; offline shows the sync warning and it does not come back |
-| 50 | ED-REQ-005 | Delete the event on the phone, then try in Daybar | "Evento não encontrado"; calendar reloads |
-| 51 | ED-REQ-006 | `ps -ef \| grep -E "grep -rlP\|rm -f --"` while deleting | argv processes only, no `sh -c` |
-
-## Focus timer
-
-| # | REQ | Step | Expected |
-|---|-----|------|----------|
-| 52 | FT-REQ-001 | Timer field: `chá`, `25h`, `1:30`, `1h 30m` | needs-duration, invalid-duration, 01:30, 1:30:00 |
-| 53 | FT-REQ-002 | Start focus, click Timer, click Foco | Focus still counting, no reset |
-| 54 | FT-REQ-003 | Click the 1 min preset | Starts at once |
-| 55 | FT-REQ-004 | Pause, reset, Novo timer | Paused; back to full and stopped; entry state with the field focused |
-| 56 | FT-REQ-005 | Focus view | Ring around the clock, shrinking each second; dots not clipped |
-| 57 | FT-REQ-006 | `/t 5s ovo` | Toast "Timer: ovo", alarm 5 s, back to 00:05 |
-| 58 | FT-REQ-007 | Focus running, `/t 1m`; then `/p` | "Foco pausado para o timer"; then "Timer pausado para o foco", focus resumes |
-| 59 | FT-REQ-008 | `/t 5m` with a timer set; `/t`; `/t parar` | Preview warns it replaces; pause/resume; reset |
-| 60 | FT-REQ-009 | `/p curta` with the short break paused; `/p agora` | Resumes without reset; unknown-command |
-| 61 | FT-REQ-010 | Tab from Link; empty Enter | Timer type; "Nada para salvar ainda" |
-| 62 | FT-REQ-011 | Timer running, middle click on the bar | Alarm icon and clock; pauses the timer |
-
-## Detached clock
-
-| # | REQ | Step | Expected |
-|---|-----|------|----------|
-| 63 | DC-REQ-001 | Focus header in the pomodoro and Timer views; Tab to the buttons | Window and pin buttons; Space toggles; tooltip says open/close |
-| 64 | DC-REQ-002 | Click the window button; resize; Mod+Q | "Daybar timer" window; ring scales; closing turns the button off |
-| 65 | DC-REQ-003 | Click the pin button; switch workspace; type in a window | Corner clock on every workspace, clear of the bar; typing still goes to the window |
-| 66 | DC-REQ-004 | Start a focus, then `/t 1m` | Both forms switch from the focus clock to the timer |
-| 67 | DC-REQ-005 | Hover each form; play, reset; let a `/t 5s` ring and press play | Controls fade in; act on the shown clock; ringing timer is only silenced |
-| 68 | DC-REQ-006 | Settings: each corner and size | Pinned clock moves and resizes at once |
-| 69 | DC-REQ-007 | Both open, restart the shell | Both come back |
-| 70 | DC-REQ-008 | Add the README window-rule, reopen the window | Opens floating in the top-right, 280x280 |
-
+| 1 | REQ-001 | `noctalia plugins lint .`; enable the plugin | `0 errors`; the service, bar widget, five panels and the desktop clock are listed in Settings, Plugins |
+| 2 | REQ-002 | `git log --oneline -1 legacy-v4` | 0.3.1 release commit |
+| 3 | REQ-003, REQ-006, REQ-033 | `./run-tests` | `N passed, 0 failed` and `guards: ok` |
+| 4 | REQ-004, REQ-005 | Capture `comprar pão sexta 9h` on a Thursday night | Task dated the next Friday 09:00 (local time) |
+| 5 | REQ-007 | Change every setting in Settings, Plugins, Daybar | Values persist; a new focus duration applies to an untouched phase without restarting a running one |
+| 6 | REQ-008 | Add a task, wait one second, read `data.json` in the plugin data dir | File has `"version": 2` and the task |
+| 7 | REQ-008 | Write `{oops` into `data.json`, restart Noctalia | Error notification; `data.json.bak` kept; plugin starts empty |
+| 8 | REQ-009 (host) | Move the v5 `data.json` away with the v4 file in place, restart | One "Imported N tasks..." notification; thumbnails copied; v4 file untouched |
+| 9 | REQ-010, REQ-025 | Start a pomodoro, close every panel, wait | Bar keeps counting; the end notifies with the panels closed |
+| 10 | REQ-011 | Toggle a task twice quickly | Each click applies once; nothing repeats after a Noctalia restart |
+| 11 | REQ-012 | `noctalia msg plugin nandomoreirame/daybar:core all open focus` | Toolbar opens on Focus; `toggle` and `capture` work too |
+| 12 | REQ-013 | Copy `https://example.com`, open capture | Field focused and prefilled; after saving, the same URL is not prefilled again |
+| 13 | REQ-014 (host) | Type `pagar boleto 18h`, press Tab three times, then Shift+Tab | Type chip cycles Task, Event, Reminder, Note and back, with the input focused |
+| 14 | REQ-014 (host) | Type `a`, Shift+Enter, `b`, Enter | Two tasks saved; the panel stays open after the first and closes after the second |
+| 15 | REQ-015 | `/e teste daybar amanhã 10h`; `/l teste <now+2min>`; `/n ideia`; `=200*15%` | Event in khal and Google after sync; reminder notification at that minute; note listed; `30` on the clipboard and the panel stays open |
+| 16 | REQ-016 (host) | Open Calendar with real calendars | Events match `khal list`, including all-day and multi-day ones |
+| 17 | REQ-017 | Rename `khal` out of `PATH`, restart | Calendar says "Calendar not configured"; Today, Focus, Bookmarks and Notes still work |
+| 18 | REQ-018 | Disconnect the network, create an event | One "Calendar sync failed" notification; the event is in `khal list`; the next sync after reconnecting clears it |
+| 19 | REQ-019 | Delete a test event from Calendar; try a holiday | Locating, then the question (repeat warning on a recurring one); the event disappears and is gone from Google after sync; the holiday says read-only |
+| 20 | REQ-020 | Expand an event with attendees and Meet | Time range `16:00–17:00`, attendees, place, Join Meet opens the browser |
+| 21 | REQ-021 | Open the toolbar, switch tabs, close, reopen | Five tabs; it reopens on the last tab when Initial tab is `last` |
+| 22 | REQ-022 | Today with an event, a timed task, an untimed task and an overdue one | Events first, then timed tasks, then untimed; overdue flagged; check, rename and delete work |
+| 23 | REQ-023 | Calendar: next and previous month past the loaded range | Dots on event days of the new month; selecting a day lists it |
+| 24 | REQ-024 | Focus: chips, start, skip, reset; Timer: `10m chá`, presets, recent chips | Each control acts on the shown clock; starting one clock pauses the other with a notification |
+| 25 | REQ-024 (host) | Let a 1-minute focus end with Play alarm sound on | `alarm.mp3` plays; the linked task gets a pomodoro; today's count goes up |
+| 26 | REQ-026 | Bar on a horizontal and a vertical bar, with and without a running clock | Glyph, digits and progress; column on the vertical bar; middle click pauses or resumes |
+| 27 | REQ-027 (host) | Focus, Pin to corner; change the clock panel Position; restart | Small clock above windows at that corner, not taking focus; it comes back after the restart; hover shows the controls and close unpins |
+| 28 | REQ-028 (host) | Add the desktop clock in the desktop-widgets editor | Same clock, scales with the tile; controls on hover, no close |
+| 29 | REQ-029 | Save a link, search it without accents, hover: copy, refresh, rename | Preview and thumbnail appear; search finds it; each action works; a `192.168.x.x` link is saved without a request |
+| 30 | REQ-030 | Delete a bookmark, a note and an event | Each asks inline first; Cancel keeps it |
+| 31 | REQ-031 | Notes: new note, type Markdown with a link, Ctrl+E, Ctrl+S, Esc | Saved 600 ms after typing; preview renders; the link opens through xdg-open; a new note closed empty is not stored |
+| 32 | REQ-032 | Switch the shell language between English and Portuguese | Every Daybar string follows |
+| 33 | REQ-033 | Set Focus mode command to a script that logs its argument | `on` when focus starts, `off` when it pauses or ends |
+| 34 | REQ-034 | Read README, CLAUDE.md and this file against the running plugin | Entry ids, commands and settings match |

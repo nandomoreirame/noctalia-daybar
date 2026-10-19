@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-19
+
+### Changed
+
+- **Noctalia v5**: Daybar is now a Noctalia v5 plugin (Luau entries and a
+  `plugin.toml`, plugin API 32): a service that owns data, processes, timers and
+  network, a bar widget, the toolbar, quick capture and note panels, a pinned clock
+  panel and a desktop clock. Every 0.3.1 feature is kept except the gaps below. The
+  v4 plugin stays on branch `legacy-v4`.
+- **Data** moves to the plugin data directory (same format). The v4
+  `data.json` and bookmark thumbnails are imported once on the first start and left
+  untouched.
+- **Calendar** is read straight from khal (`khal list --json`) every 5 minutes and
+  after each write, instead of through the shell's calendar service.
+- **Detached clock**: the floating "Daybar timer" window becomes a desktop clock
+  placed in the desktop-widgets editor; the pinned clock's corner is its panel
+  Position setting.
+
+### Removed
+
+- Pinned clock size setting, progress rings (now bars), the anchored confirmation
+  bubble (now an inline row) and the preselected clipboard URL in capture: the v5
+  plugin API has no way to express them yet.
+
+### Security
+
+- A bookmark preview image is downloaded only from a public host, and a URL with
+  credentials (`http://user@host/`) is judged by its real host.
+
 ## [0.3.1] - 2026-10-13
 
 ### Added
