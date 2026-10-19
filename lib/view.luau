@@ -47,6 +47,7 @@ function View.build(opts: { [string]: any }): { [string]: any }
 		requestedTab = opts.requestedTab,
 		details = opts.details or {},
 		deleting = opts.deleting or {},
+		ringDir = opts.ringDir,
 	}
 end
 

@@ -152,6 +152,13 @@ describe("service focus: timer", function()
 		assert.same(H.view(s).data.recentTimers[1], { seconds = 600, label = "chá" })
 	end)
 
+	it("set with start = true starts the timer at once", function()
+		local s = boot({})
+		assert.equal(H.command(s, "toolbar", "timer", { action = "set", text = "10m chá", start = true }).ok, true)
+		assert.equal(timer(s).running, true)
+		assert.equal(timer(s).endsAtMs, H.NOW + 10 * MIN)
+	end)
+
 	it("starting the pomodoro pauses the timer, keeping its time, and vice versa", function()
 		local s = boot({})
 		H.command(s, "toolbar", "timer", { action = "set", text = "10m" })

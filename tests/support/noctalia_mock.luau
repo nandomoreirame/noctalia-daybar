@@ -985,6 +985,10 @@ function Mock.setConfig(env: any, key: string, value: any)
 	privOf(env).config[key] = value
 end
 
+function Mock.setColor(env: any, role: string, hex: string?)
+	privOf(env).colors[role] = hex
+end
+
 function Mock.setVertical(env: any, vertical: boolean)
 	privOf(env).vertical = vertical
 end

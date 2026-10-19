@@ -28,6 +28,7 @@ local Bookmarks = require("./lib/bookmarks.luau")
 local FetchPool = require("./lib/fetchpool.luau")
 local PageMeta = require("./lib/pagemeta.luau")
 local Url = require("./lib/url.luau")
+local Ring = require("./lib/ring.luau")
 
 local PLUGIN_ID = "nandomoreirame/daybar"
 local TOOLBAR_PANEL = PLUGIN_ID .. ":toolbar"
@@ -65,6 +66,7 @@ local REMINDER_CHECK_MS = 30000
 local FETCH_LIMIT = 3
 local FETCH_TIMEOUT_MS = 8000
 local BODY_MAX = 2 * 1024 * 1024
+local THEME_CHECK_MS = 5000
 
 local dataDir = noctalia.pluginDataDir() or ""
 local dataPath = dataDir .. "/data.json"
@@ -124,6 +126,10 @@ local fetchPool = FetchPool.createPool(FETCH_LIMIT)
 -- id -> { token, startedAt, gen } of each request in flight.
 local inFlight: { [string]: { token: number, startedAt: number, gen: number } } = {}
 local fetchGen = 0
+
+-- Progress rings (lib/ring.luau) for the theme's primary color.
+local ringDir: string? = nil
+local lastThemeCheckMs: number? = nil
 
 -- ---------------------------------------------------------------- helpers
 
@@ -211,6 +217,7 @@ local function publish()
 			timer = Tbl.merge(tmr, { set = tmr.total > 0 }),
 			alarmSource = alarmSource,
 			focusPanel = focusPanel,
+			ringDir = ringDir,
 			thumbDir = thumbDir,
 			thumbExists = function(id: string): boolean
 				local path = thumbPathOf(id)
@@ -807,6 +814,28 @@ COMMANDS.commit = function(args, reply)
 	return PENDING
 end
 
+-- ---------------------------------------------------------------- rings
+
+-- Writes the 101 ring files for the current primary color once; returns true when
+-- the published directory changed.
+local function ensureRings(): boolean
+	lastThemeCheckMs = nowMs()
+	local hex = noctalia.getColor("primary")
+	local name = Ring.dirName(hex)
+	local dir = if name ~= nil then dataDir .. "/rings/" .. name else nil
+	if dir == ringDir then
+		return false
+	end
+	if dir ~= nil and not noctalia.fileExists(dir .. "/" .. Ring.STEPS .. ".svg") then
+		noctalia.mkdirAll(dir)
+		for step = 0, Ring.STEPS do
+			noctalia.writeFile(dir .. "/" .. step .. ".svg", Ring.svg(step, hex :: string))
+		end
+	end
+	ringDir = dir
+	return true
+end
+
 -- ---------------------------------------------------------------- focus
 
 local function cfg(): { [string]: any }
@@ -1069,6 +1098,10 @@ COMMANDS.timer = function(args)
 			return false, d.error or "invalid-duration"
 		end
 		setTimer(d.seconds, d.label)
+		-- The Focus entry starts at once ("Enter starts"); capture uses startTimer.
+		if args.start == true then
+			startTimer()
+		end
 	elseif action == "preset" then
 		local seconds = args.seconds
 		if typeof(seconds) ~= "number" or seconds <= 0 or seconds > Duration.MAX_SECONDS then
@@ -1344,6 +1377,11 @@ function update()
 	if tickFocus() then
 		focusChanged()
 	end
+	if lastThemeCheckMs == nil or nowMs() - (lastThemeCheckMs :: number) >= THEME_CHECK_MS then
+		if ensureRings() then
+			publish()
+		end
+	end
 	expireFetches()
 	if dirtyAt ~= nil and nowMs() - (dirtyAt :: number) >= SAVE_DELAY_MS then
 		flush()
@@ -1390,6 +1428,7 @@ if #recent > 0 and typeof(recent[1].seconds) == "number" then
 	tmr.remaining = tmr.total
 	tmr.label = recent[1].label or ""
 end
+ensureRings()
 noctalia.sound.load(ALARM_SOUND, ALARM_FILE, function(ok: boolean, err: string?)
 	soundReady = ok
 	if not ok then
