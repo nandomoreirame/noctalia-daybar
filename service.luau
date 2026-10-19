@@ -24,6 +24,10 @@ local PomodoroCommand = require("./lib/capture/pomodoro.luau")
 local Timers = require("./lib/timers.luau")
 local FocusLog = require("./lib/focuslog.luau")
 local Duration = require("./lib/duration.luau")
+local Bookmarks = require("./lib/bookmarks.luau")
+local FetchPool = require("./lib/fetchpool.luau")
+local PageMeta = require("./lib/pagemeta.luau")
+local Url = require("./lib/url.luau")
 
 local PLUGIN_ID = "nandomoreirame/daybar"
 local TOOLBAR_PANEL = PLUGIN_ID .. ":toolbar"
@@ -58,6 +62,9 @@ local ALARM_SOUND = "alarm"
 local ALARM_FILE = "alarm.mp3"
 local ALARM_MS = 5000
 local REMINDER_CHECK_MS = 30000
+local FETCH_LIMIT = 3
+local FETCH_TIMEOUT_MS = 8000
+local BODY_MAX = 2 * 1024 * 1024
 
 local dataDir = noctalia.pluginDataDir() or ""
 local dataPath = dataDir .. "/data.json"
@@ -111,6 +118,12 @@ local focusPanel = "pomodoro"
 local soundReady = false
 local focusModeOn = false
 local lastReminderCheckMs: number? = nil
+
+-- Bookmark previews (REQ-029, REQ-030): native HTTP, bounded pool, 8 s budget.
+local fetchPool = FetchPool.createPool(FETCH_LIMIT)
+-- id -> { token, startedAt, gen } of each request in flight.
+local inFlight: { [string]: { token: number, startedAt: number, gen: number } } = {}
+local fetchGen = 0
 
 -- ---------------------------------------------------------------- helpers
 
@@ -1140,6 +1153,140 @@ CAPTURE_ACTIONS.timerStop = function(_p, done)
 	done(true)
 end
 
+-- ---------------------------------------------------------------- bookmarks
+
+local function fetchEnabled(): boolean
+	return settings.fetch_previews ~= false
+end
+
+local startFetches: ({ any }) -> ()
+
+local function finishFetch(id: string)
+	inFlight[id] = nil
+	local r = FetchPool.finish(fetchPool, id)
+	fetchPool = r.pool
+	startFetches(r.start)
+end
+
+local function downloadImage(id: string, token: number, imageUrl: string)
+	local dest = thumbPathOf(id)
+	if dest == nil or not Url.isPublicHttpUrl(imageUrl) then
+		return
+	end
+	noctalia.mkdirAll(thumbDir)
+	noctalia.download(imageUrl, dest, function(ok: boolean)
+		if ok and Bookmarks.isCurrent(data, id, token) then
+			change(Bookmarks.setImage(data, id, token, dest))
+		end
+	end)
+end
+
+startFetches = function(jobs: { any })
+	for _, job in ipairs(jobs) do
+		fetchGen += 1
+		local gen = fetchGen
+		inFlight[job.id] = { token = job.token, startedAt = nowMs(), gen = gen }
+		noctalia.http({ url = job.url, method = "GET", follow_redirects = true }, function(res: any)
+			local current = inFlight[job.id]
+			if current == nil or current.gen ~= gen then
+				return
+			end
+			finishFetch(job.id)
+			if typeof(res) ~= "table" or res.ok ~= true or res.status ~= 200 or typeof(res.body) ~= "string" then
+				change(Bookmarks.markFailed(data, job.id, job.token))
+				return
+			end
+			local meta = PageMeta.parse(string.sub(res.body, 1, BODY_MAX), job.url)
+			change(Bookmarks.applyPreview(data, job.id, job.token, meta))
+			if meta.image ~= "" then
+				downloadImage(job.id, job.token, meta.image)
+			end
+		end)
+	end
+end
+
+-- Queues a fetch, or fails at once a URL that points at a private network.
+local function requestPreview(bookmark: any)
+	if not fetchEnabled() then
+		return
+	end
+	if not Url.isPublicHttpUrl(bookmark.url) then
+		change(Bookmarks.markFailed(data, bookmark.id, bookmark.token))
+		return
+	end
+	local r = FetchPool.request(fetchPool, { id = bookmark.id, token = bookmark.token, url = bookmark.url })
+	fetchPool = r.pool
+	startFetches(r.start)
+end
+
+-- Requests past the budget fail; a late answer is dropped by its generation.
+local function expireFetches(): boolean
+	local expired = {}
+	for id, f in inFlight do
+		if nowMs() - f.startedAt >= FETCH_TIMEOUT_MS then
+			table.insert(expired, { id = id, token = f.token })
+		end
+	end
+	for _, e in ipairs(expired) do
+		finishFetch(e.id)
+		change(Bookmarks.markFailed(data, e.id, e.token))
+	end
+	return #expired > 0
+end
+
+local function addBookmark(url: any): (boolean, string?, any?)
+	local r = Bookmarks.add(data, url, newId(), nowIso(), fetchEnabled())
+	if r == nil then
+		return false, "invalid-url"
+	end
+	change(r.data)
+	requestPreview(r.bookmark)
+	return true, nil, { id = r.bookmark.id, replaced = r.replaced }
+end
+
+COMMANDS.addBookmark = function(args)
+	return addBookmark(args.url)
+end
+
+COMMANDS.refreshBookmark = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	local r = Bookmarks.refresh(data, args.id, nowIso(), fetchEnabled())
+	if r == nil then
+		return false, "not-found"
+	end
+	change(r.data)
+	requestPreview(r.bookmark)
+	return true
+end
+
+COMMANDS.renameBookmark = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	change(Bookmarks.rename(data, args.id, args.title))
+	return true
+end
+
+COMMANDS.deleteBookmark = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	inFlight[args.id] = nil
+	change(Bookmarks.remove(data, args.id))
+	local path = thumbPathOf(args.id)
+	if path ~= nil then
+		noctalia.removeFile(path)
+	end
+	return true
+end
+
+CAPTURE_ACTIONS.addBookmark = function(p, done)
+	local ok, err = addBookmark(p.url)
+	done(ok, err)
+end
+
 local function sendAck(entryName: string, seq: number, ok: boolean, err: string?, result: any?)
 	noctalia.state.set("ack." .. entryName, {
 		seq = seq,
@@ -1197,6 +1344,7 @@ function update()
 	if tickFocus() then
 		focusChanged()
 	end
+	expireFetches()
 	if dirtyAt ~= nil and nowMs() - (dirtyAt :: number) >= SAVE_DELAY_MS then
 		flush()
 	end
