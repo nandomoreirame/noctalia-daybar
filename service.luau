@@ -8,7 +8,14 @@ local Outbox = require("./lib/outbox.luau")
 local Tasks = require("./lib/tasks.luau")
 local Dates = require("./lib/dates.luau")
 local Tbl = require("./lib/tbl.luau")
+local Tabs = require("./lib/tabs.luau")
+local Notes = require("./lib/notes.luau")
+local Markdown = require("./lib/markdown.luau")
 
+local PLUGIN_ID = "nandomoreirame/daybar"
+local TOOLBAR_PANEL = PLUGIN_ID .. ":toolbar"
+local CAPTURE_PANEL = PLUGIN_ID .. ":capture"
+local CLOCK_PANEL = PLUGIN_ID .. ":clock"
 local ENTRIES = { "bar", "toolbar", "capture", "note", "clockpin", "clockdesk" }
 local SAVE_DELAY_MS = 500
 local UPDATE_MS = 250
@@ -40,6 +47,8 @@ local settings: { [string]: any } = {}
 local dirtyAt: number? = nil
 local rev = 0
 local server = Outbox.newServer()
+-- Tab the toolbar opens on after `open <tab>`; cleared when the toolbar closes.
+local requestedTab: string? = nil
 
 -- ---------------------------------------------------------------- helpers
 
@@ -119,6 +128,7 @@ local function publish()
 			settings = settings,
 			rev = rev,
 			now = nowMs(),
+			requestedTab = requestedTab,
 			thumbDir = thumbDir,
 			thumbExists = function(id: string): boolean
 				local path = thumbPathOf(id)
@@ -234,6 +244,113 @@ COMMANDS.addTask = function(args)
 	return true, nil, { id = id }
 end
 
+-- Ids that reach lib lookups: non-empty strings only.
+local function validId(id: any): boolean
+	return typeof(id) == "string" and id ~= "" and #id <= 256
+end
+
+COMMANDS.toggleTask = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	change(Tasks.toggleTask(data, args.id, nowIso()))
+	return true
+end
+
+COMMANDS.deleteTask = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	change(Tasks.deleteTask(data, args.id))
+	return true
+end
+
+COMMANDS.renameTask = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	change(Tasks.renameTask(data, args.id, if typeof(args.title) == "string" then args.title else ""))
+	return true
+end
+
+COMMANDS.toggleEvent = function(args)
+	if not validId(args.uid) then
+		return false, "invalid-id"
+	end
+	if Dates.parseIsoDate(args.date) == nil then
+		return false, "invalid-date"
+	end
+	change(Tasks.toggleEventCheck(data, args.uid, args.date))
+	return true
+end
+
+COMMANDS.setLastTab = function(args)
+	if not Tabs.isTab(args.tab) then
+		return false, "invalid-tab"
+	end
+	change(Tabs.setLastTab(data, args.tab))
+	return true
+end
+
+-- Creates the note on its first non-blank save (id nil); result.id is the note id,
+-- nil when a blank new note was discarded.
+COMMANDS.saveNote = function(args)
+	local text = if typeof(args.text) == "string" then args.text else ""
+	if args.id == nil or args.id == "" then
+		if Notes.isBlank(text) then
+			return true, nil, {}
+		end
+		local id = newId()
+		change(Notes.add(data, text, id, nowIso()))
+		return true, nil, { id = id }
+	end
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	change(Notes.update(data, args.id, text, nowIso()))
+	return true, nil, { id = args.id }
+end
+
+COMMANDS.deleteNote = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	change(Notes.remove(data, args.id))
+	return true
+end
+
+COMMANDS.copyText = function(args)
+	if typeof(args.text) ~= "string" then
+		return false, "invalid-text"
+	end
+	noctalia.copyToClipboard(args.text, "text/plain")
+	return true
+end
+
+-- http, https and mailto only (REQ-029, REQ-031); argv, never a shell string.
+COMMANDS.openUrl = function(args)
+	local url = trim(args.url)
+	if not Markdown.isOpenableLink(url) then
+		return false, "invalid-url"
+	end
+	noctalia.runAsync({ "xdg-open", url })
+	return true
+end
+
+COMMANDS.setClockOverlay = function(args)
+	local nextData = Store.setUiFlag(data, "clockOverlay", args.value == true)
+	if nextData ~= data then
+		change(nextData)
+		noctalia.togglePanel(CLOCK_PANEL)
+	end
+	return true
+end
+
+COMMANDS.openSettings = function()
+	noctalia.openSettings()
+	return true
+end
+
 local function sendAck(entryName: string, seq: number, ok: boolean, err: string?, result: any?)
 	noctalia.state.set("ack." .. entryName, {
 		seq = seq,
@@ -285,6 +402,21 @@ function update()
 	end
 end
 
+-- REQ-012: noctalia msg plugin nandomoreirame/daybar:core all <event> [payload]
+function onIpc(event: any, payload: any)
+	if event == "toggle" then
+		noctalia.togglePanel(TOOLBAR_PANEL)
+	elseif event == "capture" then
+		noctalia.togglePanel(CAPTURE_PANEL)
+	elseif event == "open" then
+		requestedTab = Tabs.initialTab(payload, settings.initial_tab, (data.ui or {}).lastTab)
+		publish()
+		if noctalia.state.get("toolbar.open") ~= true then
+			noctalia.togglePanel(TOOLBAR_PANEL)
+		end
+	end
+end
+
 function onExit(_signal: number?, _reason: string?)
 	if dirtyAt ~= nil then
 		flush()
@@ -296,6 +428,17 @@ noctalia.setUpdateInterval(UPDATE_MS)
 readSettings()
 loadData()
 publish()
+
+if (data.ui or {}).clockOverlay == true then
+	noctalia.togglePanel(CLOCK_PANEL)
+end
+
+noctalia.state.watch("toolbar.open", function(open: any)
+	if open ~= true and requestedTab ~= nil then
+		requestedTab = nil
+		publish()
+	end
+end)
 
 for _, entryName in ipairs(ENTRIES) do
 	-- A restarted service must not rerun what it acked before the restart.
