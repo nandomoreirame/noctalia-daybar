@@ -69,7 +69,8 @@ local function grid(ctx: any, cal: any): any
 				align = "center",
 				gap = 2,
 				radius = 6,
-				fill = if cell.date == st.selected then "primary/0.2" elseif cell.today then "surface_variant" else nil,
+				-- Always explicit: the host keeps a prop that a later render omits.
+				fill = if cell.date == st.selected then "primary/0.2" elseif cell.today then "surface_variant" else "#00000000",
 				opacity = if cell.inMonth then 1 else 0.45,
 				tooltip = cell.date,
 				onClick = function()
@@ -77,7 +78,7 @@ local function grid(ctx: any, cal: any): any
 					ctx.render()
 				end,
 			}, {
-				ui.label({ text = tostring(cell.day), fontSize = 12, textAlign = "center", fontWeight = if cell.today then "bold" else nil }),
+				ui.label({ text = tostring(cell.day), fontSize = 12, textAlign = "center", fontWeight = if cell.today then "bold" else "normal" }),
 				ui.row({ justify = "center", minHeight = 4 }, marks),
 			}))
 		end

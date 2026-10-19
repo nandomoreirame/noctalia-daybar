@@ -60,6 +60,19 @@ describe("calendar view", function()
 		assert.equal(U.byKey(tree, "day-2026-09-27") ~= nil, true)
 	end)
 
+	it("gives every day cell an explicit fill so a deselected day is cleared", function()
+		-- The host keeps a prop that a later render omits.
+		local ctx = makeCtx()
+		U.byKey(CalendarView.build(ctx), "day-2026-10-16").props.onClick()
+		local tree = CalendarView.build(ctx)
+		for _, iso in { "2026-10-15", "2026-10-16", "2026-10-20" } do
+			local cell = U.byKey(tree, "day-" .. iso)
+			assert.equal(typeof(cell.props.fill), "string")
+			assert.equal(typeof(cell.children[1].props.fontWeight), "string")
+		end
+		assert.equal(U.byKey(tree, "day-2026-10-20").props.fill, "#00000000")
+	end)
+
 	it("lists the selected day's events with their time range", function()
 		local tree = CalendarView.build(makeCtx())
 		assert.equal(U.hasLabel(tree, "Daily"), true)

@@ -45,15 +45,17 @@ local function render()
 	local children
 	if clock ~= nil then
 		children = {
-			ui.glyph({ name = clock.glyph, size = 14, color = "primary" }),
-			ui.label({ text = clock.text, color = "primary" }),
+			-- Keys differ from the idle nodes: the host keeps props a later render omits,
+			-- so a fresh node is the only way to drop the clock's colors.
+			ui.glyph({ key = "clock-glyph", name = clock.glyph, size = 14, color = "primary" }),
+			ui.label({ key = "clock-text", text = clock.text, color = "primary" }),
 			ui.progress({ progress = clock.progress, width = PROGRESS_WIDTH, height = 4, fill = "primary" }),
 		}
 	else
 		local tab = Tabs.initialTab("", (v.settings or {}).initial_tab, ((v.data or {}).ui or {}).lastTab)
 		children = {
-			ui.glyph({ name = Tabs.ICONS[tab], size = 14 }),
-			ui.label({ text = noctalia.tr("tabs." .. tab) }),
+			ui.glyph({ key = "tab-glyph", name = Tabs.ICONS[tab], size = 14 }),
+			ui.label({ key = "tab-text", text = noctalia.tr("tabs." .. tab) }),
 		}
 	end
 	barWidget.render(container({ gap = 6, align = "center" }, children))

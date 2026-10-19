@@ -101,6 +101,19 @@ describe("bar widget", function()
 		assert.equal(find(t, "label").props.text, "00:00")
 	end)
 
+	it("keys the clock and idle nodes apart so a stopped clock drops its colors", function()
+		local running = baseView({
+			pomodoro = { mode = 0, running = true, started = true, endsAtMs = NOW + 754000, remaining = 1500, total = 1500 },
+		})
+		local w = boot({ view = running })
+		local clockKey = find(tree(w), "glyph").props.key
+		w.env.noctalia.state.set("view", baseView())
+		local idleKey = find(tree(w), "glyph").props.key
+		assert.equal(typeof(clockKey), "string")
+		assert.equal(typeof(idleKey), "string")
+		assert.equal(clockKey ~= idleKey, true)
+	end)
+
 	it("idles on the next tab's glyph and name", function()
 		local w = boot({ view = baseView() })
 		local t = tree(w)
