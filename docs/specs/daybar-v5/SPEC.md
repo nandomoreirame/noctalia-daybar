@@ -65,7 +65,7 @@ removed from `main`. The user's v4 data is imported once.
   characters, `dependencies = ["khal", "vdirsyncer", "xdg-utils"]`, and these entries:
   `[[service]] core` (`service.luau`); `[[widget]] bar` (`widget.luau`, `[widget.actions] middle = "none"`); `[[panel]] toolbar`
   (`toolbar.luau`, 680x450, `placement = "attached"`, `open_near_click = true`);
-  `[[panel]] capture` (`capture.luau`, 640x240, `placement = "floating"`, `position = "center"`,
+  `[[panel]] capture` (`capture.luau`, 640x200, `placement = "floating"`, `position = "center"`,
   `layer = "overlay"`, `keyboard_focus = "exclusive"`, `capture_keys = ["tab", "shift+tab", "shift+Return"]`);
   `[[panel]] note` (`note.luau`, 1100x800, floating, center, `keyboard_focus = "exclusive"`,
   `capture_keys = ["ctrl+e", "ctrl+s"]`); `[[panel]] clock` (`clockpin.luau`, 200x200,

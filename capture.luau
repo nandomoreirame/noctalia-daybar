@@ -113,16 +113,45 @@ local function previewText(r: { [string]: any }): string
 	return table.concat(parts, SEP)
 end
 
-local function render()
+local render: () -> ()
+
+render = function()
 	local r = resolve()
 	local kind = r.type or "task"
 	local offCycle = rawget(TYPE_ICONS, kind) == nil or not table.find(Registry.CYCLE, kind)
 	local line = if feedback ~= "" then feedback else previewText(r)
-	panel.render(ui.column({ gap = 10, padding = 16 }, {
-		ui.row({ gap = 8, align = "center" }, {
+	-- One tab per type in the Tab cycle; calculation and pomodoro sit outside it
+	-- and show as a label on the right instead.
+	local header = {}
+	for _, t in ipairs(Registry.CYCLE) do
+		local current = t == kind
+		table.insert(header, ui.button({
+			key = "type-" .. t,
+			glyph = TYPE_ICONS[t],
+			text = tr("capture.type." .. t),
+			variant = if current then "secondary" else "ghost",
+			selected = current,
+			controlSize = "sm",
+			onClick = function()
+				forcedType = t
+				-- A fresh input takes the focus back from the clicked tab (the
+				-- seeded value keeps what was typed).
+				inputRev += 1
+				feedback = ""
+				feedbackIsError = false
+				render()
+			end,
+		}))
+	end
+	table.insert(header, ui.spacer({ flexGrow = 1 }))
+	if offCycle then
+		table.insert(header, ui.row({ key = "offcycle", gap = 6, align = "center" }, {
 			ui.glyph({ name = TYPE_ICONS[kind] or "checkbox", size = 16, color = "primary" }),
 			ui.label({ text = tr("capture.type." .. kind), fontWeight = "bold", color = "primary" }),
-		}),
+		}))
+	end
+	panel.render(ui.column({ gap = 10, padding = 16 }, {
+		ui.row({ gap = 4, align = "center" }, header),
 		ui.input({
 			key = "input-" .. inputRev,
 			value = text,

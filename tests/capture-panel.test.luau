@@ -56,7 +56,9 @@ end
 
 local function hasText(p, text)
 	return #findAll(tree(p), function(n)
-		return n.type == "label" and n.props.text ~= nil and string.find(n.props.text, text, 1, true) ~= nil
+		return (n.type == "label" or (n.type == "button" and n.props.selected == true))
+			and n.props.text ~= nil
+			and string.find(n.props.text, text, 1, true) ~= nil
 	end) > 0
 end
 
@@ -78,6 +80,36 @@ describe("capture panel", function()
 		assert.equal(field.props.value, "")
 		assert.equal(hasText(p, "capture.type.task"), true)
 		assert.equal(hasText(p, "capture.keys"), true)
+	end)
+
+	it("shows one tab per capture type, the current one selected", function()
+		local p = boot()
+		local tabs = findAll(tree(p), function(n)
+			return n.type == "button" and typeof(n.props.key) == "string" and string.sub(n.props.key, 1, 5) == "type-"
+		end)
+		local keys = {}
+		for _, b in tabs do
+			table.insert(keys, b.props.key)
+		end
+		assert.same(keys, { "type-task", "type-event", "type-reminder", "type-note", "type-link", "type-timer" })
+		assert.equal(tabs[1].props.selected, true)
+		assert.equal(tabs[2].props.selected, false)
+	end)
+
+	it("clicking a type tab forces that type", function()
+		local p = boot()
+		p.call("onChange", "reunião")
+		local eventTab = findAll(tree(p), function(n)
+			return n.type == "button" and n.props.key == "type-event"
+		end)[1]
+		local before = input(p).props.key
+		eventTab.props.onClick()
+		-- A fresh input key gives the focus back to the field, keeping the text.
+		assert.equal(input(p).props.key ~= before, true)
+		assert.equal(input(p).props.focus, true)
+		assert.equal(input(p).props.value, "reunião")
+		p.call("onSubmit", "reunião amanhã 15h")
+		assert.equal(commands(p)[1].args.type, "event")
 	end)
 
 	it("prefills a clipboard URL that is not bookmarked yet", function()
