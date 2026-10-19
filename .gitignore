@@ -3,3 +3,4 @@ node_modules/
 *.jsc
 settings.json
 coverage/
+tests/.generated/
