@@ -135,7 +135,8 @@
   "store": {
     "corrupt-title": "Dados do Daybar ilegíveis",
     "corrupt-body": "O arquivo antigo foi guardado como data.json.bak e um novo foi iniciado.",
-    "imported": "Importados {tasks} tarefas, {notes} notas e {bookmarks} favoritos da versão anterior."
+    "imported": "Importados {tasks} tarefas, {notes} notas e {bookmarks} favoritos da versão anterior.",
+    "import-failed": "Não foi possível ler os dados da versão anterior. Eles ficaram intactos e um novo arquivo foi iniciado."
   },
   "settings": {
     "work_duration": {

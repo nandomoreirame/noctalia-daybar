@@ -961,6 +961,11 @@ function Mock.resolveDownload(env: any, index: number, ok: boolean)
 	end
 end
 
+-- Live view of the fake filesystem (path -> content, or true for a directory).
+function Mock.fs(env: any): { [string]: any }
+	return privOf(env).fs
+end
+
 function Mock.setNow(env: any, ms: number)
 	privOf(env).now = ms
 end
