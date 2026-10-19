@@ -11,6 +11,13 @@ local Tbl = require("./lib/tbl.luau")
 local Tabs = require("./lib/tabs.luau")
 local Notes = require("./lib/notes.luau")
 local Markdown = require("./lib/markdown.luau")
+local Khal = require("./lib/khal.luau")
+local KhalRead = require("./lib/khalread.luau")
+local EventDelete = require("./lib/eventdelete.luau")
+local EventInfo = require("./lib/eventinfo.luau")
+local WriteQueue = require("./lib/writequeue.luau")
+local Reminders = require("./lib/reminders.luau")
+local Registry = require("./lib/capture/registry.luau")
 
 local PLUGIN_ID = "nandomoreirame/daybar"
 local TOOLBAR_PANEL = PLUGIN_ID .. ":toolbar"
@@ -37,6 +44,10 @@ local SETTING_KEYS = {
 }
 -- Returned by an async command handler: it acks later through its `reply`.
 local PENDING = {}
+local CALENDAR_RELOAD_MS = 5 * 60 * 1000
+local WINDOW_BEFORE_DAYS = 14
+local WINDOW_AFTER_DAYS = 31
+local KHAL_CONFIG = "~/.config/khal/config"
 
 local dataDir = noctalia.pluginDataDir() or ""
 local dataPath = dataDir .. "/data.json"
@@ -49,6 +60,28 @@ local rev = 0
 local server = Outbox.newServer()
 -- Tab the toolbar opens on after `open <tab>`; cleared when the toolbar closes.
 local requestedTab: string? = nil
+
+-- Agenda (REQ-015..020): khal reads and writes, vdirsyncer syncs.
+local calendar: { [string]: any } = {
+	available = false,
+	calendars = {},
+	events = {},
+	from = nil,
+	to = nil,
+	writing = false,
+	syncFailed = false,
+	loading = false,
+}
+local listGen = 0
+local lastReloadMs: number? = nil
+local writeQueue = WriteQueue.createQueue()
+local writeCallbacks: { [number]: (boolean, string?) -> () } = {}
+local syncState = WriteQueue.createSync()
+local hiddenKeys: { string } = {}
+-- uid -> { phase, recurring, error } for the view; located files stay here.
+local deleting: { [string]: any } = {}
+local located: { [string]: { path: string, calendar: string, roots: { string } } } = {}
+local details: { [string]: any } = {}
 
 -- ---------------------------------------------------------------- helpers
 
@@ -129,6 +162,9 @@ local function publish()
 			rev = rev,
 			now = nowMs(),
 			requestedTab = requestedTab,
+			calendar = Tbl.merge(calendar, { events = EventDelete.hideEvents(calendar.events, hiddenKeys) }),
+			details = details,
+			deleting = deleting,
 			thumbDir = thumbDir,
 			thumbExists = function(id: string): boolean
 				local path = thumbPathOf(id)
@@ -351,6 +387,380 @@ COMMANDS.openSettings = function()
 	return true
 end
 
+
+-- ---------------------------------------------------------------- agenda
+
+local function home(): string
+	return (string.gsub(noctalia.expandPath("~/"), "/$", ""))
+end
+
+local function okResult(r: any): boolean
+	return typeof(r) == "table" and r.exitCode == 0 and r.timedOut ~= true
+end
+
+local function runCmd(argv: { string }, cb: (any) -> ())
+	noctalia.runAsync(argv, function(r: any)
+		cb(r)
+	end)
+end
+
+local function windowRange(): (string, string)
+	local today = Dates.parseIsoDate(todayIso()) :: number
+	return Dates.isoDate(Dates.addDays(today, -WINDOW_BEFORE_DAYS)), Dates.isoDate(Dates.addDays(today, WINDOW_AFTER_DAYS))
+end
+
+-- Same event twice (overlapping ranges) is kept once: uid + start.
+local function mergeEvents(base: { any }, extra: { any }): { any }
+	local out = Tbl.copyList(base)
+	local seen: { [string]: boolean } = {}
+	for _, ev in ipairs(base) do
+		seen[tostring(ev.uid) .. "@" .. tostring(ev.start)] = true
+	end
+	for _, ev in ipairs(extra) do
+		local key = tostring(ev.uid) .. "@" .. tostring(ev.start)
+		if not seen[key] then
+			seen[key] = true
+			table.insert(out, ev)
+		end
+	end
+	return out
+end
+
+-- Reloads the -14/+31 window; an answer older than the newest reload is dropped.
+local function loadWindow()
+	if not calendar.available then
+		return
+	end
+	lastReloadMs = nowMs()
+	listGen += 1
+	local gen = listGen
+	local from, to = windowRange()
+	calendar.loading = true
+	publish()
+	runCmd(Khal.listArgs(from, to), function(r)
+		if gen ~= listGen then
+			return
+		end
+		calendar.loading = false
+		if okResult(r) then
+			calendar.events = KhalRead.parse(r.stdout, decode)
+			calendar.from = from
+			calendar.to = to
+			-- Events deleted this session are gone from a fresh read.
+			hiddenKeys = {}
+		else
+			log("khal list failed: " .. tostring(r and r.stderr))
+		end
+		publish()
+	end)
+end
+
+local function runSync()
+	runCmd(Khal.syncArgs(), function(r)
+		local failed = not okResult(r)
+		if failed and not calendar.syncFailed then
+			noctalia.notifyError(tr("agenda.sync-failed-title"), tr("agenda.sync-failed-body"))
+		end
+		calendar.syncFailed = failed
+		local nextSync = WriteQueue.syncFinished(syncState)
+		syncState = nextSync.state
+		if nextSync.start then
+			runSync()
+		else
+			loadWindow()
+		end
+	end)
+end
+
+-- Pull from the server then reload; without vdirsyncer there is only the reload.
+local function requestSync()
+	if not noctalia.commandExists("vdirsyncer") then
+		loadWindow()
+		return
+	end
+	local r = WriteQueue.requestSync(syncState)
+	syncState = r.state
+	if r.start then
+		runSync()
+	end
+end
+
+local startWrite: (any) -> ()
+
+local function finishWrite(token: number, ok: boolean, err: string?)
+	local r = WriteQueue.settle(writeQueue, token)
+	if r.settled == nil then
+		return
+	end
+	writeQueue = r.queue
+	calendar.writing = writeQueue.active ~= nil
+	local done = writeCallbacks[token]
+	writeCallbacks[token] = nil
+	publish()
+	if ok then
+		requestSync()
+	end
+	if done ~= nil then
+		done(ok, err)
+	end
+	if r.start ~= nil then
+		startWrite(r.start)
+	end
+end
+
+startWrite = function(job: any)
+	local payload = Tbl.merge(job.payload, { calendar = settings.default_calendar })
+	calendar.writing = true
+	publish()
+	runCmd(Khal.newEventArgs(payload), function(r)
+		if not okResult(r) then
+			log("khal new failed: " .. tostring(r and r.stderr))
+		end
+		finishWrite(job.token, okResult(r), "khal-failed")
+	end)
+end
+
+local function enqueueEvent(payload: any, done: (boolean, string?) -> ())
+	local r = WriteQueue.enqueue(writeQueue, payload)
+	writeQueue = r.queue
+	writeCallbacks[writeQueue.seq] = done
+	if r.start ~= nil then
+		startWrite(r.start)
+	end
+end
+
+local function startCalendar()
+	if not noctalia.commandExists("khal") then
+		return
+	end
+	runCmd(Khal.printCalendarsArgs(), function(r)
+		local names = if okResult(r) then Khal.parseCalendars(r.stdout) else {}
+		calendar.calendars = names
+		calendar.available = #names > 0
+		publish()
+		loadWindow()
+	end)
+end
+
+-- Roots and collections from the khal config, then the .ics files holding UID.
+-- done({ ok, path, roots, self } | { ok = false, error })
+local function findEventFile(uid: string, calendarName: string, readable: boolean, done: (any) -> ())
+	local configText = noctalia.readFile(noctalia.expandPath(KHAL_CONFIG))
+	local h = home()
+	local roots = EventDelete.calendarRoots(configText, h)
+	if #roots == 0 then
+		done({ ok = false, error = "not-found" })
+		return
+	end
+	local sections = EventDelete.calendarSections(configText, h)
+	runCmd(EventDelete.collectionsArgs(roots), function(cr)
+		local collections = EventDelete.parseCollections(if typeof(cr) == "table" then cr.stdout else "", sections)
+		runCmd(EventDelete.findArgs(uid, roots), function(fr)
+			local paths = EventDelete.parsePaths(if typeof(fr) == "table" then fr.stdout else "")
+			local pick = if readable
+				then EventDelete.pickReadable(paths, collections, calendarName)
+				else EventDelete.pickFile(paths, collections, calendarName)
+			if not pick.ok then
+				done(pick)
+				return
+			end
+			done({ ok = true, path = pick.path, roots = roots, self = pick.self })
+		end)
+	end)
+end
+
+-- uid and calendar reach argv and file lookups: plain strings, no NUL or newline.
+local function validEventArgs(args: any): (boolean, string?)
+	if not validId(args.uid) or string.find(args.uid, "[%z\n\r]") then
+		return false, "invalid-id"
+	end
+	if typeof(args.calendar) ~= "string" or args.calendar == "" or string.find(args.calendar, "[%z\n\r]") then
+		return false, "invalid-calendar"
+	end
+	return true
+end
+
+COMMANDS.reloadCalendar = function()
+	if not calendar.available then
+		return false, "calendar-not-configured"
+	end
+	requestSync()
+	return true
+end
+
+COMMANDS.loadRange = function(args, reply)
+	local from, to = args.from, args.to
+	if Dates.parseIsoDate(from) == nil or Dates.parseIsoDate(to) == nil or from > to then
+		return false, "invalid-date"
+	end
+	if not calendar.available then
+		return false, "calendar-not-configured"
+	end
+	if calendar.from ~= nil and from >= calendar.from and to <= calendar.to then
+		return true
+	end
+	local gen = listGen
+	runCmd(Khal.listArgs(from, to), function(r)
+		if not okResult(r) then
+			reply(false, "khal-failed")
+			return
+		end
+		if gen == listGen then
+			calendar.events = mergeEvents(calendar.events, KhalRead.parse(r.stdout, decode))
+			publish()
+		end
+		reply(true)
+	end)
+	return PENDING
+end
+
+COMMANDS.locateEvent = function(args, reply)
+	local valid, err = validEventArgs(args)
+	if not valid then
+		return false, err
+	end
+	local uid, calendarName = args.uid, args.calendar
+	deleting[uid] = { phase = "locating", recurring = false }
+	located[uid] = nil
+	publish()
+	findEventFile(uid, calendarName, false, function(found)
+		if deleting[uid] == nil then
+			reply(false, "cancelled")
+			return
+		end
+		if not found.ok then
+			deleting[uid] = { phase = "error", recurring = false, error = found.error }
+			publish()
+			reply(false, found.error)
+			return
+		end
+		local ics = noctalia.readFile(found.path)
+		located[uid] = { path = found.path, calendar = calendarName, roots = found.roots }
+		deleting[uid] = { phase = "ready", recurring = EventDelete.isRecurring(ics) }
+		publish()
+		reply(true)
+	end)
+	return PENDING
+end
+
+COMMANDS.cancelDelete = function(args)
+	if not validId(args.uid) then
+		return false, "invalid-id"
+	end
+	deleting[args.uid] = nil
+	located[args.uid] = nil
+	publish()
+	return true
+end
+
+COMMANDS.deleteEvent = function(args)
+	local valid, err = validEventArgs(args)
+	if not valid then
+		return false, err
+	end
+	local uid = args.uid
+	local where = located[uid]
+	if where == nil or where.calendar ~= args.calendar then
+		return false, "not-located"
+	end
+	if not EventDelete.isDeletablePath(where.path, where.roots) then
+		return false, "not-deletable"
+	end
+	local removed = noctalia.removeFile(where.path)
+	if not removed then
+		return false, "delete-failed"
+	end
+	located[uid] = nil
+	deleting[uid] = nil
+	table.insert(hiddenKeys, EventDelete.eventKey(uid, args.calendar))
+	-- Checks are keyed by uid only.
+	change(EventDelete.removeEventChecks(data, uid))
+	publish()
+	requestSync()
+	return true
+end
+
+COMMANDS.loadDetails = function(args, reply)
+	local valid, err = validEventArgs(args)
+	if not valid then
+		return false, err
+	end
+	local uid = args.uid
+	if details[uid] ~= nil then
+		return true
+	end
+	findEventFile(uid, args.calendar, true, function(found)
+		if not found.ok then
+			reply(false, found.error)
+			return
+		end
+		details[uid] = EventInfo.parseEventInfo(noctalia.readFile(found.path), found.self)
+		publish()
+		reply(true)
+	end)
+	return PENDING
+end
+
+-- ---------------------------------------------------------------- capture
+
+-- Capture result actions; each acks through done(ok, err).
+local CAPTURE_ACTIONS: { [string]: (any, (boolean, string?) -> ()) -> () } = {}
+
+CAPTURE_ACTIONS.addTask = function(p, done)
+	change(Tasks.addTask(data, { title = p.title, date = p.date, time = p.time }, newId(), nowIso()))
+	done(true)
+end
+
+CAPTURE_ACTIONS.addNote = function(p, done)
+	change(Notes.add(data, p.text, newId(), nowIso()))
+	done(true)
+end
+
+CAPTURE_ACTIONS.copy = function(p, done)
+	noctalia.copyToClipboard(tostring(p.display), "text/plain")
+	done(true)
+end
+
+CAPTURE_ACTIONS.createEvent = function(p, done)
+	if not calendar.available then
+		done(false, "calendar-not-configured")
+		return
+	end
+	enqueueEvent(p, done)
+end
+
+CAPTURE_ACTIONS.createReminder = function(p, done)
+	local function remember()
+		change(Reminders.addReminder(data, { title = p.title, date = p.date, time = p.start }, newId()))
+	end
+	if not calendar.available then
+		remember()
+		done(true)
+		return
+	end
+	enqueueEvent(p, function(ok, err)
+		if ok then
+			remember()
+		end
+		done(ok, err)
+	end)
+end
+
+COMMANDS.commit = function(args, reply)
+	local text = if typeof(args.text) == "string" then args.text else ""
+	local forced = if typeof(args.type) == "string" then args.type else nil
+	local result = Registry.resolve(text, forced, nowSec())
+	if not result.ok then
+		return false, result.error or "invalid"
+	end
+	local action = rawget(CAPTURE_ACTIONS, result.action)
+	if action == nil then
+		return false, "unsupported-action"
+	end
+	action(result.payload, reply)
+	return PENDING
+end
+
 local function sendAck(entryName: string, seq: number, ok: boolean, err: string?, result: any?)
 	noctalia.state.set("ack." .. entryName, {
 		seq = seq,
@@ -397,6 +807,14 @@ end
 -- ---------------------------------------------------------------- lifecycle
 
 function update()
+	if calendar.available and lastReloadMs ~= nil and nowMs() - (lastReloadMs :: number) >= CALENDAR_RELOAD_MS then
+		if calendar.syncFailed then
+			lastReloadMs = nowMs()
+			requestSync()
+		else
+			loadWindow()
+		end
+	end
 	if dirtyAt ~= nil and nowMs() - (dirtyAt :: number) >= SAVE_DELAY_MS then
 		flush()
 	end
@@ -428,6 +846,7 @@ noctalia.setUpdateInterval(UPDATE_MS)
 readSettings()
 loadData()
 publish()
+startCalendar()
 
 if (data.ui or {}).clockOverlay == true then
 	noctalia.togglePanel(CLOCK_PANEL)
