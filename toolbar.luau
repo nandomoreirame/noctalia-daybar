@@ -6,6 +6,8 @@ local TabsView = require("./views/tabs.luau")
 local TodayView = require("./views/today.luau")
 local CalendarView = require("./views/calendar.luau")
 local FocusView = require("./views/focus.luau")
+local BookmarksView = require("./views/bookmarks.luau")
+local NotesView = require("./views/notes.luau")
 local Tabs = require("./lib/tabs.luau")
 
 local client = Client.new(noctalia.state, noctalia.nowMs(), "toolbar")
@@ -14,6 +16,8 @@ local TAB_VIEWS: { [string]: any } = {
 	today = TodayView,
 	calendar = CalendarView,
 	focus = FocusView,
+	bookmarks = BookmarksView,
+	notes = NotesView,
 }
 
 local isOpen = false
