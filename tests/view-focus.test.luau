@@ -80,6 +80,21 @@ describe("focus view", function()
 		assert.same(ctx.sent[3].args, { action = "reset" })
 	end)
 
+	it("draws the ring with the digits inside when the service published rings", function()
+		local ctx = makeCtx({ ringDir = "/d/rings/ffb38a" })
+		local tree = FocusView.build(ctx)
+		local ring = U.ofType(tree, "image")[1]
+		-- 754 of 1500 s left: 50 %.
+		assert.equal(ring.props.path, "/d/rings/ffb38a/50.svg")
+		assert.equal(#U.ofType(tree, "progress"), 0)
+		local stack = U.findAll(tree, function(n)
+			return n.type == "column" and typeof(n.props.gap) == "number" and n.props.gap < 0
+		end)[1]
+		assert.equal(stack ~= nil, true)
+		assert.equal(stack.children[1].type, "image")
+		assert.equal(U.hasLabel(stack, "12:34"), true)
+	end)
+
 	it("links one of today's open tasks", function()
 		local ctx = makeCtx()
 		local select = U.ofType(FocusView.build(ctx), "select")[1]
@@ -92,12 +107,30 @@ describe("focus view", function()
 		local ctx = makeCtx({ focusPanel = "timer" })
 		local tree = FocusView.build(ctx)
 		U.ofType(tree, "input")[1].props.onSubmit("10m chá")
-		assert.same(ctx.sent[1], { name = "timer", args = { action = "set", text = "10m chá" } })
+		assert.same(ctx.sent[1], { name = "timer", args = { action = "set", text = "10m chá", start = true } })
 		U.byKey(tree, "preset-5").props.onClick()
 		assert.same(ctx.sent[2].args, { action = "preset", seconds = 300 })
 		U.byKey(tree, "recent-1").props.onClick()
 		assert.same(ctx.sent[3].args, { action = "preset", seconds = 300, label = "chá" })
 		assert.equal(U.hasLabel(tree, "05:00 · chá") or U.button(tree, "text", "05:00 · chá") ~= nil, true)
+	end)
+
+	it("shows why a duration was refused and clears the field once accepted", function()
+		local ctx = makeCtx({ focusPanel = "timer" })
+		ctx.send = function(name, args, onAck)
+			table.insert(ctx.sent, { name = name, args = args, onAck = onAck })
+		end
+		local field = U.ofType(FocusView.build(ctx), "input")[1]
+		local key = field.props.key
+		field.props.onSubmit("Teste de tarefa")
+		ctx.sent[1].onAck({ ok = false, error = "invalid-duration" })
+		local tree = FocusView.build(ctx)
+		assert.equal(U.hasLabel(tree, "capture.error.invalid-duration"), true)
+		U.ofType(tree, "input")[1].props.onSubmit("10m chá")
+		ctx.sent[2].onAck({ ok = true })
+		tree = FocusView.build(ctx)
+		assert.equal(U.hasLabel(tree, "capture.error.invalid-duration"), false)
+		assert.equal(U.ofType(tree, "input")[1].props.key ~= key, true)
 	end)
 
 	it("controls a timer that is set", function()

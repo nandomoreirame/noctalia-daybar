@@ -5,6 +5,7 @@
 -- opts: { ui, tr, size, hovered, closable, onHover, onToggle, onReset, onClose }
 
 local ClockFmt = require("./clockfmt.luau")
+local RingFace = require("./ringface.luau")
 
 local ClockFace = {}
 
@@ -18,13 +19,24 @@ function ClockFace.build(view: { [string]: any }?, nowMs: number, opts: { [strin
 	end
 	local clock = ClockFmt.shown(view, nowMs)
 	local caption = if clock.labelKey ~= nil then opts.tr(clock.labelKey) else clock.label
-	local children = {
-		ui.label({ text = clock.text, fontSize = size, fontWeight = "bold", textAlign = "center", color = if clock.ringing then "error" else nil }),
-		ui.progress({ progress = clock.progress, height = 4, fill = "primary" }),
+	local inner = {
+		ui.label({ text = clock.text, fontSize = size, fontWeight = "bold", textAlign = "center", color = if clock.ringing then "error" else "on_surface" }),
 	}
 	if caption ~= "" then
-		table.insert(children, ui.label({ text = caption, fontSize = 12, color = "on_surface_variant", textAlign = "center", maxLines = 1 }))
+		table.insert(inner, ui.label({ text = caption, fontSize = 11, color = "on_surface_variant", textAlign = "center", maxLines = 1, maxWidth = size * 2.4 }))
 	end
+	local children = {
+		RingFace.build({
+			ui = ui,
+			key = "ring",
+			ringDir = view.ringDir,
+			progress = clock.progress,
+			-- The ring scales with the digits: 3.6x the font size fits "00:00" inside.
+			size = size * 3.6,
+			contentHeight = size * 1.3 + (if caption ~= "" then 16 else 0),
+			content = inner,
+		}),
+	}
 	if opts.hovered then
 		local controls = {
 			ui.button({

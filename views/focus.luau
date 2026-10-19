@@ -7,6 +7,7 @@ local Pomodoro = require("../lib/pomodoro.luau")
 local Timers = require("../lib/timers.luau")
 local FocusLog = require("../lib/focuslog.luau")
 local Dates = require("../lib/dates.luau")
+local RingFace = require("./ringface.luau")
 
 local FocusView = {}
 
@@ -46,12 +47,25 @@ local function chips(ctx: any, v: any): any
 	return ui.row({ gap = 4, justify = "center" }, row)
 end
 
+-- Sized to fit the toolbar body (340 px) with the controls and the mode chips.
+local RING_SIZE = 130
+local DIGITS_SIZE = 32
+
 local function digits(ctx: any, clock: any, total: number): { any }
 	local ui = ctx.ui
 	local remaining = if clock.running then Clock.remaining(clock, ctx.nowMs) else (clock.remaining or 0)
 	return {
-		ui.label({ text = Pomodoro.formatClock(remaining), fontSize = 44, fontWeight = "bold", textAlign = "center" }),
-		ui.progress({ progress = Clock.progress(remaining, total), height = 6, fill = "primary" }),
+		RingFace.build({
+			ui = ui,
+			key = "ring",
+			ringDir = (ctx.view or {}).ringDir,
+			progress = Clock.progress(remaining, total),
+			size = RING_SIZE,
+			contentHeight = DIGITS_SIZE * 1.3,
+			content = {
+				ui.label({ text = Pomodoro.formatClock(remaining), fontSize = DIGITS_SIZE, fontWeight = "bold", textAlign = "center" }),
+			},
+		}),
 	}
 end
 
@@ -132,14 +146,28 @@ local function timerBody(ctx: any, v: any): { any }
 			end),
 		}))
 	end
+	local st = ctx.st
+	st.entryRev = st.entryRev or 0
 	table.insert(out, ui.input({
-		key = "timer-entry",
+		key = "timer-entry-" .. st.entryRev,
 		placeholder = ctx.tr("timer.placeholder"),
 		controlSize = "sm",
 		onSubmit = function(text: string)
-			ctx.send("timer", { action = "set", text = text })
+			ctx.send("timer", { action = "set", text = text, start = true }, function(ack: any)
+				-- A refused duration says why; an accepted one clears the field.
+				if ack.ok then
+					st.entryError = nil
+					st.entryRev += 1
+				else
+					st.entryError = ctx.tr("capture.error." .. tostring(ack.error or "invalid-duration"))
+				end
+				ctx.render()
+			end)
 		end,
 	}))
+	if st.entryError ~= nil then
+		table.insert(out, ui.label({ key = "timer-error", text = st.entryError, fontSize = 12, color = "error", textAlign = "center" }))
+	end
 	local presets = {}
 	for _, minutes in ipairs(PRESETS) do
 		table.insert(presets, ui.button({
@@ -152,7 +180,6 @@ local function timerBody(ctx: any, v: any): { any }
 			end,
 		}))
 	end
-	table.insert(out, ui.row({ gap = 4, justify = "center" }, presets))
 	local recent = {}
 	for i, entry in ipairs((v.data or {}).recentTimers or {}) do
 		table.insert(recent, ui.button({
@@ -165,10 +192,11 @@ local function timerBody(ctx: any, v: any): { any }
 			end,
 		}))
 	end
-	if #recent > 0 then
-		table.insert(out, ui.row({ gap = 4, justify = "center" }, recent))
+	-- Presets and recent timers share one row to keep the tab inside the body.
+	for _, chip in ipairs(recent) do
+		table.insert(presets, chip)
 	end
-	table.insert(out, ui.label({ text = ctx.tr("timer.entry-help"), fontSize = 11, color = "on_surface_variant", textAlign = "center" }))
+	table.insert(out, ui.row({ gap = 4, justify = "center" }, presets))
 	return out
 end
 
@@ -193,7 +221,7 @@ function FocusView.build(ctx: any): any
 	end
 	table.insert(children, ui.spacer({ flexGrow = 1 }))
 	table.insert(children, chips(ctx, v))
-	return ui.column({ gap = 10, flexGrow = 1 }, children)
+	return ui.column({ gap = 8, flexGrow = 1 }, children)
 end
 
 return FocusView

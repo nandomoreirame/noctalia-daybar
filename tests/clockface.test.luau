@@ -57,7 +57,16 @@ describe("clock face", function()
 			return n.type == "label" and n.props.text == "12:34"
 		end)[1]
 		assert.equal(digits.props.fontSize, 40)
+		assert.equal(typeof(digits.props.color), "string")
 		assert.equal(#ofType(tree, "progress"), 1)
+	end)
+
+	it("draws the ring when the view has a ring dir", function()
+		local view = table.clone(RUNNING)
+		view.ringDir = "/d/rings/ffb38a"
+		local tree = build(view, {})
+		assert.equal(ofType(tree, "image")[1].props.path, "/d/rings/ffb38a/50.svg")
+		assert.equal(#ofType(tree, "progress"), 0)
 	end)
 
 	it("shows controls only while hovered, close only when closable", function()

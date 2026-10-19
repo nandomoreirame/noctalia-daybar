@@ -19,7 +19,7 @@ render = function()
 	panel.render(ClockFace.build(view(), noctalia.nowMs(), {
 		ui = ui,
 		tr = noctalia.tr,
-		size = 40,
+		size = 34,
 		hovered = hovered,
 		closable = true,
 		onHover = function(state: string)
