@@ -52,6 +52,8 @@ function Assert.deepEqual(actual: any, expected: any)
 	end
 end
 
+Assert.same = Assert.deepEqual
+
 function Assert.throws(fn: () -> (), messageSubstring: string?)
 	local ok, err = pcall(fn)
 	if ok then

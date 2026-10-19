@@ -36,6 +36,9 @@ export type MockOpts = {
 	now: number?,
 	fileInfo: { [string]: any }?,
 	vertical: boolean?,
+	deferAsync: boolean?,
+	commands: { [string]: boolean }?,
+	clipboard: string?,
 }
 
 type CallLog = { [string]: { { any } } }
@@ -53,6 +56,12 @@ type EnvPrivate = {
 	http: { any },
 	fileInfo: { [string]: any },
 	vertical: boolean,
+	deferAsync: boolean,
+	commands: { [string]: boolean },
+	clipboard: string?,
+	async_pending: { any },
+	sound_pending: { any },
+	download_pending: { any },
 }
 
 -- Side table: env identity -> private state (keeps host env clean for setfenv).
@@ -582,9 +591,16 @@ local function buildNoctalia(priv: EnvPrivate): any
 			return priv.now
 		end,
 		copyToClipboard = recorder(priv, "noctalia.copyToClipboard", "true"),
-		clipboardText = recorder(priv, "noctalia.clipboardText", "nil"),
+		clipboardText = function(): string?
+			record(priv, "noctalia.clipboardText", {})
+			return priv.clipboard
+		end,
 		runAsync = function(cmdOrArgv: any, cb: ((AsyncResult) -> ())?): boolean
 			record(priv, "noctalia.runAsync", { cmdOrArgv, cb })
+			if priv.deferAsync then
+				table.insert(priv.async_pending, { argv = cmdOrArgv, cb = cb })
+				return true
+			end
 			if cb == nil then
 				return true
 			end
@@ -600,7 +616,7 @@ local function buildNoctalia(priv: EnvPrivate): any
 		runInTerminal = recorder(priv, "noctalia.runInTerminal", "true"),
 		commandExists = function(name: string): boolean
 			record(priv, "noctalia.commandExists", { name })
-			return false
+			return priv.commands[name] == true
 		end,
 		getenv = function(name: string): string?
 			record(priv, "noctalia.getenv", { name })
@@ -651,6 +667,36 @@ local function buildNoctalia(priv: EnvPrivate): any
 			priv.fs[path] = nil
 			return true, nil
 		end,
+		renameFile = function(from: string, to: string): (boolean, string?)
+			record(priv, "noctalia.renameFile", { from, to })
+			local content = priv.fs[from]
+			if content == nil then
+				return false, "file not found: " .. from
+			end
+			priv.fs[to] = content
+			priv.fs[from] = nil
+			local info = priv.fileInfo[from]
+			if info ~= nil then
+				priv.fileInfo[to] = info
+				priv.fileInfo[from] = nil
+			end
+			return true, nil
+		end,
+		listDir = function(dir: string): { string }
+			record(priv, "noctalia.listDir", { dir })
+			local prefix = dir .. "/"
+			local names = {}
+			for path, _ in priv.fs do
+				if string.sub(path, 1, #prefix) == prefix then
+					local rest = string.sub(path, #prefix + 1)
+					if rest ~= "" and string.find(rest, "/", 1, true) == nil then
+						table.insert(names, rest)
+					end
+				end
+			end
+			table.sort(names)
+			return names
+		end,
 		pluginDir = function(): string
 			record(priv, "noctalia.pluginDir", {})
 			return "/mock/plugin"
@@ -675,7 +721,19 @@ local function buildNoctalia(priv: EnvPrivate): any
 			table.insert(priv.http, { request = request, cb = cb })
 			return true
 		end,
-		download = recorder(priv, "noctalia.download", "true"),
+		download = function(url: string, dest: string, cb: ((boolean) -> ())?): boolean
+			record(priv, "noctalia.download", { url, dest, cb })
+			table.insert(priv.download_pending, { url = url, dest = dest, cb = cb })
+			return true
+		end,
+		sound = guardTable("noctalia.sound", {
+			load = function(name: string, path: string, cb: ((boolean) -> ())?): boolean
+				record(priv, "noctalia.sound.load", { name, path, cb })
+				table.insert(priv.sound_pending, { name = name, path = path, cb = cb })
+				return true
+			end,
+			play = recorder(priv, "noctalia.sound.play"),
+		}),
 		json = jsonApi,
 		string = stringApi,
 		state = stateApi,
@@ -706,6 +764,7 @@ local function buildPanel(priv: EnvPrivate): any
 	return guardTable("panel", {
 		render = recorder(priv, "panel.render", "first"),
 		close = recorder(priv, "panel.close"),
+		setWantsSecondTicks = recorder(priv, "panel.setWantsSecondTicks"),
 		setNeedsFrameTick = recorder(priv, "panel.setNeedsFrameTick"),
 		openContextMenu = recorder(priv, "panel.openContextMenu"),
 	})
@@ -797,6 +856,12 @@ function Mock.new(opts: MockOpts?): any
 		http = {},
 		fileInfo = fileInfo,
 		vertical = o.vertical == true,
+		deferAsync = o.deferAsync == true,
+		commands = copyMap(o.commands :: any) :: any,
+		clipboard = o.clipboard,
+		async_pending = {},
+		sound_pending = {},
+		download_pending = {},
 	}
 
 	local env = {
@@ -840,8 +905,69 @@ function Mock.respond(env: any, index: number, response: any)
 	call.cb(response)
 end
 
+function Mock.resolveHttp(env: any, index: number, response: any)
+	Mock.respond(env, index, response)
+end
+
+function Mock.pendingAsync(env: any): { any }
+	return privOf(env).async_pending
+end
+
+function Mock.resolveAsync(env: any, index: number, result: any)
+	local priv = privOf(env)
+	local entry = priv.async_pending[index]
+	if entry == nil then
+		error(string.format("mock.resolveAsync: no pending call #%d", index), 2)
+	end
+	table.remove(priv.async_pending, index)
+	local full: AsyncResult = {
+		exitCode = result.exitCode,
+		stdout = result.stdout or "",
+		stderr = result.stderr or "",
+		timedOut = if result.timedOut == nil then false else result.timedOut,
+		stdoutTruncated = if result.stdoutTruncated == nil then false else result.stdoutTruncated,
+		stderrTruncated = if result.stderrTruncated == nil then false else result.stderrTruncated,
+	}
+	if entry.cb then
+		entry.cb(full)
+	end
+end
+
+function Mock.resolveSound(env: any, index: number, ok: boolean)
+	local priv = privOf(env)
+	local entry = priv.sound_pending[index]
+	if entry == nil then
+		error(string.format("mock.resolveSound: no pending load #%d", index), 2)
+	end
+	table.remove(priv.sound_pending, index)
+	if entry.cb then
+		entry.cb(ok)
+	end
+end
+
+function Mock.resolveDownload(env: any, index: number, ok: boolean)
+	local priv = privOf(env)
+	local entry = priv.download_pending[index]
+	if entry == nil then
+		error(string.format("mock.resolveDownload: no pending download #%d", index), 2)
+	end
+	table.remove(priv.download_pending, index)
+	if ok then
+		priv.fs[entry.dest] = "<bytes>"
+		priv.fileInfo[entry.dest] = { size = 7, mtime = 1, isDir = false }
+	end
+	if entry.cb then
+		entry.cb(ok)
+	end
+end
+
 function Mock.setNow(env: any, ms: number)
 	privOf(env).now = ms
+end
+
+function Mock.advance(env: any, ms: number)
+	local priv = privOf(env)
+	priv.now = priv.now + ms
 end
 
 function Mock.setFile(env: any, path: string, content: string, mtime: number)
