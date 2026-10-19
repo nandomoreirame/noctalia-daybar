@@ -1,6 +1,6 @@
 ---
 feature: daybar-v5
-phase: plan-complete
+phase: implement
 spec_path: docs/specs/daybar-v5/SPEC.md
 plan_path: docs/plans/2026-10-16-daybar-v5.md
 updated: 2026-10-19

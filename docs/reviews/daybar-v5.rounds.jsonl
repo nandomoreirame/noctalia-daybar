@@ -1,0 +1,1 @@
+{"round": 1, "implementer": "claude", "reviewer": "claude", "identities": ["toolbar.luau:98", "lib/store.luau:182", "lib/store.luau:185", "views/client.luau:24", "tests/service-agenda.test.luau:111", "service.luau:578"], "open_count": 6}
