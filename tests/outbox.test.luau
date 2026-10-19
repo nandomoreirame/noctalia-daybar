@@ -1,0 +1,108 @@
+local assert = require("./support/assert")
+local runner = require("./support/runner")
+local modules = require("./support/modules")
+
+local describe, it = runner.describe, runner.it
+local Outbox = modules.load("lib/outbox.luau")
+
+describe("outbox client", function()
+	it("appends commands with increasing seq seeded from now", function()
+		local q = Outbox.newClient(5000)
+		local a = Outbox.push(q, "addTask", { title = "x" })
+		local b = Outbox.push(q, "toggleTask", { id = "1" })
+		assert.equal(a.seq, 5000001)
+		assert.equal(b.seq, 5000002)
+		assert.same(a, { seq = 5000001, name = "addTask", args = { title = "x" } })
+		assert.equal(#Outbox.pending(q), 2)
+	end)
+
+	it("defaults missing args to an empty table", function()
+		local q = Outbox.newClient(1)
+		assert.same(Outbox.push(q, "reloadCalendar", nil).args, {})
+	end)
+
+	it("keeps seq strictly increasing for a realistic epoch ms seed", function()
+		local q = Outbox.newClient(1791662400000)
+		local a = Outbox.push(q, "a", {})
+		local b = Outbox.push(q, "b", {})
+		assert.equal(b.seq - a.seq, 1)
+		assert.equal(a.seq, 1791662400000 * 1000 + 1)
+	end)
+
+	it("trims acknowledged commands", function()
+		local q = Outbox.newClient(5000)
+		Outbox.push(q, "a", {})
+		Outbox.push(q, "b", {})
+		Outbox.ack(q, { seq = 5000001, ok = true })
+		local rest = Outbox.pending(q)
+		assert.equal(#rest, 1)
+		assert.equal(rest[1].name, "b")
+	end)
+
+	it("an ack trims every command up to its seq and ignores stale or invalid acks", function()
+		local q = Outbox.newClient(5000)
+		Outbox.push(q, "a", {})
+		Outbox.push(q, "b", {})
+		Outbox.push(q, "c", {})
+		Outbox.ack(q, { seq = 5000002, ok = true })
+		assert.equal(#Outbox.pending(q), 1)
+		Outbox.ack(q, { seq = 5000001, ok = true })
+		Outbox.ack(q, nil)
+		Outbox.ack(q, { ok = true })
+		Outbox.ack(q, { seq = "5000003" })
+		assert.equal(#Outbox.pending(q), 1)
+	end)
+
+	it("pending returns a copy the caller cannot use to change the queue", function()
+		local q = Outbox.newClient(5000)
+		Outbox.push(q, "a", {})
+		local list = Outbox.pending(q)
+		table.remove(list, 1)
+		assert.equal(#Outbox.pending(q), 1)
+	end)
+end)
+
+describe("outbox server", function()
+	it("returns only unseen commands in seq order and remembers the last", function()
+		local s = Outbox.newServer()
+		local list = { { seq = 2, name = "b" }, { seq = 1, name = "a" } }
+		assert.same(Outbox.take(s, "toolbar", list), { { seq = 1, name = "a" }, { seq = 2, name = "b" } })
+		assert.same(Outbox.take(s, "toolbar", list), {})
+	end)
+
+	it("returns only the new tail when the list grows", function()
+		local s = Outbox.newServer()
+		Outbox.take(s, "toolbar", { { seq = 1, name = "a" } })
+		local got = Outbox.take(s, "toolbar", { { seq = 1, name = "a" }, { seq = 2, name = "b" } })
+		assert.same(got, { { seq = 2, name = "b" } })
+	end)
+
+	it("tracks entries separately", function()
+		local s = Outbox.newServer()
+		local list = { { seq = 1, name = "a" } }
+		assert.equal(#Outbox.take(s, "toolbar", list), 1)
+		assert.equal(#Outbox.take(s, "capture", list), 1)
+		assert.equal(#Outbox.take(s, "toolbar", list), 0)
+		assert.equal(Outbox.lastSeen(s, "toolbar"), 1)
+		assert.equal(Outbox.lastSeen(s, "bar"), 0)
+	end)
+
+	it("skips malformed items and tolerates a missing list", function()
+		local s = Outbox.newServer()
+		assert.same(Outbox.take(s, "bar", nil), {})
+		assert.same(Outbox.take(s, "bar", "junk"), {})
+		local got = Outbox.take(s, "bar", {
+			"junk",
+			{ seq = "3", name = "x" },
+			{ seq = 4 },
+			{ seq = 5, name = "ok" },
+		})
+		assert.same(got, { { seq = 5, name = "ok" } })
+	end)
+
+	it("runs a duplicated seq only once", function()
+		local s = Outbox.newServer()
+		local got = Outbox.take(s, "bar", { { seq = 7, name = "a" }, { seq = 7, name = "a" } })
+		assert.equal(#got, 1)
+	end)
+end)
