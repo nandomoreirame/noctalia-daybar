@@ -1,0 +1,159 @@
+id = "nandomoreirame/daybar"
+name = "Daybar"
+version = "0.4.0"
+plugin_api = 32
+author = "Fernando Moreira Costa"
+license = "MIT"
+icon = "calendar-event"
+description = "Quick capture, today's checklist, khal calendar, focus timer, bookmarks and notes."
+tags = ["productivity", "calendar", "pomodoro", "notes"]
+dependencies = ["khal", "vdirsyncer", "xdg-utils"]
+
+[[setting]]
+key = "work_duration"
+type = "int"
+label_key = "settings.work_duration.label"
+min = 1
+max = 180
+default = 25
+
+[[setting]]
+key = "short_break_duration"
+type = "int"
+label_key = "settings.short_break_duration.label"
+min = 1
+max = 60
+default = 5
+
+[[setting]]
+key = "long_break_duration"
+type = "int"
+label_key = "settings.long_break_duration.label"
+min = 1
+max = 120
+default = 15
+
+[[setting]]
+key = "sessions_before_long_break"
+type = "int"
+label_key = "settings.sessions_before_long_break.label"
+min = 1
+max = 12
+default = 4
+
+[[setting]]
+key = "daily_pomodoro_goal"
+type = "int"
+label_key = "settings.daily_pomodoro_goal.label"
+min = 0
+max = 24
+default = 8
+
+[[setting]]
+key = "auto_start_breaks"
+type = "bool"
+label_key = "settings.auto_start_breaks.label"
+default = false
+
+[[setting]]
+key = "auto_start_work"
+type = "bool"
+label_key = "settings.auto_start_work.label"
+default = false
+
+[[setting]]
+key = "play_sound"
+type = "bool"
+label_key = "settings.play_sound.label"
+default = true
+
+[[setting]]
+key = "focus_mode_command"
+type = "string"
+label_key = "settings.focus_mode_command.label"
+description_key = "settings.focus_mode_command.description"
+default = ""
+
+[[setting]]
+key = "default_calendar"
+type = "string"
+label_key = "settings.default_calendar.label"
+description_key = "settings.default_calendar.description"
+default = ""
+
+[[setting]]
+key = "initial_tab"
+type = "select"
+label_key = "settings.initial_tab.label"
+default = "last"
+options = [
+  { value = "last", label_key = "settings.initial_tab.last" },
+  { value = "calendar", label_key = "tabs.calendar" },
+  { value = "today", label_key = "tabs.today" },
+  { value = "focus", label_key = "tabs.focus" },
+  { value = "bookmarks", label_key = "tabs.bookmarks" },
+  { value = "notes", label_key = "tabs.notes" },
+]
+
+[[setting]]
+key = "fetch_previews"
+type = "bool"
+label_key = "settings.fetch_previews.label"
+description_key = "settings.fetch_previews.description"
+default = true
+
+[[service]]
+id = "core"
+entry = "service.luau"
+
+[[widget]]
+id = "bar"
+entry = "widget.luau"
+
+# Middle click is handled by the widget script instead of opening settings.
+[widget.actions]
+middle = "none"
+
+[[panel]]
+id = "toolbar"
+entry = "toolbar.luau"
+width = 680
+height = 450
+placement = "attached"
+open_near_click = true
+
+[[panel]]
+id = "capture"
+entry = "capture.luau"
+width = 640
+height = 240
+placement = "floating"
+position = "center"
+layer = "overlay"
+keyboard_focus = "exclusive"
+capture_keys = ["tab", "shift+tab", "shift+Return"]
+
+[[panel]]
+id = "note"
+entry = "note.luau"
+width = 1100
+height = 800
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+capture_keys = ["ctrl+e", "ctrl+s"]
+
+[[panel]]
+id = "clock"
+entry = "clockpin.luau"
+width = 200
+height = 200
+persistent = true
+keyboard_focus = "none"
+dismiss_on_outside_click = false
+position = "top_right"
+layer = "overlay"
+
+[[desktop_widget]]
+id = "clockface"
+entry = "clockdesk.luau"

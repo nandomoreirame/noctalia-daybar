@@ -70,7 +70,8 @@
       "start-work": "Iniciar foco",
       "start-short": "Iniciar pausa curta",
       "start-long": "Iniciar pausa longa"
-    }
+    },
+    "not-ready": "O Daybar ainda está iniciando. Tente de novo em instantes."
   },
   "when": {
     "today": "hoje",
@@ -120,11 +121,9 @@
     "settings-close": "Fechar ajustes",
     "settings-help": "As mudanças valem na hora para um ciclo que ainda não começou. Meta 0 desliga a meta diária.",
     "toast-goal-reached": "Meta diária de pomodoros atingida.",
-    "clock-window-open": "Abrir em janela",
-    "clock-window-close": "Fechar a janela",
-    "clock-overlay-open": "Fixar no canto",
-    "clock-overlay-close": "Desafixar do canto",
-    "link-task": "Relacionar uma tarefa"
+    "link-task": "Relacionar uma tarefa",
+    "pin": "Fixar no canto",
+    "unpin": "Desafixar do canto"
   },
   "reminder": {
     "title": "Lembrete"
@@ -135,40 +134,49 @@
   },
   "store": {
     "corrupt-title": "Dados do Daybar ilegíveis",
-    "corrupt-body": "O arquivo antigo foi guardado como data.json.bak e um novo foi iniciado."
+    "corrupt-body": "O arquivo antigo foi guardado como data.json.bak e um novo foi iniciado.",
+    "imported": "Importados {tasks} tarefas, {notes} notas e {bookmarks} favoritos da versão anterior."
   },
   "settings": {
-    "focus": "Foco",
-    "work-duration": "Duração do foco",
-    "short-break": "Pausa curta",
-    "long-break": "Pausa longa",
-    "sessions": "Sessões até a pausa longa",
-    "auto-start-breaks": "Iniciar pausas automaticamente",
-    "auto-start-work": "Iniciar foco automaticamente",
-    "play-sound": "Tocar alarme",
-    "focus-command": "Comando de modo foco",
-    "focus-command-help": "Executável chamado com on/off quando um foco começa ou para. Deixe vazio para desligar.",
-    "general": "Geral",
-    "default-calendar": "Agenda padrão",
-    "default-calendar-none": "Padrão do khal",
-    "initial-tab": "Aba inicial",
-    "daily-goal": "Meta diária de pomodoros",
-    "daily-goal-help": "Sessões de foco por dia. 0 desliga a meta.",
-    "initial-tab-last": "Última aba usada",
-    "fetch-previews": "Buscar prévia dos links",
-    "fetch-previews-help": "Ao salvar um favorito, baixa título, descrição e imagem da página.",
-    "clock-corner": "Canto do relógio fixado",
-    "clock-size": "Tamanho do relógio fixado",
-    "clock-corners": {
-      "top-left": "Superior esquerdo",
-      "top-right": "Superior direito",
-      "bottom-left": "Inferior esquerdo",
-      "bottom-right": "Inferior direito"
+    "work_duration": {
+      "label": "Duração do foco (minutos)"
     },
-    "clock-sizes": {
-      "small": "Pequeno",
-      "medium": "Médio",
-      "large": "Grande"
+    "short_break_duration": {
+      "label": "Pausa curta (minutos)"
+    },
+    "long_break_duration": {
+      "label": "Pausa longa (minutos)"
+    },
+    "sessions_before_long_break": {
+      "label": "Sessões até a pausa longa"
+    },
+    "daily_pomodoro_goal": {
+      "label": "Meta diária de pomodoros (0 desliga)"
+    },
+    "auto_start_breaks": {
+      "label": "Iniciar pausas automaticamente"
+    },
+    "auto_start_work": {
+      "label": "Iniciar foco automaticamente"
+    },
+    "play_sound": {
+      "label": "Tocar alarme"
+    },
+    "focus_mode_command": {
+      "label": "Comando de modo foco",
+      "description": "Executável chamado com on/off quando um foco começa ou para. Deixe vazio para desligar."
+    },
+    "default_calendar": {
+      "label": "Agenda padrão",
+      "description": "Agenda dos novos eventos e lembretes. Deve ser um nome de khal printcalendars; vazio usa o padrão do khal."
+    },
+    "initial_tab": {
+      "label": "Aba inicial",
+      "last": "Última aba usada"
+    },
+    "fetch_previews": {
+      "label": "Buscar prévia dos links",
+      "description": "Ao salvar um favorito, baixa título, descrição e imagem da página."
     }
   },
   "bookmarks": {
@@ -209,7 +217,8 @@
   },
   "confirm": {
     "ok": "OK",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "delete": "Excluir"
   },
   "events": {
     "delete": "Excluir evento",

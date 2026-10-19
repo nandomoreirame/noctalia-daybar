@@ -70,7 +70,7 @@ removed from `main`. The user's v4 data is imported once.
   `[[panel]] note` (`note.luau`, 1100x800, floating, center, `keyboard_focus = "exclusive"`,
   `capture_keys = ["ctrl+e", "ctrl+s"]`); `[[panel]] clock` (`clockpin.luau`, 200x200,
   `persistent = true`, `keyboard_focus = "none"`, `dismiss_on_outside_click = false`,
-  `position = "top_right"`, `layer = "overlay"`); `[[desktop_widget]] clock`
+  `position = "top_right"`, `layer = "overlay"`); `[[desktop_widget]] clockface`
   (`clockdesk.luau`). `noctalia plugins lint .` SHALL pass.
 - **[REQ-002]** Before any v5 file lands, branch `legacy-v4` SHALL point at the 0.3.1 commit.
   Then all QML, `utils/`, `components/`, `i18n/`, `manifest.json`, `settings.json`,
@@ -237,7 +237,7 @@ removed from `main`. The user's v4 data is imported once.
   shows the active clock (running or ringing, else the one selected in Focus): digits and a
   progress bar; hovering shows play/pause, reset and close. Corner comes from the host
   `clock_position` setting; size is fixed.
-- **[REQ-028]** The `clock` desktop widget SHALL show the same active clock with digits and a
+- **[REQ-028]** The `clockface` desktop widget SHALL show the same active clock with digits and a
   progress bar, scale with the tile the user sizes, tick every second, and show play/pause
   and reset on hover. It replaces the v4 "Open in a window" form.
 
@@ -302,7 +302,7 @@ removed from `main`. The user's v4 data is imported once.
 - **AD-206 Native HTTP for previews.** `noctalia.http`/`download` replace curl; the 2 MB cap
   applies to parsing, the 8 s limit to waiting (generation id). Network still happens off the
   list rendering path.
-- **AD-207 Clock surfaces.** Persistent `clock` panel for the corner, `clock` desktop widget
+- **AD-207 Clock surfaces.** Persistent `clock` panel for the corner, `clockface` desktop widget
   for the movable/resizable form. Both read the same `view`; the ring becomes a progress bar
   (W10).
 - **AD-208 Data in pluginDataDir with a one-time import.** Keeps v4 untouched (it may still

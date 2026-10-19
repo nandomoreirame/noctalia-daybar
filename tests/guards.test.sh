@@ -16,5 +16,13 @@ fi
 if grep -rniE 'n[i]ko' --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.generated . >/dev/null; then
   echo "guards: reference to a previous project found" >&2; fail=1
 fi
+shopt -s nullglob
+leftovers=(*.qml)
+shopt -u nullglob
+[[ -e package.json ]] && leftovers+=(package.json)
+[[ -e utils ]] && leftovers+=(utils/)
+if ((${#leftovers[@]})); then
+  echo "guards: v4 files left in the repo root: ${leftovers[*]}" >&2; fail=1
+fi
 ((fail == 0)) && echo "guards: ok"
 exit "$fail"
