@@ -8,6 +8,7 @@ local Outbox = require("./lib/outbox.luau")
 local Tasks = require("./lib/tasks.luau")
 local Dates = require("./lib/dates.luau")
 local Tbl = require("./lib/tbl.luau")
+local Clock = require("./lib/clock.luau")
 local Tabs = require("./lib/tabs.luau")
 local Notes = require("./lib/notes.luau")
 local Markdown = require("./lib/markdown.luau")
@@ -18,6 +19,11 @@ local EventInfo = require("./lib/eventinfo.luau")
 local WriteQueue = require("./lib/writequeue.luau")
 local Reminders = require("./lib/reminders.luau")
 local Registry = require("./lib/capture/registry.luau")
+local Pomodoro = require("./lib/pomodoro.luau")
+local PomodoroCommand = require("./lib/capture/pomodoro.luau")
+local Timers = require("./lib/timers.luau")
+local FocusLog = require("./lib/focuslog.luau")
+local Duration = require("./lib/duration.luau")
 
 local PLUGIN_ID = "nandomoreirame/daybar"
 local TOOLBAR_PANEL = PLUGIN_ID .. ":toolbar"
@@ -48,6 +54,10 @@ local CALENDAR_RELOAD_MS = 5 * 60 * 1000
 local WINDOW_BEFORE_DAYS = 14
 local WINDOW_AFTER_DAYS = 31
 local KHAL_CONFIG = "~/.config/khal/config"
+local ALARM_SOUND = "alarm"
+local ALARM_FILE = "alarm.mp3"
+local ALARM_MS = 5000
+local REMINDER_CHECK_MS = 30000
 
 local dataDir = noctalia.pluginDataDir() or ""
 local dataPath = dataDir .. "/data.json"
@@ -82,6 +92,25 @@ local hiddenKeys: { string } = {}
 local deleting: { [string]: any } = {}
 local located: { [string]: { path: string, calendar: string, roots: { string } } } = {}
 local details: { [string]: any } = {}
+
+-- Focus (REQ-024..027): one pomodoro and one free timer, never both running.
+-- Running clocks keep a deadline (endsAtMs); `remaining` is exact while paused.
+local pom: { [string]: any } = {
+	mode = Pomodoro.WORK,
+	running = false,
+	started = false,
+	remaining = 0,
+	endsAtMs = nil,
+	completed = 0,
+	linkedTaskId = nil,
+}
+local tmr: { [string]: any } = { total = 0, remaining = 0, running = false, endsAtMs = nil, label = "" }
+local alarmSource = ""
+local alarmUntilMs: number? = nil
+local focusPanel = "pomodoro"
+local soundReady = false
+local focusModeOn = false
+local lastReminderCheckMs: number? = nil
 
 -- ---------------------------------------------------------------- helpers
 
@@ -165,6 +194,10 @@ local function publish()
 			calendar = Tbl.merge(calendar, { events = EventDelete.hideEvents(calendar.events, hiddenKeys) }),
 			details = details,
 			deleting = deleting,
+			pomodoro = Tbl.merge(pom, { total = Pomodoro.durationFor(pom.mode, Pomodoro.configFrom(settings)) }),
+			timer = Tbl.merge(tmr, { set = tmr.total > 0 }),
+			alarmSource = alarmSource,
+			focusPanel = focusPanel,
 			thumbDir = thumbDir,
 			thumbExists = function(id: string): boolean
 				local path = thumbPathOf(id)
@@ -761,6 +794,352 @@ COMMANDS.commit = function(args, reply)
 	return PENDING
 end
 
+-- ---------------------------------------------------------------- focus
+
+local function cfg(): { [string]: any }
+	return Pomodoro.configFrom(settings)
+end
+
+local function remainingOf(clock: { [string]: any }): number
+	return Clock.remaining(clock, nowMs())
+end
+
+-- Runs the focus-mode command with "on"/"off" when focus starts or stops.
+local function syncFocusMode()
+	local shouldBeOn = pom.running and pom.mode == Pomodoro.WORK
+	if shouldBeOn == focusModeOn then
+		return
+	end
+	focusModeOn = shouldBeOn
+	local cmd = trim(settings.focus_mode_command)
+	if cmd ~= "" then
+		noctalia.runAsync({ cmd, if shouldBeOn then "on" else "off" })
+	end
+end
+
+local function playAlarm(source: string)
+	alarmSource = source
+	alarmUntilMs = nowMs() + ALARM_MS
+	if settings.play_sound ~= false and soundReady then
+		noctalia.sound.play(ALARM_SOUND)
+	end
+end
+
+-- Without a source, any ringing alarm stops; with one, only that clock's.
+local function stopAlarm(source: string?)
+	if alarmSource == "" or (source ~= nil and alarmSource ~= source) then
+		return
+	end
+	alarmSource = ""
+	alarmUntilMs = nil
+end
+
+local function pausePomodoro()
+	if pom.running then
+		pom.remaining = remainingOf(pom)
+	end
+	pom.running = false
+	pom.endsAtMs = nil
+end
+
+local function pauseTimer()
+	if tmr.running then
+		tmr.remaining = remainingOf(tmr)
+	end
+	tmr.running = false
+	tmr.endsAtMs = nil
+end
+
+local function startPomodoro()
+	stopAlarm()
+	if tmr.running then
+		pauseTimer()
+		noctalia.notify(tr("timer.toast-title"), tr("timer.paused-timer"))
+	end
+	if pom.remaining <= 0 then
+		pom.remaining = Pomodoro.durationFor(pom.mode, cfg())
+	end
+	pom.started = true
+	pom.running = true
+	pom.endsAtMs = nowMs() + pom.remaining * 1000
+end
+
+local function resetPomodoro()
+	pausePomodoro()
+	pom.started = false
+	pom.remaining = Pomodoro.durationFor(pom.mode, cfg())
+	stopAlarm("pomodoro")
+end
+
+local function setPomodoroMode(mode: number)
+	pausePomodoro()
+	pom.started = false
+	pom.mode = mode
+	pom.remaining = Pomodoro.durationFor(mode, cfg())
+	stopAlarm("pomodoro")
+end
+
+local function skipPomodoro()
+	local nextPhase = Pomodoro.nextPhase({ mode = pom.mode, completed = pom.completed }, cfg())
+	setPomodoroMode(nextPhase.mode)
+	pom.completed = nextPhase.completed
+end
+
+local function startTimer(): boolean
+	if tmr.total <= 0 then
+		return false
+	end
+	stopAlarm()
+	if pom.running then
+		pausePomodoro()
+		noctalia.notify(tr("timer.toast-title"), tr("timer.paused-pomodoro"))
+	end
+	if tmr.remaining <= 0 then
+		tmr.remaining = tmr.total
+	end
+	tmr.running = true
+	tmr.endsAtMs = nowMs() + tmr.remaining * 1000
+	change(Timers.recordRecent(data, { seconds = tmr.total, label = tmr.label }))
+	return true
+end
+
+local function setTimer(seconds: number, label: string?)
+	pauseTimer()
+	stopAlarm("timer")
+	tmr.total = seconds
+	tmr.remaining = seconds
+	tmr.label = label or ""
+	focusPanel = "timer"
+end
+
+local function resetTimer()
+	pauseTimer()
+	tmr.remaining = tmr.total
+	stopAlarm("timer")
+end
+
+local function pomodoroFinished()
+	pom.running = false
+	pom.started = false
+	pom.endsAtMs = nil
+	local outcome = Pomodoro.finish({ mode = pom.mode, completed = pom.completed }, cfg())
+	local goalReached = false
+	if outcome.workCompleted then
+		local today = todayIso()
+		local nextData = FocusLog.addSession(data, today)
+		if pom.linkedTaskId ~= nil then
+			nextData = Tasks.addPomodoro(nextData, pom.linkedTaskId)
+		end
+		change(nextData)
+		-- Each focus session links its task anew.
+		pom.linkedTaskId = nil
+		goalReached = FocusLog.goalJustReached(FocusLog.sessionsOn(data, today), cfg().dailyGoal)
+	end
+	playAlarm("pomodoro")
+	local key = if goalReached
+		then "focus.toast-goal-reached"
+		elseif outcome.workCompleted then "focus.toast-work-done"
+		else "focus.toast-break-done"
+	noctalia.notify(tr("focus.toast-title"), tr(key))
+	pom.mode = outcome["next"].mode
+	pom.completed = outcome["next"].completed
+	pom.remaining = outcome.remaining
+	if outcome.autoStart then
+		pom.started = true
+		pom.running = true
+		pom.endsAtMs = nowMs() + pom.remaining * 1000
+	end
+end
+
+local function timerFinished()
+	tmr.running = false
+	tmr.endsAtMs = nil
+	tmr.remaining = tmr.total
+	playAlarm("timer")
+	noctalia.notify(tr("timer.toast-title"), if tmr.label ~= "" then tmr.label else tr("timer.toast-done"))
+end
+
+local function checkReminders()
+	lastReminderCheckMs = nowMs()
+	local due = Reminders.dueReminders(data, nowSec())
+	for _, r in ipairs(due.fire) do
+		noctalia.notify(tr("reminder.title"), tostring(r.title))
+	end
+	local ids = {}
+	for _, r in ipairs(due.fire) do
+		table.insert(ids, r.id)
+	end
+	for _, r in ipairs(due.expire) do
+		table.insert(ids, r.id)
+	end
+	if #ids > 0 then
+		change(Reminders.markFired(data, ids))
+	end
+end
+
+-- Advances deadlines; returns true when something visible changed.
+local function tickFocus(): boolean
+	local changed = false
+	local now = nowMs()
+	if pom.running and pom.endsAtMs ~= nil and now >= pom.endsAtMs then
+		pomodoroFinished()
+		changed = true
+	end
+	if tmr.running and tmr.endsAtMs ~= nil and now >= tmr.endsAtMs then
+		timerFinished()
+		changed = true
+	end
+	if alarmUntilMs ~= nil and now >= (alarmUntilMs :: number) then
+		stopAlarm()
+		changed = true
+	end
+	if lastReminderCheckMs == nil or now - (lastReminderCheckMs :: number) >= REMINDER_CHECK_MS then
+		checkReminders()
+	end
+	return changed
+end
+
+-- Every focus command ends here: focus mode follows the pomodoro, the view republishes.
+local function focusChanged()
+	syncFocusMode()
+	publish()
+end
+
+local function runPomodoroCommand(command: string)
+	local step = PomodoroCommand.plan(command, { running = pom.running, mode = pom.mode })
+	focusPanel = "pomodoro"
+	if step.switchTo >= 0 then
+		setPomodoroMode(step.switchTo)
+	end
+	if step.op == "start" then
+		startPomodoro()
+	elseif step.op == "pause" then
+		pausePomodoro()
+		stopAlarm("pomodoro")
+	else
+		resetPomodoro()
+	end
+end
+
+local POMODORO_MODES: { [number]: boolean } = { [Pomodoro.WORK] = true, [Pomodoro.SHORT] = true, [Pomodoro.LONG] = true }
+
+COMMANDS.pomodoro = function(args)
+	local action = args.action
+	if action == "toggle" then
+		runPomodoroCommand("toggle")
+	elseif action == "start" then
+		startPomodoro()
+	elseif action == "pause" then
+		pausePomodoro()
+		stopAlarm("pomodoro")
+	elseif action == "skip" then
+		skipPomodoro()
+	elseif action == "reset" then
+		resetPomodoro()
+	elseif action == "setMode" then
+		if typeof(args.mode) ~= "number" or POMODORO_MODES[args.mode] ~= true then
+			return false, "invalid-mode"
+		end
+		setPomodoroMode(args.mode)
+	else
+		return false, "invalid-action"
+	end
+	focusChanged()
+	return true
+end
+
+COMMANDS.timer = function(args)
+	local action = args.action
+	if action == "set" then
+		local d = Duration.parseDuration(args.text)
+		if not d.ok then
+			return false, d.error or "invalid-duration"
+		end
+		setTimer(d.seconds, d.label)
+	elseif action == "preset" then
+		local seconds = args.seconds
+		if typeof(seconds) ~= "number" or seconds <= 0 or seconds > Duration.MAX_SECONDS then
+			return false, "invalid-duration"
+		end
+		setTimer(math.floor(seconds), if typeof(args.label) == "string" then args.label else "")
+		startTimer()
+	elseif action == "toggle" then
+		if tmr.total <= 0 then
+			return false, "no-timer"
+		end
+		focusPanel = "timer"
+		if alarmSource == "timer" then
+			stopAlarm("timer")
+		elseif tmr.running then
+			pauseTimer()
+		else
+			startTimer()
+		end
+	elseif action == "reset" then
+		resetTimer()
+	else
+		return false, "invalid-action"
+	end
+	focusChanged()
+	return true
+end
+
+COMMANDS.setFocusPanel = function(args)
+	if args.panel ~= "pomodoro" and args.panel ~= "timer" then
+		return false, "invalid-panel"
+	end
+	focusPanel = args.panel
+	publish()
+	return true
+end
+
+-- Today's play button: link the task, switch to focus (ending a break) and start.
+COMMANDS.linkTask = function(args)
+	if not validId(args.id) then
+		return false, "invalid-id"
+	end
+	if not Pomodoro.canFocusTask(pom.running, pom.mode) then
+		return false, "focus-running"
+	end
+	pom.linkedTaskId = args.id
+	if pom.mode ~= Pomodoro.WORK then
+		setPomodoroMode(Pomodoro.WORK)
+	end
+	startPomodoro()
+	focusPanel = "pomodoro"
+	focusChanged()
+	return true
+end
+
+CAPTURE_ACTIONS.pomodoro = function(p, done)
+	runPomodoroCommand(tostring(p.command))
+	focusChanged()
+	done(true)
+end
+
+CAPTURE_ACTIONS.startTimer = function(p, done)
+	setTimer(p.seconds, p.label)
+	startTimer()
+	focusChanged()
+	done(true)
+end
+
+CAPTURE_ACTIONS.timerToggle = function(_p, done)
+	local ok, err = COMMANDS.timer({ action = "toggle" }, done)
+	done(ok == true, err)
+end
+
+CAPTURE_ACTIONS.timerStop = function(_p, done)
+	if tmr.total <= 0 then
+		done(false, "no-timer")
+		return
+	end
+	focusPanel = "timer"
+	resetTimer()
+	focusChanged()
+	done(true)
+end
+
 local function sendAck(entryName: string, seq: number, ok: boolean, err: string?, result: any?)
 	noctalia.state.set("ack." .. entryName, {
 		seq = seq,
@@ -815,6 +1194,9 @@ function update()
 			loadWindow()
 		end
 	end
+	if tickFocus() then
+		focusChanged()
+	end
 	if dirtyAt ~= nil and nowMs() - (dirtyAt :: number) >= SAVE_DELAY_MS then
 		flush()
 	end
@@ -835,6 +1217,13 @@ function onIpc(event: any, payload: any)
 	end
 end
 
+-- New settings apply without restarting a running clock.
+function onConfigChanged()
+	readSettings()
+	pom.remaining = Pomodoro.idleRemaining(pom.started, pom.remaining, pom.mode, cfg())
+	focusChanged()
+end
+
 function onExit(_signal: number?, _reason: string?)
 	if dirtyAt ~= nil then
 		flush()
@@ -845,6 +1234,20 @@ math.randomseed(math.floor(nowMs()) % 2147483647)
 noctalia.setUpdateInterval(UPDATE_MS)
 readSettings()
 loadData()
+pom.remaining = Pomodoro.durationFor(pom.mode, cfg())
+-- After a restart the Timer view shows the last timer started, ready to run.
+local recent = data.recentTimers or {}
+if #recent > 0 and typeof(recent[1].seconds) == "number" then
+	tmr.total = recent[1].seconds
+	tmr.remaining = tmr.total
+	tmr.label = recent[1].label or ""
+end
+noctalia.sound.load(ALARM_SOUND, ALARM_FILE, function(ok: boolean, err: string?)
+	soundReady = ok
+	if not ok then
+		log("cannot load the alarm sound: " .. tostring(err))
+	end
+end)
 publish()
 startCalendar()
 
