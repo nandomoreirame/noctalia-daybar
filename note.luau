@@ -9,6 +9,9 @@ local Notes = require("./lib/notes.luau")
 local Format = require("./lib/format.luau")
 
 local SAVE_DELAY_MS = 600
+-- The panel is 800 px tall (plugin.toml) and containers do not stretch to it:
+-- the editor and the preview get the height left under the header.
+local BODY_HEIGHT = 680
 
 local client = Client.new(noctalia.state, noctalia.nowMs(), "note")
 
@@ -154,19 +157,31 @@ render = function()
 		}))
 	end
 	if editing then
-		table.insert(children, ui.input({
-			key = "editor-" .. editorRev,
-			value = text,
-			multiline = true,
-			focus = true,
-			flexGrow = 1,
-			placeholder = tr("notes.placeholder"),
-			onChange = "onChange",
+		-- The native input frame rounds with its height (a pill at this size), so
+		-- the editor hides it and draws its own frame with a fixed radius.
+		table.insert(children, ui.column({
+			key = "editor-frame",
+			radius = 8,
+			border = "outline",
+			borderWidth = 1,
+			padding = 8,
+		}, {
+			ui.input({
+				key = "editor-" .. editorRev,
+				value = text,
+				multiline = true,
+				focus = true,
+				frameVisible = false,
+				height = BODY_HEIGHT - 16,
+				placeholder = tr("notes.placeholder"),
+				onChange = "onChange",
+			}),
 		}))
 	else
 		local home = string.gsub(noctalia.expandPath("~/"), "/$", "")
 		table.insert(children, MarkdownView.build(MdView.render(text, { home = home }), {
 			ui = ui,
+			height = BODY_HEIGHT,
 			onLink = function(href: string)
 				client.send("openUrl", { url = href })
 			end,
@@ -210,9 +225,11 @@ function onClose()
 	end
 end
 
+-- Re-rendering keeps the typed text (the input is uncontrolled) and refreshes the title.
 function onChange(value: string)
 	text = value or ""
 	dirtyAt = noctalia.nowMs()
+	render()
 end
 
 function onKey(chord: string, pressed: boolean)

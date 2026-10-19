@@ -79,6 +79,34 @@ describe("note panel", function()
 		assert.equal(field.props.multiline, true)
 	end)
 
+	it("gives the editor and the preview the panel's height", function()
+		local p = boot("new")
+		local field = ofType(p, "input")[1]
+		assert.equal(typeof(field.props.height), "number")
+		assert.equal(field.props.height > 600, true)
+		-- The native frame rounds with its height; the editor draws its own.
+		assert.equal(field.props.frameVisible, false)
+		local frame = findAll(tree(p), function(n)
+			return n.type == "column" and n.props.key == "editor-frame"
+		end)[1]
+		assert.equal(frame.props.radius, 8)
+		assert.equal(frame.children[1], field)
+		p.call("onChange", "x")
+		p.call("onKey", "ctrl+e", true)
+		local scroll = ofType(p, "scroll")[1]
+		assert.equal(typeof(scroll.props.height), "number")
+	end)
+
+	it("the title follows the text while editing", function()
+		local p = boot("new")
+		p.call("onChange", "# Shopping\n\n- eggs")
+		local titles = {}
+		for _, l in ofType(p, "label") do
+			titles[l.props.text] = true
+		end
+		assert.equal(titles["Shopping"], true)
+	end)
+
 	it("ctrl+e and the pencil button toggle editor and preview", function()
 		local p = boot("n1")
 		p.call("onKey", "ctrl+e", true)

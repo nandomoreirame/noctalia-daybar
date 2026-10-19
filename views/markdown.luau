@@ -79,7 +79,7 @@ local function blockNode(ui: any, block: any, ctx: any): any?
 		for r, cells in ipairs(block.rows) do
 			local labels = {}
 			for _, cell in ipairs(cells) do
-				table.insert(labels, ui.label({ text = cell, fontSize = BODY_SIZE, fontWeight = if r == 1 then "bold" else nil, flexGrow = 1 }))
+				table.insert(labels, ui.label({ text = cell, fontSize = BODY_SIZE, fontWeight = if r == 1 then "bold" else "normal", flexGrow = 1 }))
 			end
 			table.insert(rows, ui.row({ gap = 12 }, labels))
 		end
@@ -97,7 +97,8 @@ function MarkdownView.build(blocks: { any }, ctx: { [string]: any }): any
 			table.insert(children, node)
 		end
 	end
-	return ui.scroll({ gap = 10, flexGrow = 1 }, children)
+	-- ctx.height: containers do not stretch to the panel, so the caller sizes it.
+	return ui.scroll({ gap = 10, flexGrow = 1, height = ctx.height }, children)
 end
 
 return MarkdownView
