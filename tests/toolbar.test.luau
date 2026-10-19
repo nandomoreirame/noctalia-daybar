@@ -87,6 +87,15 @@ describe("toolbar", function()
 		assert.same(ticks[#ticks], { true })
 	end)
 
+	it("gives the tab body the panel's remaining height", function()
+		local p = boot()
+		local body = U.byKey(tree(p), "body")
+		assert.equal(typeof(body.props.height), "number")
+		assert.equal(body.props.height > 300, true)
+		-- Room left under the body for the bottom padding (panel 450, tab row and gaps).
+		assert.equal(body.props.height <= 350, true)
+	end)
+
 	it("refresh pushes reloadCalendar", function()
 		local p = boot()
 		U.byKey(tree(p), "reload").props.onClick()

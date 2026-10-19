@@ -12,6 +12,11 @@ local Tabs = require("./lib/tabs.luau")
 
 local client = Client.new(noctalia.state, noctalia.nowMs(), "toolbar")
 
+-- The panel is 450 px tall (plugin.toml) and the root column does not stretch to
+-- it, so the body gets an explicit height: what is left after the host's own
+-- padding, the tab row and the gaps, with room for the bottom padding.
+local BODY_HEIGHT = 340
+
 local TAB_VIEWS: { [string]: any } = {
 	today = TodayView,
 	calendar = CalendarView,
@@ -87,7 +92,7 @@ render = function()
 		TabsView.build(ctx, activeTab, selectTab, function()
 			client.send("reloadCalendar", {})
 		end),
-		ui.column({ flexGrow = 1 }, { body }),
+		ui.column({ key = "body", height = BODY_HEIGHT }, { body }),
 	}))
 end
 
